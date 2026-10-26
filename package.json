@@ -1,12 +1,12 @@
 {
-  "name": "template-ldaw-2026-proyfinal",
+  "name": "template-pdaw-2026-proyfinal",
   "version": "1.0.0",
-  "description": "Plantilla para el proyecto final LDAW 2026",
-  "main": "index.js",
+  "description": "Plantilla para el proyecto final PDAW 2026",
+  "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node --env-file-if-exists=.env server.js",
-    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },

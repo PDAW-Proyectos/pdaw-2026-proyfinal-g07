@@ -41,10 +41,39 @@ Servidor: **http://localhost:3000**.
 
 Tecnologías: JavaScript, Node.js, Express, Jest.
 
+## Endpoints de la API
+
+Todas las rutas usan el prefijo `/api`. El detalle de campos, validaciones y errores está en el [contrato de API](docs/contrato_api.md). Los casos de éxito y error para probar manualmente están en [requests.http](requests.http).
+
+| Método | Ruta | Acceso | Éxito | Descripción |
+| --- | --- | --- | --- | --- |
+| `GET` | `/api/salud` | Público | `200` | Estado del servicio. |
+| `GET` | `/api/auth/sesion` | Público | `200` | Devuelve si hay sesión y el usuario público. |
+| `POST` | `/api/auth/registro` | Público | `201` | Crea la cuenta e inicia sesión. |
+| `POST` | `/api/auth/login` | Público | `200` | Inicia sesión con email o nombre de usuario. |
+| `POST` | `/api/auth/logout` | Público | `204` | Cierra la sesión y borra la cookie. |
+| `GET` | `/api/peliculas/buscar?q=` | Público | `200` | Busca películas en TMDB y guarda la copia local. |
+| `GET` | `/api/peliculas/tendencias` | Público | `200` | Lista las tendencias de TMDB. |
+| `GET` | `/api/peliculas/:peliculaId` | Público | `200` | Detalle de una película del catálogo local. |
+| `GET` | `/api/peliculas/:peliculaId/resenas` | Público | `200` | Reseñas públicas de una película. |
+| `GET` | `/api/resenas/recientes` | Público | `200` | Últimas reseñas publicadas. |
+| `GET` | `/api/resenas/:id` | Público | `200` | Detalle de una reseña. |
+| `GET` | `/api/resenas/mias` | Autenticado | `200` | Reseñas del usuario autenticado. |
+| `POST` | `/api/resenas` | Autenticado | `201` | Publica una reseña. |
+| `PATCH` | `/api/resenas/:id` | Autor | `200` | Edita una reseña propia. |
+| `DELETE` | `/api/resenas/:id` | Autor | `204` | Elimina una reseña propia. |
+| `GET` | `/api/visualizaciones` | Dueño | `200` | Historial privado del usuario autenticado. |
+| `POST` | `/api/visualizaciones` | Autenticado | `201` | Registra una visualización. |
+| `GET` | `/api/visualizaciones/:id` | Dueño | `200` | Detalle de una visualización propia. |
+| `PATCH` | `/api/visualizaciones/:id` | Dueño | `200` | Edita una visualización propia. |
+| `DELETE` | `/api/visualizaciones/:id` | Dueño | `204` | Elimina una visualización propia. |
+| `GET` | `/api/estadisticas/me` | Autenticado | `200` | Estadísticas del usuario autenticado. |
 
 ## Documentación
 
 - [Diagramas y boceto](docs/README.md).
+- [Contrato de API](docs/contrato_api.md).
+- [Casos de prueba manuales](requests.http).
 - [Personas usuarias y escenarios](docs/usuarios.md).
 - [Patrón elegido](docs/patron_elegido.md).
 - [Acuerdos de trabajo y Definition of Done](CONTRIBUTING.md).

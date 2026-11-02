@@ -2,6 +2,8 @@
 
 Diagramas y boceto del alcance general del proyecto. Se actualizan cuando cambian las decisiones de diseño.
 
+El contrato de API acordado está en [contrato_api.md](contrato_api.md).
+
 ## Contexto
 
 ![Diagrama de contexto](diagrama_contexto.png)

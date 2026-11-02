@@ -1,0 +1,165 @@
+@base = http://localhost:3000/api
+
+### Salud del servicio
+GET {{base}}/salud
+
+### Sesión actual
+GET {{base}}/auth/sesion
+
+### Registro
+POST {{base}}/auth/registro
+Content-Type: application/json
+
+{
+  "nombre": "Lucía Gómez",
+  "nombreUsuario": "lucia",
+  "email": "lucia@example.com",
+  "contrasena": "secreto123"
+}
+
+### Registro con email duplicado (error 409)
+POST {{base}}/auth/registro
+Content-Type: application/json
+
+{
+  "nombre": "Otra Lucía",
+  "nombreUsuario": "otra-lucia",
+  "email": "lucia@example.com",
+  "contrasena": "secreto123"
+}
+
+### Login con email
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "identificador": "lucia@example.com",
+  "contrasena": "secreto123"
+}
+
+### Login con nombre de usuario
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "identificador": "lucia",
+  "contrasena": "secreto123"
+}
+
+### Login con credenciales inválidas (error 401)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "identificador": "lucia@example.com",
+  "contrasena": "mala"
+}
+
+### Logout
+POST {{base}}/auth/logout
+
+### Buscar películas
+GET {{base}}/peliculas/buscar?q=matrix&page=1
+
+### Búsqueda sin query (error 400)
+GET {{base}}/peliculas/buscar
+
+### Tendencias
+GET {{base}}/peliculas/tendencias?page=1
+
+### Detalle de película
+GET {{base}}/peliculas/8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f
+
+### Película inexistente (error 404)
+GET {{base}}/peliculas/00000000-0000-4000-8000-000000000000
+
+### Reseñas de una película
+GET {{base}}/peliculas/8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f/resenas?page=1&limit=10
+
+### Reseñas recientes
+GET {{base}}/resenas/recientes?page=1&limit=10
+
+### Mis reseñas
+GET {{base}}/resenas/mias?page=1&limit=10
+
+### Obtener reseña por id
+GET {{base}}/resenas/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
+
+### Crear reseña
+POST {{base}}/resenas
+Content-Type: application/json
+
+{
+  "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+  "comentario": "Una película que invita a pensar."
+}
+
+### Crear reseña vacía (error 400)
+POST {{base}}/resenas
+Content-Type: application/json
+
+{
+  "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+  "comentario": "   "
+}
+
+### Crear reseña con contenido no soportado (error 415)
+POST {{base}}/resenas
+Content-Type: text/plain
+
+Una reseña enviada como texto plano
+
+### Editar reseña
+PATCH {{base}}/resenas/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
+Content-Type: application/json
+
+{
+  "comentario": "Cambio de opinión después de un segundo visionado."
+}
+
+### Eliminar reseña
+DELETE {{base}}/resenas/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
+
+### Historial de visualizaciones
+GET {{base}}/visualizaciones?page=1&limit=20&orden=fecha_desc
+
+### Registrar visualización
+POST {{base}}/visualizaciones
+Content-Type: application/json
+
+{
+  "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+  "fecha": "2026-10-30",
+  "puntuacion": 4
+}
+
+### Registrar visualización con fecha futura (error 400)
+POST {{base}}/visualizaciones
+Content-Type: application/json
+
+{
+  "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+  "fecha": "2099-01-01",
+  "puntuacion": 5
+}
+
+### Obtener visualización por id
+GET {{base}}/visualizaciones/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+
+### Editar visualización
+PATCH {{base}}/visualizaciones/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Content-Type: application/json
+
+{
+  "fecha": "2026-10-29",
+  "puntuacion": null
+}
+
+### Eliminar visualización
+DELETE {{base}}/visualizaciones/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+
+### Estadísticas propias
+GET {{base}}/estadisticas/me
+
+### Ruta inexistente (error 404)
+GET {{base}}/ruta-inexistente

@@ -1,0 +1,198 @@
+:root {
+  --bg-dark: #121517;
+  --bg-sidebar: #0d0f10;
+  --bg-card: #181b1e;
+  --accent-green: #a4c639;
+  --text-muted: #808a93;
+  --border-color: #24282c;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: #e1e3e5;
+  font-family: "Inter", sans-serif;
+}
+
+.bg-dark-custom {
+  background-color: #16191c;
+}
+
+/* Botón transparente para el menú lateral (elimina estilo ovalado y bordes permanentes) */
+.btn-menu-toggle {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.btn-menu-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--accent-green);
+}
+
+.btn-menu-toggle:focus,
+.btn-menu-toggle:active {
+  box-shadow: none;
+  outline: none;
+}
+
+/* Offcanvas / Aside estilo oscuro */
+.bg-sidebar,
+.offcanvas.bg-sidebar {
+  background-color: var(--bg-sidebar) !important;
+  color: #e1e3e5;
+}
+
+.logo-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-color: var(--accent-green);
+  border-radius: 3px;
+}
+
+.max-w-search {
+  max-width: 550px;
+}
+
+.max-w-content {
+  max-width: 1300px;
+}
+
+.nav-link {
+  color: #a0aab2;
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+  color: #ffffff;
+  background-color: #212620;
+  border: 1px solid rgba(164, 198, 57, 0.3);
+}
+
+/* Hero Carousel */
+.hero-carousel-item {
+  height: 320px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.hero-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(18, 21, 23, 0.95) 100%
+  );
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 2rem;
+}
+
+/* Tarjetas de películas */
+.movie-card {
+  position: relative;
+}
+
+.poster-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 2/3;
+  background-color: var(--bg-card);
+}
+
+.poster-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.movie-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 8px 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Reseñas */
+.review-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.review-poster {
+  width: 50px;
+  height: 75px;
+  object-fit: cover;
+}
+
+.fs-7 {
+  font-size: 0.8rem;
+}
+.micro-text {
+  font-size: 0.7rem;
+}
+
+.btn-outline-custom {
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+}
+.btn-outline-custom:hover {
+  background-color: var(--bg-card);
+}
+/* Avatar de la cabecera del perfil */
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+/* Indicadores numéricos */
+.vr {
+  width: 1px;
+  min-height: 2em;
+}
+/* Hero / Backdrop de la Película */
+.movie-backdrop-hero {
+  min-height: 280px;
+  max-height: 400px;
+  background-color: var(--bg-card);
+  background-size: cover;
+  background-position: center;
+}
+
+/* Reducción de opacidad en la capa superior del hero */
+.movie-backdrop-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 21, 23, 0.3) 0%,
+    rgba(18, 21, 23, 0.9) 100%
+  );
+}

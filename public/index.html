@@ -3,67 +3,281 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fotograma</title>
+    <title>Fotograma - Tu vida en películas</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <!-- Tipografía Google Fonts (Inter) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Hoja de estilos de la aplicación -->
+    <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <!-- ENCABEZADO -->
-    <header>
-      <h1>Fotograma</h1>
-      <nav>
-        <ul>
-          <li><a href="#">Inicio</a></li>
-          <li><a href="#">Tendencias</a></li>
-          <li><a href="#">Recomendadas</a></li>
-          <li><a href="#">Iniciar sesión</a></li>
-        </ul>
-      </nav>
+    <!-- NAVEGACIÓN PRINCIPAL / ENCABEZADO SUPERIOR -->
+    <header
+      class="navbar navbar-dark bg-dark-custom sticky-top border-bottom border-dark-subtle px-3 px-md-4 py-2"
+    >
+      <div
+        class="container-fluid d-flex align-items-center justify-content-between gap-2"
+      >
+        <!-- Logotipo e iniciador del menú lateral (Oculto por defecto si no hay sesión iniciada) -->
+        <div class="d-flex align-items-center gap-3">
+          <button
+            id="btn-menu-offcanvas"
+            class="btn btn-menu-toggle d-none align-items-center justify-content-center"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#asideDesplegable"
+            aria-controls="asideDesplegable"
+            title="Abrir menú de usuario"
+          >
+            <i class="bi bi-list fs-4"></i>
+          </button>
+          <a
+            class="navbar-brand fw-bold m-0 d-flex align-items-center gap-2"
+            href="#"
+          >
+            <span class="logo-icon"></span> Fotograma<span class="text-success"
+              >.</span
+            >
+          </a>
+        </div>
+
+        <!-- Formulario de búsqueda global -->
+        <form
+          id="form-busqueda"
+          class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4"
+        >
+          <div class="input-group">
+            <input
+              type="search"
+              id="busqueda-pelicula"
+              name="q"
+              class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
+              placeholder="Buscar película..."
+              aria-label="Buscar película"
+            />
+            <button class="btn btn-success rounded-end-pill px-3" type="submit">
+              <i class="bi bi-search"></i>
+              <span class="d-none d-md-inline ms-1">Buscar</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Botón dinámico de acceso/perfil de usuario -->
+        <div class="d-flex align-items-center">
+          <a
+            id="btn-auth-action"
+            href="login.html"
+            class="btn btn-sm btn-success rounded-pill px-3 fw-medium"
+          >
+            <i class="bi bi-person-fill me-1"></i>
+            <span id="auth-btn-text">Iniciar sesión</span>
+          </a>
+        </div>
+      </div>
     </header>
 
-    <main>
-      <!-- HERO SECTION -->
-      <section class="hero">
-        <h2>¿Que pelicula viste hoy?</h2>
-        <p>Contanos que escenas no te podes sacar de la cabeza</p>
+    <!-- MENÚ LATERAL DESPLEGABLE (ASIDE) - Exclusivo para usuarios con sesión -->
+    <aside
+      class="offcanvas offcanvas-start bg-sidebar text-white border-end border-dark-subtle"
+      tabindex="-1"
+      id="asideDesplegable"
+      aria-labelledby="asideDesplegableLabel"
+    >
+      <!-- Encabezado del menú con botón de cierre -->
+      <div class="offcanvas-header border-bottom border-dark-subtle p-3">
+        <h5
+          class="offcanvas-title fw-bold text-white d-flex align-items-center gap-2"
+          id="asideDesplegableLabel"
+        >
+          <span class="logo-icon"></span> Fotograma<span class="text-success"
+            >.</span
+          >
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Cerrar menú"
+        ></button>
+      </div>
 
-        <form>
-          <label for="busqueda-pelicula">Buscar película:</label>
-          <input
-            type="text"
-            id="busqueda-pelicula"
-            name="busqueda-pelicula"
-            placeholder="Ej. Titanic, El Padrino..."
-          />
-          <button type="submit">Buscar</button>
-        </form>
-      </section>
+      <!-- Enlaces del menú del usuario -->
+      <div
+        class="offcanvas-body d-flex flex-column justify-content-between p-4"
+      >
+        <nav>
+          <ul class="nav flex-column gap-2 p-0 fs-6">
+            <li class="nav-item">
+              <a
+                href="perfil.html"
+                class="nav-link text-white rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-person-circle"></i> Perfil
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="#"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-bookmark-heart"></i> Watchlist
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="#"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-chat-square-text"></i> Reviews
+              </a>
+            </li>
+          </ul>
+        </nav>
 
-      <!-- SECCION DE PELICULAS EN TRENDING -->
-      <section class="trending-peliculas">
-        <h2>Películas en tendencia</h2>
-        <div>
-          <!-- Aquí se mostrarán las películas en tendencia -->
+        <!-- Acción de cierre de sesión -->
+        <div class="sidebar-footer pt-3 border-top border-dark-subtle">
+          <a
+            href="#"
+            id="btn-logout"
+            class="nav-link text-danger rounded d-flex align-items-center gap-3 fs-6 p-2"
+          >
+            <i class="bi bi-box-arrow-left"></i> Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SECCIÓN PRINCIPAL DE CONTENIDO -->
+    <main class="container-fluid max-w-content py-4 px-3 px-md-5">
+      <!-- CARRUSEL DE PELÍCULAS DESTACADAS (HERO CAROUSEL) -->
+      <section class="hero-carousel-section mb-5">
+        <div
+          id="heroCarousel"
+          class="carousel slide rounded-4 overflow-hidden border border-dark-subtle shadow"
+          data-bs-ride="carousel"
+        >
+          <div class="carousel-inner" id="carousel-items-container">
+            <!-- Indicador inicial de carga de elementos -->
+            <div class="carousel-item active p-5 text-center bg-dark">
+              <div class="spinner-border text-success" role="status"></div>
+              <p class="mt-2 text-secondary">Cargando destacados...</p>
+            </div>
+          </div>
+          <button
+            class="carousel-control-prev"
+            type="button"
+            data-bs-target="#heroCarousel"
+            data-bs-slide="prev"
+          >
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
+          </button>
+          <button
+            class="carousel-control-next"
+            type="button"
+            data-bs-target="#heroCarousel"
+            data-bs-slide="next"
+          >
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Siguiente</span>
+          </button>
         </div>
       </section>
 
-      <!-- SECCION DE PELICULAS RECOMENDADAS (SOLO CON LOGIN)-->
-      <section class="recomendadas-peliculas">
-        <h2>Películas recomendadas</h2>
-        <div>
-          <!-- Aquí se mostrarán las películas recomendadas -->
+      <!-- SECCIÓN DE PELÍCULAS EN TENDENCIA (TRENDING) -->
+      <section class="trending-section mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h4 text-white fw-bold m-0">
+            <i class="bi bi-fire text-warning me-2"></i>Trending
+          </h2>
+          <div class="d-flex gap-2">
+            <button
+              id="btn-prev"
+              class="btn btn-outline-custom btn-sm text-white px-3"
+              disabled
+            >
+              Anterior
+            </button>
+            <button
+              id="btn-next"
+              class="btn btn-outline-custom btn-sm text-white px-3"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenedor dinámico de tarjetas de películas -->
+        <div id="movies-container" class="row g-3">
+          <div class="text-secondary py-3">Cargando catálogo...</div>
         </div>
       </section>
 
-      <!-- SECCION ULTMAS RESEÑAS-->
-      <section class="ultimas-resenas">
-        <h2>Últimas reseñas</h2>
-        <div>
-          <!-- Aquí se mostrarán las últimas reseñas -->
+      <!-- SECCIÓN DE RECOMENDACIONES (Oculta por defecto; reservada para cuando hay sesión iniciada) -->
+      <section
+        id="recomendadas-section"
+        class="recomendadas-section mb-5 d-none"
+      >
+        <hr class="border-dark-subtle mb-5" />
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h4 text-white fw-bold m-0">
+            <i class="bi bi-stars text-success me-2"></i>Recomendadas para ti
+          </h2>
+        </div>
+        <div id="recommended-container" class="row g-3">
+          <!-- Espacio reservado para las tarjetas de recomendaciones -->
         </div>
       </section>
+
+      <hr class="border-dark-subtle my-5" />
+
+      <!-- SECCIÓN DE ÚLTIMAS RESEÑAS -->
+      <section class="resenas-section mb-5">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+          <div>
+            <span class="section-tag text-success fw-bold micro-text"
+              >DESPUÉS DE LOS CRÉDITOS</span
+            >
+            <h2 class="h3 text-white fw-bold m-0 mt-1">Últimas Reseñas</h2>
+          </div>
+          <a href="#" class="text-secondary text-decoration-none fs-7"
+            >Ver todas &rarr;</a
+          >
+        </div>
+
+        <!-- Contenedor de reseñas de los usuarios -->
+        <div id="reviews-container" class="row g-4">
+          <div class="text-secondary py-3">Cargando reseñas...</div>
+        </div>
+      </section>
+
+      <hr class="border-dark-subtle my-4" />
+
+      <!-- PIE DE PÁGINA (FOOTER) -->
+      <footer
+        class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center text-secondary fs-7 gap-2"
+      >
+        <p class="m-0">Fotograma &copy; 2026 · Hecho para mirar y recordar.</p>
+        <a href="#" class="text-secondary text-decoration-none"
+          >Acerca de y créditos &#x2197;</a
+        >
+      </footer>
     </main>
 
-    <footer>
-      <p>&copy; 2026 Fotograma. Todos los derechos reservados.</p>
-    </footer>
+    <!-- Scripts de Bootstrap y lógica cliente -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../src/app.js"></script>
   </body>
 </html>

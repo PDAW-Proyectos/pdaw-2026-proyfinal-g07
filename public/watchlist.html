@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fotograma - Mi Watchlist</title>
+    <!-- Framework CSS (Bootstrap 5) e Iconos -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <!-- Tipografía Google Fonts (Inter) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Hoja de estilos principal -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <!-- NAVEGACIÓN SUPERIOR / ENCABEZADO -->
+    <header
+      class="navbar navbar-dark bg-dark-custom sticky-top border-bottom border-dark-subtle px-3 px-md-4 py-2"
+    >
+      <div
+        class="container-fluid d-flex align-items-center justify-content-between gap-2"
+      >
+        <!-- Identidad Visual y Activador del Menú Lateral (Oculto si no hay sesión iniciada) -->
+        <div class="d-flex align-items-center gap-3">
+          <button
+            id="btn-menu-offcanvas"
+            class="btn btn-menu-toggle d-none align-items-center justify-content-center"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#asideDesplegable"
+            aria-controls="asideDesplegable"
+            aria-label="Abrir menú de usuario"
+          >
+            <i class="bi bi-list fs-4"></i>
+          </button>
+          <a
+            class="navbar-brand fw-bold m-0 d-flex align-items-center gap-2"
+            href="index.html"
+          >
+            <span class="logo-icon"></span> Fotograma<span class="text-success"
+              >.</span
+            >
+          </a>
+        </div>
+
+        <!-- Buscador Global -->
+        <form
+          id="form-busqueda"
+          class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4"
+        >
+          <div class="input-group">
+            <input
+              type="search"
+              id="busqueda-pelicula"
+              name="q"
+              class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
+              placeholder="Buscar película..."
+              aria-label="Buscar película"
+              required
+            />
+            <button class="btn btn-success rounded-end-pill px-3" type="submit">
+              <i class="bi bi-search"></i>
+              <span class="d-none d-md-inline ms-1">Buscar</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Botón Dinámico de Sesión / Perfil -->
+        <div class="d-flex align-items-center">
+          <a
+            id="btn-auth-action"
+            href="login.html"
+            class="btn btn-sm btn-success rounded-pill px-3 fw-medium"
+          >
+            <i class="bi bi-person-fill me-1"></i>
+            <span id="auth-btn-text">Iniciar sesión</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- MENÚ LATERAL DESPLEGABLE (ASIDE) -->
+    <aside
+      class="offcanvas offcanvas-start bg-sidebar text-white border-end border-dark-subtle"
+      tabindex="-1"
+      id="asideDesplegable"
+      aria-labelledby="asideDesplegableLabel"
+    >
+      <div class="offcanvas-header border-bottom border-dark-subtle p-3">
+        <h5
+          class="offcanvas-title fw-bold text-white d-flex align-items-center gap-2"
+          id="asideDesplegableLabel"
+        >
+          <span class="logo-icon"></span> Fotograma<span class="text-success"
+            >.</span
+          >
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Cerrar menú"
+        ></button>
+      </div>
+
+      <div
+        class="offcanvas-body d-flex flex-column justify-content-between p-4"
+      >
+        <nav>
+          <ul class="nav flex-column gap-2 p-0 fs-6">
+            <li class="nav-item">
+              <a
+                href="perfil.html"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-person-circle"></i> Perfil
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="watchlist.html"
+                class="nav-link text-white active rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-bookmark-heart"></i> Watchlist
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="reviews.html"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-chat-square-text"></i> Reviews
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-footer pt-3 border-top border-dark-subtle">
+          <button
+            id="btn-logout"
+            class="btn btn-link nav-link text-danger w-100 text-start rounded d-flex align-items-center gap-3 fs-6 p-2 text-decoration-none"
+          >
+            <i class="bi bi-box-arrow-left"></i> Logout
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL: WATCHLIST -->
+    <main class="container-fluid max-w-content py-4 px-3 px-md-5">
+      <!-- ENCABEZADO DE SECCIÓN -->
+      <section class="mb-4">
+        <div
+          class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-3 mb-4"
+        >
+          <div>
+            <h1
+              class="h3 text-white fw-bold m-0 d-flex align-items-center gap-2"
+            >
+              <i class="bi bi-bookmark-heart text-success"></i> Mi Watchlist
+            </h1>
+            <p class="text-secondary small m-0 mt-1">
+              Películas pendientes por ver en tu lista personal.
+            </p>
+          </div>
+          <button
+            id="btn-add-to-watchlist"
+            class="btn btn-sm btn-outline-success rounded-pill px-3"
+          >
+            <i class="bi bi-plus-lg"></i> Agregar película
+          </button>
+        </div>
+      </section>
+
+      <!-- SECCIÓN DE PELÍCULAS EN WATCHLIST -->
+      <section class="watchlist-section mb-5">
+        <!-- Contenedor dinámico de tarjetas -->
+        <div id="watchlist-movies-container" class="row g-3" aria-live="polite">
+          <div class="text-secondary py-4 text-center w-100">
+            <div
+              class="spinner-border spinner-border-sm text-success me-2"
+              role="status"
+            ></div>
+            Cargando tu lista de pendientes...
+          </div>
+        </div>
+      </section>
+
+      <!-- PIE DE PÁGINA (FOOTER) -->
+      <footer
+        class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center text-secondary fs-7 gap-2 border-top border-dark-subtle my-4"
+      >
+        <p class="m-0">Fotograma &copy; 2026 · Hecho para mirar y recordar.</p>
+        <a href="#" class="text-secondary text-decoration-none"
+          >Acerca de y créditos &#x2197;</a
+        >
+      </footer>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- PLANTILLAS HTML (<template>) PARA INYECCIÓN DESDE LA API         -->
+    <!-- ================================================================= -->
+
+    <!-- Plantilla de Película en Watchlist -->
+    <template id="tpl-watchlist-movie-card">
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="movie-card position-relative">
+          <div class="poster-container">
+            <img
+              src=""
+              alt=""
+              class="watchlist-poster img-fluid rounded-3"
+              loading="lazy"
+            />
+            <button
+              class="btn-remove-watchlist btn btn-sm btn-dark position-absolute top-0 end-0 m-2 rounded-circle border border-secondary text-danger"
+              title="Quitar de mi lista"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+          <h3 class="watchlist-movie-title movie-title"></h3>
+          <p class="watchlist-movie-meta movie-meta"></p>
+        </div>
+      </div>
+    </template>
+
+    <!-- Scripts de Bootstrap y Cliente JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../src/app.js" type="module"></script>
+  </body>
+</html>

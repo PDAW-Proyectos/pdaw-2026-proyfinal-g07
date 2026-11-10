@@ -6,6 +6,7 @@ import { VisualizacionRepository } from './repositories/VisualizacionRepository.
 import { ResenaRepository } from './repositories/ResenaRepository.js';
 import { ResenaService } from './services/ResenaService.js';
 import { UsuarioService } from './services/UsuarioService.js';
+import { VisualizacionService } from './services/VisualizacionService.js';
 
 /**
  * Crea y conecta el store y los repositorios.
@@ -25,6 +26,13 @@ export async function createContainer({ store, rondasHash, ahora = () => new Dat
     peliculaRepository,
     usuarioRepository,
     ahora,
+  const visualizacionRepository = new VisualizacionRepository({ store: almacen });
+  const resenaRepository = new ResenaRepository({ store: almacen });
+
+  const usuarioService = new UsuarioService({ usuarioRepository, rondasHash });
+  const visualizacionService = new VisualizacionService({
+    visualizacionRepository,
+    peliculaRepository,
   });
 
   await usuarioService.calentar();
@@ -37,6 +45,9 @@ export async function createContainer({ store, rondasHash, ahora = () => new Dat
     visualizacionRepository: new VisualizacionRepository({ store: almacen }),
     resenaRepository,
     resenaService,
+    visualizacionRepository,
+    resenaRepository,
+    visualizacionService,
   };
 }
 

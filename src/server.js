@@ -1,8 +1,10 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
+import { createContainer } from './container.js';
 import { logger } from './utils/logger.js';
 
-const app = createApp({ logger });
+const container = await createContainer();
+const app = createApp({ logger, container });
 
 const server = app.listen(config.port, () => {
   logger.info('servidor iniciado', { port: config.port });

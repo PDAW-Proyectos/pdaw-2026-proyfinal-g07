@@ -1,5 +1,7 @@
 @base = http://localhost:3000/api
 
+# Los errores responden application/problem+json (RFC 9457) e incluyen X-Request-Id.
+
 ### Salud del servicio
 GET {{base}}/salud
 

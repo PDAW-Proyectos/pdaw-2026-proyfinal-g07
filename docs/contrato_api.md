@@ -5,12 +5,12 @@ Versión inicial acordada para el backend. Este documento es la fuente de verdad
 ## Convenciones generales
 
 - Todas las rutas empiezan con `/api`.
-- El cuerpo de las peticiones y las respuestas usa JSON (`application/json`).
+- Las peticiones y las respuestas exitosas usan JSON (`application/json`). Los errores usan `application/problem+json` según RFC 9457.
 - El frontend se sirve desde el mismo origen que la API; no se necesita CORS.
 - La sesión viaja en una cookie `HttpOnly` llamada `fg_sesion`. El frontend no manipula el token.
 - Los identificadores internos son UUID en texto. `tmdbId` es el identificador externo de TMDB.
 - Las fechas de visualización usan `YYYY-MM-DD`. Las marcas de tiempo usan ISO 8601 en UTC.
-- Los errores siempre tienen el mismo formato.
+- Todos los errores usan el mismo formato `application/problem+json` y se identifican con `X-Request-Id`.
 - Las respuestas `201` incluyen `Location` con la ruta del recurso creado.
 - El servidor acepta solo los campos previstos; los campos desconocidos se rechazan con `SOLICITUD_INVALIDA`.
 - Los cambios incompatibles se publican en una nueva versión (`/api/v2`), sin romper `/api`.
@@ -34,9 +34,22 @@ Parámetros de paginación:
 
 ### Respuesta de error
 
+Todos los errores usan el formato de problema de RFC 9457 con `Content-Type: application/problem+json`:
+
+```http
+HTTP/1.1 400 Bad Request
+Content-Type: application/problem+json
+X-Request-Id: 3f9c2a1e-7b4d-4c1a-9e8f-2d6b5a0c1e77
+```
+
 ```json
 {
-  "error": "Datos inválidos",
+  "type": "about:blank",
+  "title": "Datos inválidos",
+  "status": 400,
+  "detail": "Uno o más campos no cumplen el formato.",
+  "instance": "/api/visualizaciones",
+  "requestId": "3f9c2a1e-7b4d-4c1a-9e8f-2d6b5a0c1e77",
   "errores": [
     {
       "campo": "fecha",
@@ -46,11 +59,16 @@ Parámetros de paginación:
 }
 ```
 
-`error` es el mensaje general para el usuario. `errores` detalla los campos inválidos y puede omitirse cuando el error no está asociado a un campo. El cliente usa el estado HTTP y `errores`; no depende de códigos internos. No se expone el stack ni información interna del servidor.
+- `title` es la categoría del error y `detail` explica este caso concreto.
+- `instance` es la ruta solicitada.
+- `requestId` coincide con `X-Request-Id` y permite relacionar la respuesta con el registro del servidor.
+- `errores` es una extensión opcional para validaciones por campo.
+- El cliente usa el estado HTTP, `detail` y `errores`; no depende de códigos internos.
+- No se expone el stack, rutas de archivos ni información interna del servidor.
 
 ### Códigos internos de error
 
-La tabla se usa para pruebas, logs y documentación. La respuesta HTTP solo incluye `error` y, cuando corresponde, `errores`.
+La tabla se usa para pruebas, logs y documentación. El código interno no se incluye en la respuesta HTTP; el middleware lo traduce a `title`, `status` y `detail`.
 
 | Código | HTTP | Uso |
 | --- | --- | --- |
@@ -523,7 +541,8 @@ Estas funciones requieren nuevas rutas y deben agregarse al contrato antes de im
 ## Notas de implementación
 
 - En las rutas de reseñas, declarar `/recientes` y `/mias` antes de `/:id`.
-- Centralizar la traducción de errores de dominio a HTTP en un `errorHandler`.
+- Centralizar la traducción de errores de dominio a HTTP en un `errorHandler` que responda RFC 9457.
+- Propagar `X-Request-Id` en todas las respuestas y registrarlo junto con cada error.
 - `PeliculaRepository` debe ofrecer búsqueda por `id` y por `tmdbId`, y guardar o actualizar películas normalizadas.
 - El Adapter de TMDB nunca debe exponer su estructura interna: transforma a `Pelicula` y normaliza errores.
 - La API key de TMDB se lee del entorno en el servidor y nunca se envía al cliente.

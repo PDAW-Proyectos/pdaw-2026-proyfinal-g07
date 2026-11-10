@@ -71,6 +71,10 @@ Todas las rutas usan el prefijo `/api`. El detalle de campos, validaciones y err
 | `DELETE` | `/api/visualizaciones/:id`           | Dueño       | `204` | Elimina una visualización propia.                |
 | `GET`    | `/api/estadisticas/me`               | Autenticado | `200` | Estadísticas del usuario autenticado.            |
 
+## Errores
+
+Los errores usan `application/problem+json` según RFC 9457. La respuesta incluye `type`, `title`, `status`, `detail`, `instance` y `requestId`; `errores` aparece cuando hay validaciones por campo. Todas las respuestas incluyen `X-Request-Id`.
+
 ## Documentación
 
 - [Diagramas y boceto](docs/README.md).

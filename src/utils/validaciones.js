@@ -43,6 +43,32 @@ export function validarTexto(valor, campo, { min = 1, max = Infinity, recortar =
 }
 
 /**
+ * Valida que el cuerpo sea un objeto no vacío y sin campos desconocidos.
+ * Se comparte entre los servicios para rechazar mass assignment.
+ */
+export function validarCuerpo(datos, camposPermitidos) {
+  if (datos === null || typeof datos !== 'object' || Array.isArray(datos)) {
+    throw new ErrorDominio('SOLICITUD_INVALIDA', 'El cuerpo debe ser un objeto JSON.');
+  }
+
+  const claves = Object.keys(datos);
+
+  if (claves.length === 0) {
+    throw new ErrorDominio('SOLICITUD_INVALIDA', 'El cuerpo de la solicitud no puede estar vacío.');
+  }
+
+  const desconocidos = claves.filter((clave) => !camposPermitidos.has(clave));
+
+  if (desconocidos.length > 0) {
+    throw new ErrorDominio(
+      'SOLICITUD_INVALIDA',
+      `Campos desconocidos: ${desconocidos.join(', ')}.`,
+      { campos: desconocidos },
+    );
+  }
+}
+
+/**
  * Valida una contraseña de registro.
  * El máximo se mide en bytes UTF-8 porque bcrypt ignora lo que supere los 72 bytes,
  * y se exige al menos un carácter que no sea espacio.

@@ -100,6 +100,34 @@ export class Pelicula {
   }
 
   /**
+   * Devuelve la representación resumida que se usa en listados y referencias.
+   */
+  toResumenJSON() {
+    return {
+      id: this.#id,
+      tmdbId: this.#tmdbId,
+      titulo: this.#titulo,
+      anioEstreno: this.#anioEstreno,
+      rutaPoster: this.#rutaPoster,
+    };
+  }
+
+  /**
+   * Devuelve la ficha completa de la película.
+   */
+  toDetalleJSON() {
+    return {
+      id: this.#id,
+      tmdbId: this.#tmdbId,
+      titulo: this.#titulo,
+      sinopsis: this.#sinopsis,
+      anioEstreno: this.#anioEstreno,
+      generos: [...this.#generos],
+      rutaPoster: this.#rutaPoster,
+    };
+  }
+
+  /**
    * Reconstruye una película a partir de datos persistidos.
    */
   static fromJSON(datos) {

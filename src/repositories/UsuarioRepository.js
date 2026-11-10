@@ -1,13 +1,15 @@
-import { Usuario } from "../models/Usuario.js";
-import { ErrorDominio } from "../utils/ErrorDominio.js";
+import { Usuario } from '../models/Usuario.js';
+import { ErrorDominio } from '../utils/ErrorDominio.js';
 
-const COLECCION = "usuarios";
+const COLECCION = 'usuarios';
 
 /**
  * Normaliza un texto para comparaciones sin distinguir mayúsculas.
  */
 function normalizar(valor) {
-  return String(valor ?? "").trim().toLowerCase();
+  return String(valor ?? '')
+    .trim()
+    .toLowerCase();
 }
 
 /**
@@ -29,27 +31,24 @@ export class UsuarioRepository {
   async crear(usuario) {
     return this.#store.actualizar(COLECCION, (registros) => {
       const hayEmailDuplicado = registros.some(
-        (registro) => normalizar(registro.email) === normalizar(usuario.email)
+        (registro) => normalizar(registro.email) === normalizar(usuario.email),
       );
 
       if (hayEmailDuplicado) {
-        throw new ErrorDominio(
-          "EMAIL_DUPLICADO",
-          "Ya existe una cuenta con ese email.",
-          { campo: "email" }
-        );
+        throw new ErrorDominio('EMAIL_DUPLICADO', 'Ya existe una cuenta con ese email.', {
+          campo: 'email',
+        });
       }
 
       const hayNombreUsuarioDuplicado = registros.some(
-        (registro) =>
-          normalizar(registro.nombreUsuario) === normalizar(usuario.nombreUsuario)
+        (registro) => normalizar(registro.nombreUsuario) === normalizar(usuario.nombreUsuario),
       );
 
       if (hayNombreUsuarioDuplicado) {
         throw new ErrorDominio(
-          "NOMBRE_USUARIO_DUPLICADO",
-          "Ya existe una cuenta con ese nombre de usuario.",
-          { campo: "nombreUsuario" }
+          'NOMBRE_USUARIO_DUPLICADO',
+          'Ya existe una cuenta con ese nombre de usuario.',
+          { campo: 'nombreUsuario' },
         );
       }
 
@@ -62,9 +61,7 @@ export class UsuarioRepository {
    * Busca un usuario por su identificador interno.
    */
   async buscarPorId(id) {
-    const registro = this.#store
-      .leer(COLECCION)
-      .find((candidato) => candidato.id === id);
+    const registro = this.#store.leer(COLECCION).find((candidato) => candidato.id === id);
 
     return registro ? Usuario.fromJSON(registro) : null;
   }
@@ -103,7 +100,7 @@ export class UsuarioRepository {
       .find(
         (candidato) =>
           normalizar(candidato.email) === buscado ||
-          normalizar(candidato.nombreUsuario) === buscado
+          normalizar(candidato.nombreUsuario) === buscado,
       );
 
     return registro ? Usuario.fromJSON(registro) : null;

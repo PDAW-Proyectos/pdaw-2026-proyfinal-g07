@@ -8,7 +8,7 @@ export class ErrorDominio extends Error {
    */
   constructor(codigo, mensaje, detalles = {}) {
     super(mensaje);
-    this.name = "ErrorDominio";
+    this.name = 'ErrorDominio';
     this.codigo = codigo;
     this.detalles = detalles;
   }

@@ -3,7 +3,7 @@ import {
   validarId,
   validarNombreUsuario,
   validarTexto,
-} from "../utils/validaciones.js";
+} from '../utils/validaciones.js';
 
 /**
  * Cuenta de usuario del dominio.
@@ -20,11 +20,11 @@ export class Usuario {
    * Construye un usuario validando sus datos e invariantes.
    */
   constructor({ id, nombre, nombreUsuario, email, hashContrasena }) {
-    this.#id = validarId(id, "id");
-    this.#nombre = validarTexto(nombre, "nombre", { max: 80 });
+    this.#id = validarId(id, 'id');
+    this.#nombre = validarTexto(nombre, 'nombre', { max: 80 });
     this.#nombreUsuario = validarNombreUsuario(nombreUsuario);
     this.#email = validarEmail(email);
-    this.#hashContrasena = validarTexto(hashContrasena, "hashContrasena", {
+    this.#hashContrasena = validarTexto(hashContrasena, 'hashContrasena', {
       max: 500,
       recortar: false,
     });

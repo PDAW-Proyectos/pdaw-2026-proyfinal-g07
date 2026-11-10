@@ -70,6 +70,8 @@ X-Request-Id: 3f9c2a1e-7b4d-4c1a-9e8f-2d6b5a0c1e77
 
 La tabla se usa para pruebas, logs y documentación. El código interno no se incluye en la respuesta HTTP; el middleware lo traduce a `title`, `status` y `detail`.
 
+Las listas `Errores:` de cada endpoint mencionan los casos más frecuentes; según la validación puede aparecer cualquier código de esta tabla.
+
 | Código | HTTP | Uso |
 | --- | --- | --- |
 | `SOLICITUD_INVALIDA` | 400 | JSON mal formado, parámetros o campos desconocidos, o cuerpo vacío donde se esperaba al menos un campo. |
@@ -91,7 +93,7 @@ La tabla se usa para pruebas, logs y documentación. El código interno no se in
 | `RESENA_DUPLICADA` | 409 | El usuario ya escribió una reseña para esa película. |
 | `ID_DUPLICADO` | 409 | Colisión interna de identificadores al guardar una película. |
 | `CONTENIDO_NO_SOPORTADO` | 415 | El cuerpo no usa `application/json` cuando el endpoint espera JSON. |
-| `DEMASIADOS_INTENTOS` | 429 | Se superó el límite de intentos de login o registro. |
+| `DEMASIADOS_INTENTOS` | 429 | Se superaron los 5 intentos fallidos por IP y cuenta (o identificador si la cuenta no existe) en 15 minutos. |
 | `ERROR_INTERNO` | 500 | Error no controlado. |
 | `TMDB_NO_DISPONIBLE` | 502 | TMDB no respondió y no hay datos locales para resolver la operación. |
 
@@ -99,7 +101,7 @@ La tabla se usa para pruebas, logs y documentación. El código interno no se in
 
 La versión actual es `/api`. Si un cambio rompe el contrato (renombrar o quitar campos, cambiar códigos), se publica una nueva versión bajo `/api/v2` y se mantiene `/api` mientras haya clientes que la usen.
 
-## Datos públicos
+## Representaciones de datos
 
 ### Usuario público
 
@@ -111,7 +113,20 @@ La versión actual es `/api`. Si un cambio rompe el contrato (renombrar o quitar
 }
 ```
 
-Nunca se devuelven `email` ni `hashContrasena`.
+El usuario público no incluye `email` ni `hashContrasena`.
+
+### Usuario autenticado
+
+```json
+{
+  "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
+  "nombre": "Lucía Gómez",
+  "nombreUsuario": "lucia",
+  "email": "lucia@example.com"
+}
+```
+
+Incluye el email porque representa a la propia cuenta. Se devuelve solo en `/api/auth/registro`, `/api/auth/login` y `/api/auth/sesion`; nunca en autores de reseñas ni en otros datos públicos.
 
 ### Película resumida
 
@@ -187,7 +202,9 @@ fg_sesion=<token>
 HttpOnly; SameSite=Lax; Path=/; Expires=<7 días>
 ```
 
-En producción se agrega `Secure`. La sesión dura 7 días. Al reiniciar el servidor se pierden las sesiones, pero los datos persistidos se conservan.
+En producción se agrega `Secure`; el servidor configura `trust proxy` para detectar HTTPS detrás del proxy del hosting. La sesión dura 7 días.
+
+Las sesiones y los contadores de intentos se guardan en memoria del servidor. Al reiniciar se pierden, pero los usuarios, películas, visualizaciones y reseñas persistidos en el archivo JSON se conservan.
 
 ### `POST /api/auth/registro`
 
@@ -209,7 +226,7 @@ Validaciones:
 - `nombre`: 1 a 80 caracteres.
 - `nombreUsuario`: 3 a 30 caracteres; letras, números, punto, guion y guion bajo.
 - `email`: formato válido, máximo 254 caracteres; único sin distinguir mayúsculas.
-- `contrasena`: 8 a 100 caracteres.
+- `contrasena`: entre 8 caracteres y 72 bytes UTF-8 (límite de bcrypt), con al menos un carácter distinto de espacio.
 
 Response `201` con `Location: /api/auth/sesion`:
 
@@ -218,7 +235,8 @@ Response `201` con `Location: /api/auth/sesion`:
   "usuario": {
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
     "nombre": "Lucía Gómez",
-    "nombreUsuario": "lucia"
+    "nombreUsuario": "lucia",
+    "email": "lucia@example.com"
   }
 }
 ```
@@ -238,6 +256,8 @@ Request:
 
 `identificador` acepta el email o el nombre de usuario. La comparación no distingue mayúsculas.
 
+`contrasena` solo debe ser texto no vacío: la política de longitud se aplica al registro, así una cuenta creada con reglas anteriores puede seguir iniciando sesión.
+
 Response `200`:
 
 ```json
@@ -245,12 +265,35 @@ Response `200`:
   "usuario": {
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
     "nombre": "Lucía Gómez",
-    "nombreUsuario": "lucia"
+    "nombreUsuario": "lucia",
+    "email": "lucia@example.com"
   }
 }
 ```
 
 Errores: `CREDENCIALES_INVALIDAS`, `DEMASIADOS_INTENTOS`.
+
+Al superar el límite de intentos:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/problem+json
+Retry-After: 892
+X-Request-Id: 3f9c2a1e-7b4d-4c1a-9e8f-2d6b5a0c1e77
+```
+
+```json
+{
+  "type": "about:blank",
+  "title": "Demasiadas solicitudes",
+  "status": 429,
+  "detail": "Demasiados intentos fallidos. Esperá unos minutos antes de volver a intentar.",
+  "instance": "/api/auth/login",
+  "requestId": "3f9c2a1e-7b4d-4c1a-9e8f-2d6b5a0c1e77"
+}
+```
+
+`Retry-After` indica los segundos que faltan para que se libere el contador.
 
 ### `POST /api/auth/logout`
 
@@ -266,7 +309,8 @@ Response `200` siempre que la petición sea válida:
   "usuario": {
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
     "nombre": "Lucía Gómez",
-    "nombreUsuario": "lucia"
+    "nombreUsuario": "lucia",
+    "email": "lucia@example.com"
   }
 }
 ```
@@ -282,10 +326,12 @@ Sin sesión:
 
 ### Reglas de seguridad
 
-- La contraseña se hashea con `scrypt` y nunca se devuelve.
+- La contraseña se hashea con `bcrypt` (12 rondas) y nunca se devuelve.
 - El login responde siempre `CREDENCIALES_INVALIDAS`, sin indicar si falló el usuario o la contraseña.
+- El login compara siempre con bcrypt, incluso cuando el identificador no existe, para que el tiempo de respuesta no revele si la cuenta está registrada.
 - El servidor toma el usuario de la sesión; nunca acepta `usuarioId` desde el cuerpo.
-- Límite orientativo: 5 intentos fallidos por IP e identificador cada 15 minutos.
+- Límite de intentos: 5 fallos por IP y cuenta cada 15 minutos. Si el identificador no corresponde a una cuenta, se agrupa por el identificador normalizado. En el registro se agrupa por email. Cuentan las respuestas `401` y `409`; un intento exitoso libera el contador. Al superar el límite la API responde `429` con `Retry-After`.
+- Los contadores de intentos son por proceso y se reinician al reiniciar el servidor; no se comparten entre instancias. Es una limitación aceptada por el alcance del proyecto.
 
 ## Películas e integración TMDB
 

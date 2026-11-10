@@ -18,7 +18,7 @@ Visitantes y usuarios autenticados pueden consultar películas y opiniones. La s
 - La puntuación pertenece a la visualización: es opcional y entera de 1 a 5.
 - La reseña es independiente de la visualización. El historial es privado; las reseñas son públicas.
 - `Pelicula` separa su `id` interno del `tmdbId` externo. Los registros usan `peliculaId`.
-- Los métodos del modelo controlan los cambios de estado. `fromJSON` reconstruye instancias; `toPublicJSON` limita los datos públicos de `Usuario`.
+- Los métodos del modelo controlan los cambios de estado. `fromJSON` reconstruye instancias; `toPublicJSON` limita los datos públicos de `Usuario` y `toPrivateJSON` agrega el email para la propia cuenta.
 
 La integración con TMDB se plantea mediante el [patrón Adapter](patron_elegido.md).
 

@@ -28,6 +28,18 @@ describe('Usuario', () => {
     });
   });
 
+  test('toPrivateJSON incluye el email pero no el hash', () => {
+    const usuario = new Usuario(datosBase);
+
+    expect(usuario.toPrivateJSON()).toEqual({
+      id: 'u1',
+      nombre: 'Lucía',
+      nombreUsuario: 'lucia',
+      email: 'lucia@example.com',
+    });
+    expect(usuario.toPrivateJSON()).not.toHaveProperty('hashContrasena');
+  });
+
   test('toJSON y fromJSON conservan los datos', () => {
     const usuario = new Usuario(datosBase);
     const reconstruido = Usuario.fromJSON(usuario.toJSON());

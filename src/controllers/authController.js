@@ -14,7 +14,7 @@ export function crearAuthController({ usuarioService }) {
       req.session.userId = usuario.id;
       await guardarSesion(req);
 
-      res.status(201).location('/api/auth/sesion').json({ usuario: usuario.toPublicJSON() });
+      res.status(201).location('/api/auth/sesion').json({ usuario: usuario.toPrivateJSON() });
     },
 
     async login(req, res) {
@@ -24,7 +24,7 @@ export function crearAuthController({ usuarioService }) {
       req.session.userId = usuario.id;
       await guardarSesion(req);
 
-      res.json({ usuario: usuario.toPublicJSON() });
+      res.json({ usuario: usuario.toPrivateJSON() });
     },
 
     async sesion(req, res) {
@@ -37,7 +37,7 @@ export function crearAuthController({ usuarioService }) {
         return;
       }
 
-      res.json({ autenticado: true, usuario: usuario.toPublicJSON() });
+      res.json({ autenticado: true, usuario: usuario.toPrivateJSON() });
     },
 
     async logout(req, res) {

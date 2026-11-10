@@ -43,6 +43,8 @@ Servidor: **http://localhost:3000**.
 
 La integración continua ejecuta `npm ci`, `npm run format:check`, `npm run lint` y `npm test -- --coverage` en cada push a `main` y en cada pull request.
 
+Las sesiones y los contadores de intentos viven en memoria: se pierden al reiniciar el servidor. Los usuarios, películas, visualizaciones y reseñas se conservan en el archivo JSON configurado.
+
 Tecnologías: JavaScript, Node.js, Express, Jest, ESLint, Prettier y GitHub Actions.
 
 ## Endpoints de la API
@@ -52,7 +54,7 @@ Todas las rutas usan el prefijo `/api`. El detalle de campos, validaciones y err
 | Método   | Ruta                                 | Acceso      | Éxito | Descripción                                      |
 | -------- | ------------------------------------ | ----------- | ----- | ------------------------------------------------ |
 | `GET`    | `/api/salud`                         | Público     | `200` | Estado del servicio.                             |
-| `GET`    | `/api/auth/sesion`                   | Público     | `200` | Devuelve si hay sesión y el usuario público.     |
+| `GET`    | `/api/auth/sesion`                   | Público     | `200` | Devuelve si hay sesión y los datos de la cuenta. |
 | `POST`   | `/api/auth/registro`                 | Público     | `201` | Crea la cuenta e inicia sesión.                  |
 | `POST`   | `/api/auth/login`                    | Público     | `200` | Inicia sesión con email o nombre de usuario.     |
 | `POST`   | `/api/auth/logout`                   | Público     | `204` | Cierra la sesión y borra la cookie.              |

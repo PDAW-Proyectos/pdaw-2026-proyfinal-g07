@@ -16,11 +16,14 @@ export async function createContainer({ store, rondasHash } = {}) {
   await almacen.cargar();
 
   const usuarioRepository = new UsuarioRepository({ store: almacen });
+  const usuarioService = new UsuarioService({ usuarioRepository, rondasHash });
+
+  await usuarioService.calentar();
 
   return {
     store: almacen,
     usuarioRepository,
-    usuarioService: new UsuarioService({ usuarioRepository, rondasHash }),
+    usuarioService,
     peliculaRepository: new PeliculaRepository({ store: almacen }),
     visualizacionRepository: new VisualizacionRepository({ store: almacen }),
     resenaRepository: new ResenaRepository({ store: almacen }),

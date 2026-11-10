@@ -4,6 +4,7 @@ import { Usuario } from '../models/Usuario.js';
 import { ErrorDominio } from '../utils/ErrorDominio.js';
 import {
   validarContrasena,
+  validarCuerpo,
   validarEmail,
   validarNombreUsuario,
   validarTexto,
@@ -59,7 +60,7 @@ export class UsuarioService {
   }
 
   async autenticar(datos) {
-    this.#validarCuerpo(datos, CAMPOS_LOGIN);
+    validarCuerpo(datos, CAMPOS_LOGIN);
 
     const identificador = validarTexto(datos.identificador, 'identificador', { max: 254 });
     // En el login solo se exige que la clave tenga contenido: la política de
@@ -111,33 +112,8 @@ export class UsuarioService {
     return false;
   }
 
-  #validarCuerpo(datos, camposPermitidos) {
-    if (datos === null || typeof datos !== 'object' || Array.isArray(datos)) {
-      throw new ErrorDominio('SOLICITUD_INVALIDA', 'El cuerpo debe ser un objeto JSON.');
-    }
-
-    const claves = Object.keys(datos);
-
-    if (claves.length === 0) {
-      throw new ErrorDominio(
-        'SOLICITUD_INVALIDA',
-        'El cuerpo de la solicitud no puede estar vacío.',
-      );
-    }
-
-    const desconocidos = claves.filter((clave) => !camposPermitidos.has(clave));
-
-    if (desconocidos.length > 0) {
-      throw new ErrorDominio(
-        'SOLICITUD_INVALIDA',
-        `Campos desconocidos: ${desconocidos.join(', ')}.`,
-        { campos: desconocidos },
-      );
-    }
-  }
-
   #validarRegistro(datos) {
-    this.#validarCuerpo(datos, CAMPOS_REGISTRO);
+    validarCuerpo(datos, CAMPOS_REGISTRO);
 
     return {
       nombre: validarTexto(datos.nombre, 'nombre', { max: 80 }),

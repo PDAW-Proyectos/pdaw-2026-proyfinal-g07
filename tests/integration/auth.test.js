@@ -47,8 +47,24 @@ async function detenerEntorno(server) {
   });
 }
 
+function datosLogin(overrides = {}) {
+  return {
+    identificador: 'lucia@example.com',
+    contrasena: 'secreto123',
+    ...overrides,
+  };
+}
+
 function enviarRegistro(baseUrl, datos = datosRegistro()) {
   return fetch(`${baseUrl}/api/auth/registro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datos),
+  });
+}
+
+function enviarLogin(baseUrl, datos = datosLogin()) {
+  return fetch(`${baseUrl}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(datos),
@@ -97,6 +113,76 @@ describe('auth', () => {
         autenticado: true,
         usuario: cuerpo.usuario,
       });
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('inicia sesión con email y devuelve una cookie nueva', async () => {
+    const { server, baseUrl } = await iniciarEntorno();
+
+    try {
+      const registro = await enviarRegistro(baseUrl);
+      const usuario = (await registro.json()).usuario;
+
+      const respuesta = await enviarLogin(baseUrl);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.headers.get('set-cookie')).toContain('fg_sesion=');
+      expect(await respuesta.json()).toEqual({ usuario });
+
+      const sesion = await fetch(`${baseUrl}/api/auth/sesion`, {
+        headers: { Cookie: obtenerCookie(respuesta) },
+      });
+
+      expect(await sesion.json()).toEqual({ autenticado: true, usuario });
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('inicia sesión con nombre de usuario sin distinguir mayúsculas', async () => {
+    const { server, baseUrl } = await iniciarEntorno();
+
+    try {
+      await enviarRegistro(baseUrl);
+
+      const respuesta = await enviarLogin(baseUrl, datosLogin({ identificador: 'LUCIA' }));
+
+      expect(respuesta.status).toBe(200);
+      expect((await respuesta.json()).usuario.nombreUsuario).toBe('lucia');
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('rechaza credenciales inválidas sin revelar cuál falló', async () => {
+    const { server, baseUrl } = await iniciarEntorno();
+
+    try {
+      await enviarRegistro(baseUrl);
+
+      const contrasenaIncorrecta = await enviarLogin(
+        baseUrl,
+        datosLogin({ contrasena: 'incorrecta' }),
+      );
+      const usuarioInexistente = await enviarLogin(
+        baseUrl,
+        datosLogin({ identificador: 'nadie@example.com' }),
+      );
+
+      for (const response of [contrasenaIncorrecta, usuarioInexistente]) {
+        const cuerpo = await response.json();
+
+        expect(response.status).toBe(401);
+        expect(cuerpo).toMatchObject({
+          type: 'about:blank',
+          title: 'Credenciales inválidas',
+          status: 401,
+          detail: 'El identificador o la contraseña son incorrectos.',
+        });
+        expect(cuerpo).not.toHaveProperty('errores');
+      }
     } finally {
       await detenerEntorno(server);
     }

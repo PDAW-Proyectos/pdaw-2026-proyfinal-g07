@@ -6,6 +6,7 @@ export function crearAuthRouter({ usuarioService }) {
   const controller = crearAuthController({ usuarioService });
 
   router.post('/registro', controller.registrar);
+  router.post('/login', controller.login);
   router.get('/sesion', controller.sesion);
   router.post('/logout', controller.logout);
 

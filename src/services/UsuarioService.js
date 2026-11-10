@@ -5,6 +5,7 @@ import { ErrorDominio } from '../utils/ErrorDominio.js';
 import { validarEmail, validarNombreUsuario, validarTexto } from '../utils/validaciones.js';
 
 const CAMPOS_REGISTRO = new Set(['nombre', 'nombreUsuario', 'email', 'contrasena']);
+const CAMPOS_LOGIN = new Set(['identificador', 'contrasena']);
 const RONDAS_HASH_PREDETERMINADAS = 12;
 
 export class UsuarioService {
@@ -51,11 +52,33 @@ export class UsuarioService {
     return this.#usuarioRepository.crear(usuario);
   }
 
+  async autenticar(datos) {
+    this.#validarCuerpo(datos, CAMPOS_LOGIN);
+
+    const identificador = validarTexto(datos.identificador, 'identificador', { max: 254 });
+    const contrasena = validarTexto(datos.contrasena, 'contrasena', {
+      min: 8,
+      max: 100,
+      recortar: false,
+    });
+
+    const usuario = await this.#usuarioRepository.buscarPorIdentificador(identificador);
+
+    if (!usuario || !(await bcrypt.compare(contrasena, usuario.hashContrasena))) {
+      throw new ErrorDominio(
+        'CREDENCIALES_INVALIDAS',
+        'El identificador o la contraseña son incorrectos.',
+      );
+    }
+
+    return usuario;
+  }
+
   async buscarPorId(id) {
     return this.#usuarioRepository.buscarPorId(id);
   }
 
-  #validarRegistro(datos) {
+  #validarCuerpo(datos, camposPermitidos) {
     if (datos === null || typeof datos !== 'object' || Array.isArray(datos)) {
       throw new ErrorDominio('SOLICITUD_INVALIDA', 'El cuerpo debe ser un objeto JSON.');
     }
@@ -69,7 +92,7 @@ export class UsuarioService {
       );
     }
 
-    const desconocidos = claves.filter((clave) => !CAMPOS_REGISTRO.has(clave));
+    const desconocidos = claves.filter((clave) => !camposPermitidos.has(clave));
 
     if (desconocidos.length > 0) {
       throw new ErrorDominio(
@@ -78,6 +101,10 @@ export class UsuarioService {
         { campos: desconocidos },
       );
     }
+  }
+
+  #validarRegistro(datos) {
+    this.#validarCuerpo(datos, CAMPOS_REGISTRO);
 
     return {
       nombre: validarTexto(datos.nombre, 'nombre', { max: 80 }),

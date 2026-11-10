@@ -17,6 +17,16 @@ export function crearAuthController({ usuarioService }) {
       res.status(201).location('/api/auth/sesion').json({ usuario: usuario.toPublicJSON() });
     },
 
+    async login(req, res) {
+      const usuario = await usuarioService.autenticar(req.body);
+
+      await regenerarSesion(req);
+      req.session.userId = usuario.id;
+      await guardarSesion(req);
+
+      res.json({ usuario: usuario.toPublicJSON() });
+    },
+
     async sesion(req, res) {
       const usuario = req.session?.userId
         ? await usuarioService.buscarPorId(req.session.userId)

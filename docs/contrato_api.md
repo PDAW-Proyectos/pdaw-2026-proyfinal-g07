@@ -184,7 +184,7 @@ La sesión se guarda en memoria del servidor y se identifica con una cookie:
 
 ```text
 fg_sesion=<token>
-HttpOnly; SameSite=Lax; Path=/; Max-Age=604800
+HttpOnly; SameSite=Lax; Path=/; Expires=<7 días>
 ```
 
 En producción se agrega `Secure`. La sesión dura 7 días. Al reiniciar el servidor se pierden las sesiones, pero los datos persistidos se conservan.

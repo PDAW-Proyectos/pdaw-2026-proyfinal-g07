@@ -29,6 +29,8 @@ Películas, cuentas de usuario, historial personal, puntuaciones y reseñas púb
 
 Requiere **Node.js 22.13 o superior**.
 
+Copiar `.env.example` a `.env` y definir `SESSION_SECRET` antes de iniciar el servidor.
+
 ```bash
 npm install
 npm run format:check

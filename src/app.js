@@ -7,6 +7,7 @@ import { requestContext } from './middlewares/requestContext.js';
 import { requireJson } from './middlewares/requireJson.js';
 import { createSessionMiddleware } from './middlewares/session.js';
 import { crearAuthRouter } from './routes/authRoutes.js';
+import { crearResenaRouter } from './routes/resenaRoutes.js';
 import { logger as loggerPredeterminado } from './utils/logger.js';
 
 const publicPath = fileURLToPath(new URL('../public/', import.meta.url));
@@ -33,6 +34,10 @@ export function createApp({ logger = loggerPredeterminado, container } = {}) {
 
   if (container?.usuarioService) {
     app.use('/api/auth', crearAuthRouter({ usuarioService: container.usuarioService }));
+  }
+
+  if (container?.resenaService) {
+    app.use('/api/resenas', crearResenaRouter({ resenaService: container.resenaService }));
   }
 
   app.use(express.static(publicPath));

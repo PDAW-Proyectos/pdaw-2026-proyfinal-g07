@@ -1,7 +1,7 @@
-import { Resena } from "../models/Resena.js";
-import { ErrorDominio } from "../utils/ErrorDominio.js";
+import { Resena } from '../models/Resena.js';
+import { ErrorDominio } from '../utils/ErrorDominio.js';
 
-const COLECCION = "resenas";
+const COLECCION = 'resenas';
 
 /**
  * Repositorio de reseñas públicas.
@@ -23,15 +23,14 @@ export class ResenaRepository {
     return this.#store.actualizar(COLECCION, (registros) => {
       const hayResenaDuplicada = registros.some(
         (registro) =>
-          registro.usuarioId === resena.usuarioId &&
-          registro.peliculaId === resena.peliculaId
+          registro.usuarioId === resena.usuarioId && registro.peliculaId === resena.peliculaId,
       );
 
       if (hayResenaDuplicada) {
         throw new ErrorDominio(
-          "RESENA_DUPLICADA",
-          "Ya existe una reseña de este usuario para la película.",
-          { campo: "peliculaId" }
+          'RESENA_DUPLICADA',
+          'Ya existe una reseña de este usuario para la película.',
+          { campo: 'peliculaId' },
         );
       }
 
@@ -44,9 +43,7 @@ export class ResenaRepository {
    * Busca una reseña por su identificador interno.
    */
   async buscarPorId(id) {
-    const registro = this.#store
-      .leer(COLECCION)
-      .find((candidato) => candidato.id === id);
+    const registro = this.#store.leer(COLECCION).find((candidato) => candidato.id === id);
 
     return registro ? Resena.fromJSON(registro) : null;
   }
@@ -58,9 +55,7 @@ export class ResenaRepository {
     const registro = this.#store
       .leer(COLECCION)
       .find(
-        (candidato) =>
-          candidato.usuarioId === usuarioId &&
-          candidato.peliculaId === peliculaId
+        (candidato) => candidato.usuarioId === usuarioId && candidato.peliculaId === peliculaId,
       );
 
     return registro ? Resena.fromJSON(registro) : null;
@@ -90,9 +85,7 @@ export class ResenaRepository {
    * Devuelve todas las reseñas; el servicio se encarga de ordenarlas y paginarlas.
    */
   async listarTodas() {
-    return this.#store
-      .leer(COLECCION)
-      .map((registro) => Resena.fromJSON(registro));
+    return this.#store.leer(COLECCION).map((registro) => Resena.fromJSON(registro));
   }
 
   /**
@@ -100,9 +93,7 @@ export class ResenaRepository {
    */
   async actualizar(resena) {
     return this.#store.actualizar(COLECCION, (registros) => {
-      const indice = registros.findIndex(
-        (registro) => registro.id === resena.id
-      );
+      const indice = registros.findIndex((registro) => registro.id === resena.id);
 
       if (indice < 0) {
         return null;

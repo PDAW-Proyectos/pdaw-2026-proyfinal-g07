@@ -1,8 +1,6 @@
-import { fileURLToPath } from "node:url";
+import { fileURLToPath } from 'node:url';
 
-const archivoPorDefecto = fileURLToPath(
-  new URL("../data/fotograma.json", import.meta.url)
-);
+const archivoPorDefecto = fileURLToPath(new URL('../data/fotograma.json', import.meta.url));
 
 export const config = {
   port: Number(process.env.PORT ?? 3000),

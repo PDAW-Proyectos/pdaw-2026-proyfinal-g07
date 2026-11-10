@@ -23,7 +23,7 @@ Una historia está terminada cuando:
 
 - [ ] Cumple todos sus criterios de aceptación.
 - [ ] El código fue revisado y aprobado mediante un PR por el otro integrante.
-- [ ] Las pruebas automatizadas correspondientes pasan localmente antes de integrar. Cuando la CI esté configurada, también deben pasar allí.
+- [ ] Las verificaciones de formato, lint y pruebas pasan localmente y en la integración continua.
 - [ ] Está integrada en `main` sin romper funcionalidades existentes.
 - [ ] La documentación está actualizada cuando corresponde.
 

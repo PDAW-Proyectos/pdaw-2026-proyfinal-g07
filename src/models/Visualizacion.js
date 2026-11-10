@@ -1,8 +1,4 @@
-import {
-  validarFechaNoFutura,
-  validarId,
-  validarPuntuacion,
-} from "../utils/validaciones.js";
+import { validarFechaNoFutura, validarId, validarPuntuacion } from '../utils/validaciones.js';
 
 /**
  * Registro privado de una película vista por un usuario.
@@ -20,9 +16,9 @@ export class Visualizacion {
    * El parámetro hoy permite probar la regla de fechas futuras con un reloj fijo.
    */
   constructor({ id, usuarioId, peliculaId, fecha, puntuacion = null }, hoy = new Date()) {
-    this.#id = validarId(id, "id");
-    this.#usuarioId = validarId(usuarioId, "usuarioId");
-    this.#peliculaId = validarId(peliculaId, "peliculaId");
+    this.#id = validarId(id, 'id');
+    this.#usuarioId = validarId(usuarioId, 'usuarioId');
+    this.#peliculaId = validarId(peliculaId, 'peliculaId');
     this.#fecha = validarFechaNoFutura(fecha, hoy);
     this.#puntuacion = validarPuntuacion(puntuacion);
   }

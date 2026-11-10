@@ -1,6 +1,6 @@
-import { Visualizacion } from "../models/Visualizacion.js";
+import { Visualizacion } from '../models/Visualizacion.js';
 
-const COLECCION = "visualizaciones";
+const COLECCION = 'visualizaciones';
 
 /**
  * Repositorio de visualizaciones privadas.
@@ -29,9 +29,7 @@ export class VisualizacionRepository {
    * Busca una visualización por su identificador interno.
    */
   async buscarPorId(id) {
-    const registro = this.#store
-      .leer(COLECCION)
-      .find((candidato) => candidato.id === id);
+    const registro = this.#store.leer(COLECCION).find((candidato) => candidato.id === id);
 
     return registro ? Visualizacion.fromJSON(registro) : null;
   }
@@ -51,9 +49,7 @@ export class VisualizacionRepository {
    */
   async actualizar(visualizacion) {
     return this.#store.actualizar(COLECCION, (registros) => {
-      const indice = registros.findIndex(
-        (registro) => registro.id === visualizacion.id
-      );
+      const indice = registros.findIndex((registro) => registro.id === visualizacion.id);
 
       if (indice < 0) {
         return null;

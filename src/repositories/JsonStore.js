@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-import { ErrorDominio } from "../utils/ErrorDominio.js";
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import { ErrorDominio } from '../utils/ErrorDominio.js';
 
-const COLECCIONES = ["usuarios", "peliculas", "visualizaciones", "resenas"];
+const COLECCIONES = ['usuarios', 'peliculas', 'visualizaciones', 'resenas'];
 
 /**
  * Crea un snapshot válido con todas las colecciones.
@@ -21,9 +21,9 @@ function crearSnapshot(datos = {}) {
 
     if (!Array.isArray(valor)) {
       throw new ErrorDominio(
-        "PERSISTENCIA_INVALIDA",
+        'PERSISTENCIA_INVALIDA',
         `La colección ${coleccion} debe ser un arreglo.`,
-        { coleccion }
+        { coleccion },
       );
     }
 
@@ -59,10 +59,10 @@ export class JsonStore {
     }
 
     try {
-      const contenido = await readFile(this.#archivo, "utf8");
+      const contenido = await readFile(this.#archivo, 'utf8');
       this.#datos = crearSnapshot(JSON.parse(contenido));
     } catch (error) {
-      if (error.code === "ENOENT") {
+      if (error.code === 'ENOENT') {
         return this;
       }
 
@@ -71,9 +71,9 @@ export class JsonStore {
       }
 
       throw new ErrorDominio(
-        "PERSISTENCIA_INVALIDA",
+        'PERSISTENCIA_INVALIDA',
         `No se pudo leer el archivo de datos: ${error.message}`,
-        { archivo: this.#archivo }
+        { archivo: this.#archivo },
       );
     }
 
@@ -121,9 +121,9 @@ export class JsonStore {
   async guardar(nombre, registros) {
     if (!Array.isArray(registros)) {
       throw new ErrorDominio(
-        "PERSISTENCIA_INVALIDA",
-        "La colección a guardar debe ser un arreglo.",
-        { coleccion: nombre }
+        'PERSISTENCIA_INVALIDA',
+        'La colección a guardar debe ser un arreglo.',
+        { coleccion: nombre },
       );
     }
 
@@ -139,11 +139,9 @@ export class JsonStore {
    */
   #validarColeccion(nombre) {
     if (!COLECCIONES.includes(nombre)) {
-      throw new ErrorDominio(
-        "COLECCION_INVALIDA",
-        `La colección ${nombre} no existe.`,
-        { coleccion: nombre }
-      );
+      throw new ErrorDominio('COLECCION_INVALIDA', `La colección ${nombre} no existe.`, {
+        coleccion: nombre,
+      });
     }
   }
 
@@ -160,7 +158,7 @@ export class JsonStore {
     const temporal = `${this.#archivo}.${randomUUID()}.tmp`;
     const contenido = JSON.stringify(this.#datos, null, 2);
 
-    await writeFile(temporal, contenido, "utf8");
+    await writeFile(temporal, contenido, 'utf8');
 
     try {
       await rename(temporal, this.#archivo);

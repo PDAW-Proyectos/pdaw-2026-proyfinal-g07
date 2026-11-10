@@ -10,7 +10,7 @@
 body {
   background-color: var(--bg-dark);
   color: #e1e3e5;
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .bg-dark-custom {
@@ -90,11 +90,7 @@ body {
 }
 
 .hero-overlay {
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(18, 21, 23, 0.95) 100%
-  );
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(18, 21, 23, 0.95) 100%);
   position: absolute;
   inset: 0;
   display: flex;
@@ -187,12 +183,8 @@ body {
 
 /* Reducción de opacidad en la capa superior del hero */
 .movie-backdrop-hero::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(18, 21, 23, 0.3) 0%,
-    rgba(18, 21, 23, 0.9) 100%
-  );
+  background: linear-gradient(180deg, rgba(18, 21, 23, 0.3) 0%, rgba(18, 21, 23, 0.9) 100%);
 }

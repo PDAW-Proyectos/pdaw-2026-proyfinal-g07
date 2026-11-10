@@ -1,8 +1,4 @@
-import {
-  validarFechaHora,
-  validarId,
-  validarTexto,
-} from "../utils/validaciones.js";
+import { validarFechaHora, validarId, validarTexto } from '../utils/validaciones.js';
 
 /**
  * Opinión pública escrita por un usuario sobre una película.
@@ -18,21 +14,12 @@ export class Resena {
   /**
    * Construye una reseña validando sus datos e invariantes.
    */
-  constructor({
-    id,
-    usuarioId,
-    peliculaId,
-    comentario,
-    fechaPublicacion = new Date(),
-  }) {
-    this.#id = validarId(id, "id");
-    this.#usuarioId = validarId(usuarioId, "usuarioId");
-    this.#peliculaId = validarId(peliculaId, "peliculaId");
-    this.#comentario = validarTexto(comentario, "comentario", { max: 5000 });
-    this.#fechaPublicacion = validarFechaHora(
-      fechaPublicacion,
-      "fechaPublicacion"
-    );
+  constructor({ id, usuarioId, peliculaId, comentario, fechaPublicacion = new Date() }) {
+    this.#id = validarId(id, 'id');
+    this.#usuarioId = validarId(usuarioId, 'usuarioId');
+    this.#peliculaId = validarId(peliculaId, 'peliculaId');
+    this.#comentario = validarTexto(comentario, 'comentario', { max: 5000 });
+    this.#fechaPublicacion = validarFechaHora(fechaPublicacion, 'fechaPublicacion');
   }
 
   /**
@@ -75,7 +62,7 @@ export class Resena {
    * La fecha de publicación original no cambia.
    */
   editar(texto) {
-    this.#comentario = validarTexto(texto, "comentario", { max: 5000 });
+    this.#comentario = validarTexto(texto, 'comentario', { max: 5000 });
   }
 
   /**

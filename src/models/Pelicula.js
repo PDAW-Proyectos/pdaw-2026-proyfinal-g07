@@ -4,7 +4,7 @@ import {
   validarId,
   validarRutaPoster,
   validarTexto,
-} from "../utils/validaciones.js";
+} from '../utils/validaciones.js';
 
 /**
  * Película normalizada del catálogo local.
@@ -22,16 +22,16 @@ export class Pelicula {
   /**
    * Construye una película validando sus datos e invariantes.
    */
-  constructor({ id, tmdbId, titulo, sinopsis = "", anioEstreno, generos = [], rutaPoster = null }) {
-    this.#id = validarId(id, "id");
-    this.#tmdbId = validarEntero(tmdbId, "tmdbId", { min: 1 });
-    this.#titulo = validarTexto(titulo, "titulo", { max: 500 });
-    this.#sinopsis = validarTexto(sinopsis ?? "", "sinopsis", { min: 0, max: 5000 });
-    this.#anioEstreno = validarEntero(anioEstreno, "anioEstreno", {
+  constructor({ id, tmdbId, titulo, sinopsis = '', anioEstreno, generos = [], rutaPoster = null }) {
+    this.#id = validarId(id, 'id');
+    this.#tmdbId = validarEntero(tmdbId, 'tmdbId', { min: 1 });
+    this.#titulo = validarTexto(titulo, 'titulo', { max: 500 });
+    this.#sinopsis = validarTexto(sinopsis ?? '', 'sinopsis', { min: 0, max: 5000 });
+    this.#anioEstreno = validarEntero(anioEstreno, 'anioEstreno', {
       min: 1800,
       max: 2100,
     });
-    this.#generos = validarArrayTexto(generos, "generos");
+    this.#generos = validarArrayTexto(generos, 'generos');
     this.#rutaPoster = validarRutaPoster(rutaPoster);
   }
 

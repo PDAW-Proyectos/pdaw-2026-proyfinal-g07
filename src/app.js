@@ -39,6 +39,8 @@ export function createApp({ logger = loggerPredeterminado, container } = {}) {
 
   if (container?.resenaService) {
     app.use('/api/resenas', crearResenaRouter({ resenaService: container.resenaService }));
+  }
+
   if (container?.visualizacionService) {
     app.use(
       '/api/visualizaciones',

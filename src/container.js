@@ -19,13 +19,6 @@ export async function createContainer({ store, rondasHash, ahora = () => new Dat
 
   const usuarioRepository = new UsuarioRepository({ store: almacen });
   const peliculaRepository = new PeliculaRepository({ store: almacen });
-  const resenaRepository = new ResenaRepository({ store: almacen });
-  const usuarioService = new UsuarioService({ usuarioRepository, rondasHash });
-  const resenaService = new ResenaService({
-    resenaRepository,
-    peliculaRepository,
-    usuarioRepository,
-    ahora,
   const visualizacionRepository = new VisualizacionRepository({ store: almacen });
   const resenaRepository = new ResenaRepository({ store: almacen });
 
@@ -33,6 +26,12 @@ export async function createContainer({ store, rondasHash, ahora = () => new Dat
   const visualizacionService = new VisualizacionService({
     visualizacionRepository,
     peliculaRepository,
+  });
+  const resenaService = new ResenaService({
+    resenaRepository,
+    peliculaRepository,
+    usuarioRepository,
+    ahora,
   });
 
   await usuarioService.calentar();
@@ -42,12 +41,10 @@ export async function createContainer({ store, rondasHash, ahora = () => new Dat
     usuarioRepository,
     usuarioService,
     peliculaRepository,
-    visualizacionRepository: new VisualizacionRepository({ store: almacen }),
-    resenaRepository,
-    resenaService,
     visualizacionRepository,
     resenaRepository,
     visualizacionService,
+    resenaService,
   };
 }
 

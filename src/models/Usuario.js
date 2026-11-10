@@ -77,6 +77,17 @@ export class Usuario {
   }
 
   /**
+   * Devuelve los datos de la propia cuenta, incluido el email.
+   * No incluye el hash de la contraseña.
+   */
+  toPrivateJSON() {
+    return {
+      ...this.toPublicJSON(),
+      email: this.#email,
+    };
+  }
+
+  /**
    * Serializa el usuario completo para persistencia.
    */
   toJSON() {

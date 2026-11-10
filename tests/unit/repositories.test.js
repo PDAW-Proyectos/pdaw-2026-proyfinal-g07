@@ -73,7 +73,7 @@ function suiteRepositorios(nombre, crearRecurso) {
       const recurso = await crearRecurso();
       limpiar = recurso.limpiar;
 
-      const contenedor = await createContainer({ store: recurso.store });
+      const contenedor = await createContainer({ store: recurso.store, rondasHash: 4 });
       usuarioRepository = contenedor.usuarioRepository;
       peliculaRepository = contenedor.peliculaRepository;
       visualizacionRepository = contenedor.visualizacionRepository;

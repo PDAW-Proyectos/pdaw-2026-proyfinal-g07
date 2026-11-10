@@ -1,5 +1,6 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
+import { config } from './config.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFound } from './middlewares/notFound.js';
 import { requestContext } from './middlewares/requestContext.js';
@@ -14,6 +15,12 @@ export function createApp({ logger = loggerPredeterminado, container } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
+
+  if (config.esProduccion) {
+    // El hosting termina TLS en un proxy. Sin esto, express-session no detecta
+    // la conexión como segura y nunca envía la cookie de sesión al navegador.
+    app.set('trust proxy', 1);
+  }
 
   app.use(requestContext(logger));
   app.use(createSessionMiddleware());

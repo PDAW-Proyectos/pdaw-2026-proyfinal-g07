@@ -1,5 +1,6 @@
 import { ErrorDominio } from './ErrorDominio.js';
 
+const BYTES_MAXIMOS_CONTRASENA = 72;
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGEX_NOMBRE_USUARIO = /^[\p{L}\p{N}._-]{3,30}$/u;
 const REGEX_FECHA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -39,6 +40,33 @@ export function validarTexto(valor, campo, { min = 1, max = Infinity, recortar =
   }
 
   return texto;
+}
+
+/**
+ * Valida una contraseña de registro.
+ * El máximo se mide en bytes UTF-8 porque bcrypt ignora lo que supere los 72 bytes,
+ * y se exige al menos un carácter que no sea espacio.
+ */
+export function validarContrasena(valor, campo = 'contrasena') {
+  const contrasena = validarTexto(valor, campo, { min: 8, max: 100, recortar: false });
+
+  if (!/\S/.test(contrasena)) {
+    throw new ErrorDominio(
+      'FORMATO_INVALIDO',
+      'La contraseña no puede estar compuesta solo por espacios.',
+      { campo },
+    );
+  }
+
+  if (Buffer.byteLength(contrasena, 'utf8') > BYTES_MAXIMOS_CONTRASENA) {
+    throw new ErrorDominio(
+      'LONGITUD_INVALIDA',
+      `El campo ${campo} no puede superar los ${BYTES_MAXIMOS_CONTRASENA} bytes.`,
+      { campo, max: BYTES_MAXIMOS_CONTRASENA },
+    );
+  }
+
+  return contrasena;
 }
 
 /**

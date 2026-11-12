@@ -136,7 +136,8 @@ Incluye el email porque representa a la propia cuenta. Se devuelve solo en `/api
   "tmdbId": 603,
   "titulo": "Matrix",
   "anioEstreno": 1999,
-  "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+  "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+  "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
 }
 ```
 
@@ -150,7 +151,8 @@ Incluye el email porque representa a la propia cuenta. Se devuelve solo en `/api
   "sinopsis": "Un programador descubre que el mundo que conoce es una simulación.",
   "anioEstreno": 1999,
   "generos": ["Acción", "Ciencia ficción"],
-  "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+  "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+  "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
 }
 ```
 
@@ -166,7 +168,8 @@ Incluye el email porque representa a la propia cuenta. Se devuelve solo en `/api
     "tmdbId": 603,
     "titulo": "Matrix",
     "anioEstreno": 1999,
-    "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+    "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
   }
 }
 ```
@@ -188,7 +191,8 @@ Incluye el email porque representa a la propia cuenta. Se devuelve solo en `/api
     "tmdbId": 603,
     "titulo": "Matrix",
     "anioEstreno": 1999,
-    "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+    "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
   }
 }
 ```
@@ -592,4 +596,5 @@ Estas funciones requieren nuevas rutas y deben agregarse al contrato antes de im
 - `PeliculaRepository` debe ofrecer búsqueda por `id` y por `tmdbId`, y guardar o actualizar películas normalizadas.
 - El Adapter de TMDB nunca debe exponer su estructura interna: transforma a `Pelicula` y normaliza errores.
 - La API key de TMDB se lee del entorno en el servidor y nunca se envía al cliente.
+- Las búsquedas y tendencias se cachean en memoria 60 segundos y 5 minutos por proceso; el catálogo local sigue siendo la fuente de las fichas.
 - Los tests de integración deben usar un store en memoria y un cliente HTTP contra una instancia de prueba.

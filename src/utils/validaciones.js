@@ -297,12 +297,26 @@ export function validarArrayTexto(valor, campo, { min = 0 } = {}) {
 }
 
 /**
- * Valida la ruta del póster, admitiendo null cuando la película no tiene imagen.
+ * Valida la ruta de una imagen de TMDB, admitiendo null cuando no existe.
  */
-export function validarRutaPoster(valor) {
+export function validarRutaImagen(valor, campo) {
   if (valor === null || valor === undefined || valor === '') {
     return null;
   }
 
-  return validarTexto(valor, 'rutaPoster', { max: 500 });
+  return validarTexto(valor, campo, { max: 500 });
+}
+
+/**
+ * Valida la ruta del póster, admitiendo null cuando la película no tiene imagen.
+ */
+export function validarRutaPoster(valor) {
+  return validarRutaImagen(valor, 'rutaPoster');
+}
+
+/**
+ * Valida la ruta del backdrop, admitiendo null cuando la película no tiene imagen.
+ */
+export function validarRutaBackdrop(valor) {
+  return validarRutaImagen(valor, 'rutaBackdrop');
 }

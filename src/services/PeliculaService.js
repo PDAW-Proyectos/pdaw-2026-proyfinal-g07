@@ -4,21 +4,28 @@ import { validarId } from '../utils/validaciones.js';
 const LONGITUD_MAXIMA_CONSULTA = 100;
 const LIMITE_POR_PAGINA = 20;
 const MAXIMO_PAGINA_TMDB = 500;
+const TTL_BUSQUEDA_MS = 60 * 1000;
+const TTL_TENDENCIAS_MS = 5 * 60 * 1000;
+const MAX_ENTRADAS_CACHE = 200;
 
 /**
  * Casos de uso del catálogo de películas.
  * Las búsquedas y tendencias pasan por el adaptador de TMDB y dejan una copia
  * normalizada en el catálogo local; el resto de la API usa el id interno.
+ * Las respuestas se cachean en memoria unos minutos para no saturar TMDB.
  */
 export class PeliculaService {
   #peliculaRepository;
   #tmdbAdapter;
   #resenaService;
+  #ahora;
+  #cache = new Map();
 
-  constructor({ peliculaRepository, tmdbAdapter, resenaService }) {
+  constructor({ peliculaRepository, tmdbAdapter, resenaService, ahora = () => new Date() }) {
     this.#peliculaRepository = peliculaRepository;
     this.#tmdbAdapter = tmdbAdapter;
     this.#resenaService = resenaService;
+    this.#ahora = ahora;
   }
 
   /**
@@ -27,9 +34,17 @@ export class PeliculaService {
   async buscar({ q, page = 1 }) {
     const consulta = this.#validarConsulta(q);
     const pagina = this.#validarPagina(page);
-    const resultado = await this.#tmdbAdapter.buscar({ q: consulta, page: pagina });
+    const clave = `buscar:${consulta.toLowerCase()}:${pagina}`;
+    const cacheada = this.#leerCache(clave);
 
-    return this.#guardarColeccion(resultado, pagina);
+    if (cacheada) {
+      return cacheada;
+    }
+
+    const resultado = await this.#tmdbAdapter.buscar({ q: consulta, page: pagina });
+    const coleccion = await this.#guardarColeccion(resultado, pagina);
+
+    return this.#guardarCache(clave, coleccion, TTL_BUSQUEDA_MS);
   }
 
   /**
@@ -37,9 +52,17 @@ export class PeliculaService {
    */
   async tendencias({ page = 1 } = {}) {
     const pagina = this.#validarPagina(page);
-    const resultado = await this.#tmdbAdapter.tendencias({ page: pagina });
+    const clave = `tendencias:${pagina}`;
+    const cacheada = this.#leerCache(clave);
 
-    return this.#guardarColeccion(resultado, pagina);
+    if (cacheada) {
+      return cacheada;
+    }
+
+    const resultado = await this.#tmdbAdapter.tendencias({ page: pagina });
+    const coleccion = await this.#guardarColeccion(resultado, pagina);
+
+    return this.#guardarCache(clave, coleccion, TTL_TENDENCIAS_MS);
   }
 
   /**
@@ -74,6 +97,50 @@ export class PeliculaService {
     const data = await this.#peliculaRepository.guardarVarias(peliculas);
 
     return { data, page, limit: LIMITE_POR_PAGINA, total };
+  }
+
+  #leerCache(clave) {
+    const entrada = this.#cache.get(clave);
+
+    if (!entrada) {
+      return null;
+    }
+
+    if (entrada.expira <= this.#ahora().getTime()) {
+      this.#cache.delete(clave);
+      return null;
+    }
+
+    return entrada.coleccion;
+  }
+
+  #guardarCache(clave, coleccion, ttlMs) {
+    this.#cache.set(clave, { coleccion, expira: this.#ahora().getTime() + ttlMs });
+    this.#podarCache();
+
+    return coleccion;
+  }
+
+  /**
+   * Mantiene el cache acotado: descarta las entradas vencidas y, si sigue lleno,
+   * elimina las más antiguas.
+   */
+  #podarCache() {
+    if (this.#cache.size <= MAX_ENTRADAS_CACHE) {
+      return;
+    }
+
+    const instante = this.#ahora().getTime();
+
+    for (const [clave, entrada] of this.#cache) {
+      if (entrada.expira <= instante) {
+        this.#cache.delete(clave);
+      }
+    }
+
+    while (this.#cache.size > MAX_ENTRADAS_CACHE) {
+      this.#cache.delete(this.#cache.keys().next().value);
+    }
   }
 
   #validarConsulta(valor) {

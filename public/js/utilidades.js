@@ -5,11 +5,18 @@ const BASE_IMAGENES_TMDB = 'https://image.tmdb.org/t/p';
 const formateadorFecha = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' });
 
 /**
- * Arma la URL del póster a partir de la `rutaPoster` del contrato (por ejemplo
- * "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"). Devuelve null si la película no tiene póster.
+ * Arma la URL de una imagen de TMDB a partir de la ruta del contrato.
+ * Devuelve null si la película no tiene imagen.
+ */
+export function urlImagen(ruta, tamano = 'w342') {
+  return ruta ? `${BASE_IMAGENES_TMDB}/${tamano}${ruta}` : null;
+}
+
+/**
+ * Arma la URL del póster a partir de la `rutaPoster` del contrato.
  */
 export function urlPoster(rutaPoster, tamano = 'w342') {
-  return rutaPoster ? `${BASE_IMAGENES_TMDB}/${tamano}${rutaPoster}` : null;
+  return urlImagen(rutaPoster, tamano);
 }
 
 /**

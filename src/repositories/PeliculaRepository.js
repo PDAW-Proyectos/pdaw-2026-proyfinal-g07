@@ -42,9 +42,15 @@ export class PeliculaRepository {
         const indiceTmdb = registros.findIndex((registro) => registro.tmdbId === pelicula.tmdbId);
 
         if (indiceTmdb >= 0) {
+          const existente = registros[indiceTmdb];
           const actualizada = Pelicula.fromJSON({
             ...pelicula.toJSON(),
-            id: registros[indiceTmdb].id,
+            id: existente.id,
+            // Una búsqueda puede traer campos vacíos; no debe borrar los ya guardados.
+            sinopsis: pelicula.sinopsis || existente.sinopsis,
+            generos: pelicula.generos.length > 0 ? pelicula.generos : existente.generos,
+            rutaPoster: pelicula.rutaPoster ?? existente.rutaPoster,
+            rutaBackdrop: pelicula.rutaBackdrop ?? existente.rutaBackdrop,
           });
 
           registros[indiceTmdb] = actualizada.toJSON();

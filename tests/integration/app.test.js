@@ -84,6 +84,20 @@ describe('base HTTP', () => {
     }
   });
 
+  test('agrega cabeceras de seguridad básicas', async () => {
+    const { server, baseUrl } = await iniciarApp();
+
+    try {
+      const response = await fetch(`${baseUrl}/api/salud`);
+
+      expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+      expect(response.headers.get('x-frame-options')).toBe('DENY');
+      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    } finally {
+      await detenerApp(server);
+    }
+  });
+
   test('una ruta inexistente responde problem details 404', async () => {
     const { server, baseUrl } = await iniciarApp();
 

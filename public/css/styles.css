@@ -83,20 +83,139 @@ body {
 
 /* Hero Carousel */
 .hero-carousel-item {
-  height: 320px;
-  background-size: cover;
-  background-position: center;
   position: relative;
+  height: clamp(320px, 34vw, 420px);
+  overflow: hidden;
+  background-color: var(--bg-card);
+  isolation: isolate;
+}
+
+.hero-carousel-backdrop {
+  position: absolute;
+  inset: -1px;
+  background-position: center;
+  background-size: cover;
+  filter: brightness(0.88) saturate(1.05);
+  opacity: 0.95;
+  transform: scale(1.02);
+}
+
+.hero-carousel-backdrop-poster {
+  inset: -28px;
+  filter: blur(22px) saturate(1.15);
+  opacity: 0.58;
+  transform: scale(1.08);
 }
 
 .hero-overlay {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(18, 21, 23, 0.95) 100%);
   position: absolute;
   inset: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 2rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2.5rem;
+  padding: 2.5rem 4.75rem;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(18, 21, 23, 0.97) 0%,
+      rgba(18, 21, 23, 0.88) 42%,
+      rgba(18, 21, 23, 0.35) 72%,
+      rgba(18, 21, 23, 0.78) 100%
+    ),
+    linear-gradient(0deg, rgba(18, 21, 23, 0.95) 0%, rgba(18, 21, 23, 0) 55%);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 36rem;
+  padding-bottom: 0.25rem;
+}
+
+.hero-copy .h3 {
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.hero-poster {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: auto;
+  height: 100%;
+  max-height: 315px;
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.85rem;
+  background-color: var(--bg-sidebar);
+  box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.55);
+}
+
+.hero-poster-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-poster-placeholder {
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 3rem;
+}
+
+.hero-carousel-section .carousel-control-prev,
+.hero-carousel-section .carousel-control-next {
+  z-index: 4;
+  width: 3.5rem;
+  opacity: 0.85;
+}
+
+.hero-carousel-section .carousel-control-prev:hover,
+.hero-carousel-section .carousel-control-next:hover {
+  opacity: 1;
+}
+
+.hero-carousel-section .carousel-control-prev-icon,
+.hero-carousel-section .carousel-control-next-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: rgba(13, 15, 16, 0.78);
+  background-size: 46%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 991.98px) {
+  .hero-overlay {
+    gap: 1.5rem;
+    padding: 2rem 4rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .hero-carousel-item {
+    height: 300px;
+  }
+
+  .hero-overlay {
+    padding: 1.5rem 3.5rem;
+  }
+
+  .hero-poster {
+    display: none;
+  }
+
+  .hero-carousel-section .carousel-control-prev,
+  .hero-carousel-section .carousel-control-next {
+    width: 2.75rem;
+  }
+
+  .hero-copy .h3 {
+    font-size: 1.5rem;
+  }
 }
 
 /* Tarjetas de películas */

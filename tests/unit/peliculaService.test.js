@@ -18,7 +18,7 @@ function crearPelicula(overrides = {}) {
 /**
  * Arma el servicio con dobles de prueba y registra las llamadas que recibe.
  */
-function crearServicio({ pelicula, peliculas = [crearPelicula()] } = {}) {
+function crearServicio({ pelicula, peliculas = [crearPelicula()], ahora } = {}) {
   const llamadas = {
     busquedas: [],
     tendencias: [],
@@ -56,7 +56,21 @@ function crearServicio({ pelicula, peliculas = [crearPelicula()] } = {}) {
 
   return {
     llamadas,
-    service: new PeliculaService({ peliculaRepository, tmdbAdapter, resenaService }),
+    service: new PeliculaService({ peliculaRepository, tmdbAdapter, resenaService, ahora }),
+  };
+}
+
+/**
+ * Reloj controlable para probar los TTL del cache.
+ */
+function crearReloj() {
+  let instante = Date.parse('2026-01-01T00:00:00.000Z');
+
+  return {
+    ahora: () => new Date(instante),
+    avanzar(ms) {
+      instante += ms;
+    },
   };
 }
 
@@ -129,5 +143,56 @@ describe('PeliculaService', () => {
       { peliculaId: 'p-matrix', paginacion: { page: 2, limit: 5 } },
     ]);
     expect(resultado).toMatchObject({ page: 2, limit: 5, total: 0 });
+  });
+
+  test('reutiliza la búsqueda cacheada dentro del TTL', async () => {
+    const reloj = crearReloj();
+    const { service, llamadas } = crearServicio({ ahora: reloj.ahora });
+
+    const primera = await service.buscar({ q: '  matrix  ', page: 1 });
+
+    reloj.avanzar(59_000);
+
+    const segunda = await service.buscar({ q: 'MATRIX', page: 1 });
+
+    expect(llamadas.busquedas).toHaveLength(1);
+    expect(segunda).toBe(primera);
+  });
+
+  test('vuelve a pedir a TMDB cuando vence el TTL de la búsqueda', async () => {
+    const reloj = crearReloj();
+    const { service, llamadas } = crearServicio({ ahora: reloj.ahora });
+
+    await service.buscar({ q: 'matrix' });
+    reloj.avanzar(60_000);
+    await service.buscar({ q: 'matrix' });
+
+    expect(llamadas.busquedas).toHaveLength(2);
+  });
+
+  test('separa el cache por consulta y página', async () => {
+    const { service, llamadas } = crearServicio();
+
+    await service.buscar({ q: 'matrix', page: 1 });
+    await service.buscar({ q: 'matrix', page: 2 });
+    await service.buscar({ q: 'otra', page: 1 });
+
+    expect(llamadas.busquedas).toHaveLength(3);
+  });
+
+  test('cachea tendencias con su propio TTL', async () => {
+    const reloj = crearReloj();
+    const { service, llamadas } = crearServicio({ ahora: reloj.ahora });
+
+    await service.tendencias({ page: 1 });
+    reloj.avanzar(4 * 60 * 1000);
+    await service.tendencias({ page: 1 });
+
+    expect(llamadas.tendencias).toHaveLength(1);
+
+    reloj.avanzar(2 * 60 * 1000);
+    await service.tendencias({ page: 1 });
+
+    expect(llamadas.tendencias).toHaveLength(2);
   });
 });

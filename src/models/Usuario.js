@@ -2,6 +2,7 @@ import {
   validarEmail,
   validarId,
   validarNombreUsuario,
+  validarRol,
   validarTexto,
 } from '../utils/validaciones.js';
 
@@ -15,11 +16,12 @@ export class Usuario {
   #nombreUsuario;
   #email;
   #hashContrasena;
+  #rol;
 
   /**
    * Construye un usuario validando sus datos e invariantes.
    */
-  constructor({ id, nombre, nombreUsuario, email, hashContrasena }) {
+  constructor({ id, nombre, nombreUsuario, email, hashContrasena, rol = 'usuario' }) {
     this.#id = validarId(id, 'id');
     this.#nombre = validarTexto(nombre, 'nombre', { max: 80 });
     this.#nombreUsuario = validarNombreUsuario(nombreUsuario);
@@ -28,6 +30,7 @@ export class Usuario {
       max: 500,
       recortar: false,
     });
+    this.#rol = validarRol(rol);
   }
 
   /**
@@ -66,6 +69,13 @@ export class Usuario {
   }
 
   /**
+   * Devuelve el rol de la cuenta: `usuario` o `admin`.
+   */
+  get rol() {
+    return this.#rol;
+  }
+
+  /**
    * Devuelve solo los datos que pueden mostrarse públicamente.
    */
   toPublicJSON() {
@@ -77,13 +87,14 @@ export class Usuario {
   }
 
   /**
-   * Devuelve los datos de la propia cuenta, incluido el email.
+   * Devuelve los datos de la propia cuenta, incluidos email y rol.
    * No incluye el hash de la contraseña.
    */
   toPrivateJSON() {
     return {
       ...this.toPublicJSON(),
       email: this.#email,
+      rol: this.#rol,
     };
   }
 
@@ -97,6 +108,7 @@ export class Usuario {
       nombreUsuario: this.#nombreUsuario,
       email: this.#email,
       hashContrasena: this.#hashContrasena,
+      rol: this.#rol,
     };
   }
 

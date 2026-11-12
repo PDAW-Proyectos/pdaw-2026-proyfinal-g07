@@ -119,4 +119,18 @@ export class ResenaRepository {
       return true;
     });
   }
+
+  /**
+   * Elimina todas las reseñas de un usuario y devuelve cuántas borró.
+   */
+  async eliminarPorUsuario(usuarioId) {
+    return this.#store.actualizar(COLECCION, (registros) => {
+      const restantes = registros.filter((registro) => registro.usuarioId !== usuarioId);
+      const eliminadas = registros.length - restantes.length;
+
+      registros.splice(0, registros.length, ...restantes);
+
+      return eliminadas;
+    });
+  }
 }

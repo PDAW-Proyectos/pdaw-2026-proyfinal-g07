@@ -112,4 +112,20 @@ export class UsuarioRepository {
   async listar() {
     return this.#store.leer(COLECCION).map((registro) => Usuario.fromJSON(registro));
   }
+
+  /**
+   * Elimina un usuario y devuelve true si existía.
+   */
+  async eliminar(id) {
+    return this.#store.actualizar(COLECCION, (registros) => {
+      const indice = registros.findIndex((registro) => registro.id === id);
+
+      if (indice < 0) {
+        return false;
+      }
+
+      registros.splice(indice, 1);
+      return true;
+    });
+  }
 }

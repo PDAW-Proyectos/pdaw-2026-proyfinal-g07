@@ -54,6 +54,7 @@ export class UsuarioService {
       nombreUsuario: registro.nombreUsuario,
       email: registro.email,
       hashContrasena,
+      rol: 'usuario',
     });
 
     return this.#usuarioRepository.crear(usuario);

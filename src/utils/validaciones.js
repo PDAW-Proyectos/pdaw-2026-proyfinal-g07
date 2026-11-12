@@ -1,6 +1,7 @@
 import { ErrorDominio } from './ErrorDominio.js';
 
 const BYTES_MAXIMOS_CONTRASENA = 72;
+const ROLES = new Set(['usuario', 'admin']);
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGEX_NOMBRE_USUARIO = /^[\p{L}\p{N}._-]{3,30}$/u;
 const REGEX_FECHA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -93,6 +94,17 @@ export function validarContrasena(valor, campo = 'contrasena') {
   }
 
   return contrasena;
+}
+
+/**
+ * Valida un rol de usuario; los registros viejos sin rol se interpretan como usuario.
+ */
+export function validarRol(valor = 'usuario') {
+  if (!ROLES.has(valor)) {
+    throw new ErrorDominio('FORMATO_INVALIDO', 'El rol no es válido.', { campo: 'rol' });
+  }
+
+  return valor;
 }
 
 /**

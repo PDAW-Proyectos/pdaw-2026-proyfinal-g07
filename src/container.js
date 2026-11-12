@@ -9,6 +9,7 @@ import { PeliculaService } from './services/PeliculaService.js';
 import { ResenaService } from './services/ResenaService.js';
 import { UsuarioService } from './services/UsuarioService.js';
 import { VisualizacionService } from './services/VisualizacionService.js';
+import { AdminService } from './services/AdminService.js';
 
 /**
  * Crea y conecta el store y los repositorios.
@@ -51,6 +52,12 @@ export async function createContainer({
     resenaService,
     ahora,
   });
+  const adminService = new AdminService({
+    usuarioRepository,
+    resenaRepository,
+    visualizacionRepository,
+    rondasHash,
+  });
 
   await usuarioService.calentar();
 
@@ -65,6 +72,7 @@ export async function createContainer({
     resenaRepository,
     visualizacionService,
     resenaService,
+    adminService,
   };
 }
 

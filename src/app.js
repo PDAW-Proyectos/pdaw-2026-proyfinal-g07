@@ -5,6 +5,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import { notFound } from './middlewares/notFound.js';
 import { requestContext } from './middlewares/requestContext.js';
 import { requireJson } from './middlewares/requireJson.js';
+import { cabecerasSeguridad } from './middlewares/seguridad.js';
 import { createSessionMiddleware } from './middlewares/session.js';
 import { crearAuthRouter } from './routes/authRoutes.js';
 import { crearPeliculaRouter } from './routes/peliculaRoutes.js';
@@ -43,6 +44,7 @@ export function createApp({ logger = loggerPredeterminado, container } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
+  app.use(cabecerasSeguridad);
 
   if (config.esProduccion) {
     // El hosting termina TLS en un proxy. Sin esto, express-session no detecta

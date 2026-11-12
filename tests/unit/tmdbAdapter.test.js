@@ -53,6 +53,7 @@ const BUSQUEDA = respuestaJson({
       overview: 'Un programador descubre la verdadera naturaleza de su realidad.',
       release_date: '1999-03-31',
       poster_path: '/matrix.jpg',
+      backdrop_path: '/matrix-backdrop.jpg',
       genre_ids: [28, 878, 999],
     },
     {
@@ -89,6 +90,7 @@ describe('TMDBAdapter', () => {
       anioEstreno: 1999,
       generos: ['Acción', 'Ciencia ficción'],
       rutaPoster: '/matrix.jpg',
+      rutaBackdrop: '/matrix-backdrop.jpg',
     });
     expect(pelicula.id).toMatch(/^[0-9a-f-]{36}$/);
 
@@ -191,5 +193,78 @@ describe('TMDBAdapter', () => {
     const resultado = await adaptador.buscar({ q: 'matrix' });
 
     expect(resultado.peliculas[0].generos).toEqual([]);
+  });
+
+  test('descarta un ítem imposible de normalizar sin romper la búsqueda', async () => {
+    const { fetchFalso } = crearFetchFalso({
+      '/search/movie': respuestaJson({
+        page: 1,
+        total_results: 2,
+        results: [
+          {
+            id: 603,
+            title: 'Matrix',
+            overview: '',
+            release_date: '1999-03-31',
+            poster_path: null,
+            genre_ids: [],
+          },
+          { id: 604, title: 123, overview: 'x', release_date: '2020-01-01' },
+        ],
+      }),
+      '/genre/movie/list': GENEROS,
+    });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const resultado = await adaptador.buscar({ q: 'matrix' });
+
+    expect(resultado.peliculas).toHaveLength(1);
+    expect(resultado.peliculas[0].tmdbId).toBe(603);
+  });
+
+  test('recorta la sinopsis al máximo que admite el modelo', async () => {
+    const { fetchFalso } = crearFetchFalso({
+      '/search/movie': respuestaJson({
+        page: 1,
+        total_results: 1,
+        results: [
+          {
+            id: 603,
+            title: 'Matrix',
+            overview: 'a'.repeat(6000),
+            release_date: '1999-03-31',
+            poster_path: null,
+            genre_ids: [],
+          },
+        ],
+      }),
+      '/genre/movie/list': GENEROS,
+    });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const resultado = await adaptador.buscar({ q: 'matrix' });
+
+    expect(resultado.peliculas[0].sinopsis).toHaveLength(5000);
+  });
+
+  test('reintenta la lista de géneros si el primer pedido falla', async () => {
+    let pedidosDeGeneros = 0;
+    const fetchFalso = async (url) => {
+      if (rutaDe(url) === '/genre/movie/list') {
+        pedidosDeGeneros += 1;
+
+        return pedidosDeGeneros === 1 ? respuestaJson({}, { ok: false, status: 500 }) : GENEROS;
+      }
+
+      return BUSQUEDA;
+    };
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const primera = await adaptador.buscar({ q: 'matrix' });
+    expect(primera.peliculas[0].generos).toEqual([]);
+
+    const segunda = await adaptador.buscar({ q: 'matrix' });
+    expect(segunda.peliculas[0].generos).toEqual(['Acción', 'Ciencia ficción']);
+    expect(pedidosDeGeneros).toBe(2);
   });
 });

@@ -8,12 +8,19 @@ const RUTA_GENEROS = '/genre/movie/list';
 const BASE_PREDETERMINADA = 'https://api.themoviedb.org/3';
 const ANIO_MINIMO = 1800;
 const ANIO_MAXIMO = 2100;
+const LONGITUD_MAXIMA_TITULO = 500;
+const LONGITUD_MAXIMA_SINOPSIS = 5000;
+const LONGITUD_MAXIMA_IMAGEN = 500;
 
 /**
  * Extrae el año de una fecha `YYYY-MM-DD`. Devuelve null si falta o está fuera de rango.
  */
 function leerAnioEstreno(fecha) {
-  const anio = Number((fecha ?? '').slice(0, 4));
+  if (typeof fecha !== 'string') {
+    return null;
+  }
+
+  const anio = Number(fecha.slice(0, 4));
 
   if (!Number.isInteger(anio) || anio < ANIO_MINIMO || anio > ANIO_MAXIMO) {
     return null;
@@ -77,7 +84,8 @@ export class TMDBAdapter {
    */
   async #aColeccion(datos) {
     const generos = await this.#mapaGeneros();
-    const peliculas = (datos.results ?? [])
+    const resultados = Array.isArray(datos.results) ? datos.results : [];
+    const peliculas = resultados
       .map((resultado) => this.#aPelicula(resultado, generos))
       .filter(Boolean);
 
@@ -89,22 +97,58 @@ export class TMDBAdapter {
   }
 
   #aPelicula(datos, generos) {
-    const titulo = datos.title?.trim() || datos.original_title?.trim();
-    const anio = leerAnioEstreno(datos.release_date);
+    try {
+      const titulo = this.#leerTitulo(datos);
 
-    if (!titulo || !Number.isInteger(datos.id) || anio === null) {
+      if (!titulo || !Number.isInteger(datos.id)) {
+        return null;
+      }
+
+      const anio = leerAnioEstreno(datos.release_date);
+
+      if (anio === null) {
+        return null;
+      }
+
+      return new Pelicula({
+        id: randomUUID(),
+        tmdbId: datos.id,
+        titulo,
+        sinopsis: this.#leerSinopsis(datos.overview),
+        anioEstreno: anio,
+        generos: this.#nombresDeGeneros(datos.genre_ids, generos),
+        rutaPoster: this.#leerImagen(datos.poster_path),
+        rutaBackdrop: this.#leerImagen(datos.backdrop_path),
+      });
+    } catch {
+      // Un ítem con datos inesperados se descarta; no debe romper la página entera.
       return null;
     }
+  }
 
-    return new Pelicula({
-      id: randomUUID(),
-      tmdbId: datos.id,
-      titulo,
-      sinopsis: datos.overview ?? '',
-      anioEstreno: anio,
-      generos: (datos.genre_ids ?? []).map((id) => generos.get(id)).filter(Boolean),
-      rutaPoster: datos.poster_path ?? null,
-    });
+  #leerTitulo(datos) {
+    const titulo = typeof datos.title === 'string' ? datos.title.trim() : '';
+    const alternativo = typeof datos.original_title === 'string' ? datos.original_title.trim() : '';
+
+    return (titulo || alternativo).slice(0, LONGITUD_MAXIMA_TITULO);
+  }
+
+  #leerSinopsis(valor) {
+    return typeof valor === 'string' ? valor.slice(0, LONGITUD_MAXIMA_SINOPSIS) : '';
+  }
+
+  #leerImagen(valor) {
+    return typeof valor === 'string' && valor.length > 0 && valor.length <= LONGITUD_MAXIMA_IMAGEN
+      ? valor
+      : null;
+  }
+
+  #nombresDeGeneros(ids, generos) {
+    if (!Array.isArray(ids)) {
+      return [];
+    }
+
+    return ids.map((id) => generos.get(id)).filter(Boolean);
   }
 
   /**
@@ -118,10 +162,16 @@ export class TMDBAdapter {
 
     try {
       const datos = await this.#pedir(RUTA_GENEROS);
+      const lista = Array.isArray(datos.genres) ? datos.genres : [];
 
-      this.#generos = new Map((datos.genres ?? []).map((genero) => [genero.id, genero.name]));
+      this.#generos = new Map(
+        lista
+          .filter((genero) => Number.isInteger(genero?.id) && typeof genero?.name === 'string')
+          .map((genero) => [genero.id, genero.name]),
+      );
     } catch {
-      this.#generos = new Map();
+      // No se cachea el fallo: el próximo pedido vuelve a intentar la lista.
+      return new Map();
     }
 
     return this.#generos;

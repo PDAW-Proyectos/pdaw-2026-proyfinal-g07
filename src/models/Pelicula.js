@@ -2,6 +2,7 @@ import {
   validarArrayTexto,
   validarEntero,
   validarId,
+  validarRutaBackdrop,
   validarRutaPoster,
   validarTexto,
 } from '../utils/validaciones.js';
@@ -18,11 +19,21 @@ export class Pelicula {
   #anioEstreno;
   #generos;
   #rutaPoster;
+  #rutaBackdrop;
 
   /**
    * Construye una película validando sus datos e invariantes.
    */
-  constructor({ id, tmdbId, titulo, sinopsis = '', anioEstreno, generos = [], rutaPoster = null }) {
+  constructor({
+    id,
+    tmdbId,
+    titulo,
+    sinopsis = '',
+    anioEstreno,
+    generos = [],
+    rutaPoster = null,
+    rutaBackdrop = null,
+  }) {
     this.#id = validarId(id, 'id');
     this.#tmdbId = validarEntero(tmdbId, 'tmdbId', { min: 1 });
     this.#titulo = validarTexto(titulo, 'titulo', { max: 500 });
@@ -33,6 +44,7 @@ export class Pelicula {
     });
     this.#generos = validarArrayTexto(generos, 'generos');
     this.#rutaPoster = validarRutaPoster(rutaPoster);
+    this.#rutaBackdrop = validarRutaBackdrop(rutaBackdrop);
   }
 
   /**
@@ -85,6 +97,13 @@ export class Pelicula {
   }
 
   /**
+   * Devuelve la ruta del backdrop o null si no existe.
+   */
+  get rutaBackdrop() {
+    return this.#rutaBackdrop;
+  }
+
+  /**
    * Serializa la película completa para persistencia.
    */
   toJSON() {
@@ -96,6 +115,7 @@ export class Pelicula {
       anioEstreno: this.#anioEstreno,
       generos: [...this.#generos],
       rutaPoster: this.#rutaPoster,
+      rutaBackdrop: this.#rutaBackdrop,
     };
   }
 
@@ -109,6 +129,7 @@ export class Pelicula {
       titulo: this.#titulo,
       anioEstreno: this.#anioEstreno,
       rutaPoster: this.#rutaPoster,
+      rutaBackdrop: this.#rutaBackdrop,
     };
   }
 
@@ -124,6 +145,7 @@ export class Pelicula {
       anioEstreno: this.#anioEstreno,
       generos: [...this.#generos],
       rutaPoster: this.#rutaPoster,
+      rutaBackdrop: this.#rutaBackdrop,
     };
   }
 

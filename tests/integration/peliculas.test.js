@@ -90,6 +90,7 @@ function crearPelicula(overrides = {}) {
     anioEstreno: 1999,
     generos: ['Acción', 'Ciencia ficción'],
     rutaPoster: '/matrix.jpg',
+    rutaBackdrop: '/matrix-backdrop.jpg',
     ...overrides,
   });
 }
@@ -146,6 +147,7 @@ describe('peliculas', () => {
         titulo: 'Matrix',
         anioEstreno: 1999,
         rutaPoster: '/matrix.jpg',
+        rutaBackdrop: '/matrix-backdrop.jpg',
       });
       expect(coleccion.data[0]).not.toHaveProperty('sinopsis');
       expect(coleccion.data[0]).not.toHaveProperty('generos');
@@ -163,6 +165,7 @@ describe('peliculas', () => {
         anioEstreno: 1999,
         generos: ['Acción', 'Ciencia ficción'],
         rutaPoster: '/matrix.jpg',
+        rutaBackdrop: '/matrix-backdrop.jpg',
       });
 
       const otraPagina = await (

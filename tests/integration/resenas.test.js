@@ -70,6 +70,7 @@ async function guardarPelicula(container, overrides = {}) {
     anioEstreno: 1999,
     generos: ['Acción', 'Ciencia ficción'],
     rutaPoster: '/matrix.jpg',
+    rutaBackdrop: '/matrix-backdrop.jpg',
     ...overrides,
   });
 
@@ -145,6 +146,7 @@ describe('resenas', () => {
           titulo: 'Matrix',
           anioEstreno: 1999,
           rutaPoster: '/matrix.jpg',
+          rutaBackdrop: '/matrix-backdrop.jpg',
         },
       });
       expect(cuerpo.autor).not.toHaveProperty('email');

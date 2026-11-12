@@ -10,6 +10,7 @@ const datosBase = {
   anioEstreno: 1999,
   generos: ['Acción', 'Ciencia ficción'],
   rutaPoster: '/matrix.jpg',
+  rutaBackdrop: '/matrix-backdrop.jpg',
 };
 
 describe('Pelicula', () => {
@@ -34,10 +35,21 @@ describe('Pelicula', () => {
       ...datosBase,
       sinopsis: '',
       rutaPoster: null,
+      rutaBackdrop: null,
     });
 
     expect(pelicula.sinopsis).toBe('');
     expect(pelicula.rutaPoster).toBeNull();
+    expect(pelicula.rutaBackdrop).toBeNull();
+  });
+
+  test('el resumen incluye el póster y el backdrop', () => {
+    const pelicula = new Pelicula(datosBase);
+
+    expect(pelicula.toResumenJSON()).toMatchObject({
+      rutaPoster: '/matrix.jpg',
+      rutaBackdrop: '/matrix-backdrop.jpg',
+    });
   });
 
   test('rechaza un tmdbId no positivo', () => {

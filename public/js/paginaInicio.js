@@ -1,9 +1,10 @@
 import { buscarPeliculas, obtenerTendencias } from './peliculasApi.js';
-import { leerPagina, mensajeDeError, mostrarPoster } from './utilidades.js';
+import { leerPagina, mensajeDeError, mostrarPoster, urlImagen } from './utilidades.js';
 
 const TITULO_TENDENCIAS = 'Trending';
 const ICONO_TENDENCIAS = 'bi bi-fire text-warning me-2';
 const ICONO_BUSQUEDA = 'bi bi-search text-success me-2';
+const DESTACADOS_MAXIMOS = 5;
 
 /**
  * Grilla paginada de películas de index.html. Con una consulta muestra los
@@ -14,6 +15,7 @@ class ListadoPeliculas {
   #consulta;
   #pagina;
   #solicitudActual = 0;
+  #destacadosMostrados = false;
 
   /**
    * `elementos` reúne los nodos del DOM que usa el listado: contenedor, plantilla,
@@ -35,6 +37,8 @@ class ListadoPeliculas {
       titulo.textContent = `Resultados para «${this.#consulta}»`;
       icono.className = ICONO_BUSQUEDA;
       document.title = `Fotograma - ${this.#consulta}`;
+      // Los destacados son tendencias: no tienen sentido en una búsqueda.
+      this.#ocultarDestacados();
     } else {
       titulo.textContent = TITULO_TENDENCIAS;
       icono.className = ICONO_TENDENCIAS;
@@ -85,6 +89,10 @@ class ListadoPeliculas {
     this.#pagina = page;
     this.#actualizarUrl();
 
+    if (!this.#consulta && !this.#destacadosMostrados) {
+      this.#destacadosMostrados = this.#mostrarDestacados(data);
+    }
+
     if (data.length === 0) {
       contenedor.replaceChildren(this.#crearMensaje(this.#textoSinResultados()));
       btnAnterior.disabled = page <= 1;
@@ -104,6 +112,10 @@ class ListadoPeliculas {
     const { contenedor, btnAnterior, btnSiguiente } = this.#elementos;
     const aviso = this.#crearMensaje(mensajeDeError(error), 'alert alert-danger py-2 fs-7 mb-2');
     const reintentar = document.createElement('button');
+
+    if (!this.#consulta && !this.#destacadosMostrados) {
+      this.#ocultarDestacados();
+    }
 
     reintentar.type = 'button';
     reintentar.className = 'btn btn-sm btn-outline-light rounded-pill px-3';
@@ -158,6 +170,123 @@ class ListadoPeliculas {
   }
 
   /**
+   * Completa el carrusel superior con las primeras tendencias de la página.
+   */
+  #mostrarDestacados(peliculas) {
+    const { seccionDestacados, contenedorDestacados, carrusel } = this.#elementos;
+
+    if (!seccionDestacados || !contenedorDestacados || !carrusel) {
+      return false;
+    }
+
+    const destacadas = peliculas.slice(0, DESTACADOS_MAXIMOS);
+
+    if (destacadas.length === 0) {
+      this.#ocultarDestacados();
+      return false;
+    }
+
+    seccionDestacados.classList.remove('d-none');
+
+    contenedorDestacados.replaceChildren(
+      ...destacadas.map((pelicula, indice) => this.#crearDestacado(pelicula, indice === 0)),
+    );
+
+    // El carrusel se inicializó con la diapositiva de carga; se rearma con las nuevas.
+    window.bootstrap?.Carousel?.getOrCreateInstance(carrusel)?.cycle();
+
+    return true;
+  }
+
+  #ocultarDestacados() {
+    this.#elementos.seccionDestacados?.classList.add('d-none');
+  }
+
+  /**
+   * Arma una diapositiva del carrusel con el backdrop (o póster) de fondo y el título.
+   */
+  #crearDestacado(pelicula, activa) {
+    const item = document.createElement('div');
+
+    item.className = activa ? 'carousel-item active' : 'carousel-item';
+
+    const fondo = document.createElement('div');
+    const imagenFondo = urlImagen(
+      pelicula.rutaBackdrop ?? pelicula.rutaPoster,
+      pelicula.rutaBackdrop ? 'w1280' : 'w780',
+    );
+
+    fondo.className = 'hero-carousel-item';
+
+    const backdrop = document.createElement('div');
+
+    backdrop.className = 'hero-carousel-backdrop';
+
+    if (!pelicula.rutaBackdrop) {
+      backdrop.classList.add('hero-carousel-backdrop-poster');
+    }
+
+    if (imagenFondo) {
+      backdrop.style.backgroundImage = `url(${JSON.stringify(imagenFondo)})`;
+    }
+
+    const overlay = document.createElement('div');
+
+    overlay.className = 'hero-overlay';
+
+    const copy = document.createElement('div');
+
+    copy.className = 'hero-copy';
+
+    const etiqueta = document.createElement('span');
+    etiqueta.className = 'section-tag text-success fw-bold micro-text';
+    etiqueta.textContent = 'DESTACADO';
+
+    const titulo = document.createElement('h2');
+    titulo.className = 'h3 text-white fw-bold mb-1';
+    titulo.textContent = pelicula.titulo;
+
+    const meta = document.createElement('p');
+    meta.className = 'text-secondary mb-3';
+    meta.textContent = `Película · ${pelicula.anioEstreno}`;
+
+    const enlace = document.createElement('a');
+    enlace.className = 'btn btn-success rounded-pill px-4 fw-medium align-self-start';
+    enlace.href = `pelicula.html?id=${encodeURIComponent(pelicula.id)}`;
+    enlace.textContent = 'Ver ficha';
+
+    copy.append(etiqueta, titulo, meta, enlace);
+
+    const posterContenedor = document.createElement('div');
+    const posterImagen = document.createElement('img');
+    const posterMarcador = document.createElement('div');
+    const posterIcono = document.createElement('i');
+
+    posterContenedor.className = 'hero-poster';
+    posterImagen.className = 'hero-poster-img d-none';
+    posterImagen.decoding = 'async';
+    posterImagen.alt = '';
+    posterMarcador.className =
+      'hero-poster-placeholder d-flex align-items-center justify-content-center';
+    posterIcono.className = 'bi bi-film';
+
+    posterMarcador.append(posterIcono);
+    posterContenedor.append(posterImagen, posterMarcador);
+    mostrarPoster(
+      { imagen: posterImagen, marcador: posterMarcador },
+      pelicula.rutaPoster,
+      pelicula.titulo,
+      'w780',
+    );
+
+    overlay.append(copy, posterContenedor);
+    fondo.append(backdrop, overlay);
+    item.append(fondo);
+
+    return item;
+  }
+
+  /**
    * Refleja la búsqueda y la página en la URL para poder recargar o compartir el enlace.
    */
   #actualizarUrl() {
@@ -185,6 +314,9 @@ const listado = new ListadoPeliculas({
     estado: document.getElementById('listado-estado'),
     btnAnterior: document.getElementById('btn-prev'),
     btnSiguiente: document.getElementById('btn-next'),
+    seccionDestacados: document.querySelector('.hero-carousel-section'),
+    contenedorDestacados: document.getElementById('carousel-items-container'),
+    carrusel: document.getElementById('heroCarousel'),
   },
   consulta: (parametros.get('q') ?? '').trim(),
   pagina: leerPagina(parametros.get('page')),

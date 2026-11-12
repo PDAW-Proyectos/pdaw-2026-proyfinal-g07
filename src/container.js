@@ -37,6 +37,7 @@ export async function createContainer({
   const visualizacionService = new VisualizacionService({
     visualizacionRepository,
     peliculaRepository,
+    hoy: ahora,
   });
   const resenaService = new ResenaService({
     resenaRepository,
@@ -48,6 +49,7 @@ export async function createContainer({
     peliculaRepository,
     tmdbAdapter: adaptadorTmdb,
     resenaService,
+    ahora,
   });
 
   await usuarioService.calentar();

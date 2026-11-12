@@ -147,6 +147,22 @@ function suiteRepositorios(nombre, crearRecurso) {
       expect(await peliculaRepository.listar()).toHaveLength(1);
     });
 
+    test('PeliculaRepository conserva sinopsis, géneros, póster y backdrop al actualizar con datos pobres', async () => {
+      await peliculaRepository.guardar(crearPelicula({ rutaBackdrop: '/matrix-backdrop.jpg' }));
+
+      const actualizada = await peliculaRepository.guardar(
+        crearPelicula({ id: 'p2', sinopsis: '', generos: [], rutaPoster: null }),
+      );
+
+      expect(actualizada.id).toBe('p1');
+      expect(actualizada.sinopsis).toBe(
+        'Un programador descubre la verdadera naturaleza de su realidad.',
+      );
+      expect(actualizada.generos).toEqual(['Acción', 'Ciencia ficción']);
+      expect(actualizada.rutaPoster).toBe('/matrix.jpg');
+      expect(actualizada.rutaBackdrop).toBe('/matrix-backdrop.jpg');
+    });
+
     test('PeliculaRepository rechaza un id interno duplicado con otro tmdbId', async () => {
       await peliculaRepository.guardar(crearPelicula());
 

@@ -342,19 +342,19 @@ Las búsquedas y tendencias pasan por el Adapter de TMDB y guardan una copia nor
 Parámetros:
 
 - `q`: texto de 1 a 100 caracteres. Obligatorio.
-- `page`: entero desde 1. Opcional.
+- `page`: entero de 1 a 500. Opcional; por defecto 1. El límite superior lo impone TMDB.
 
-Response `200`: colección de `PeliculaResumen`.
+Response `200`: colección de `PeliculaResumen` con `limit` fijo en 20.
 
-Errores: `VALIDACION_FALLIDA`, `TMDB_NO_DISPONIBLE`.
+Errores: `VALIDACION_FALLIDA` (consulta vacía, demasiado larga o `page` fuera de rango), `TMDB_NO_DISPONIBLE`.
 
 ### `GET /api/peliculas/tendencias`
 
-Parámetros: `page` opcional.
+Parámetros: `page` opcional, con el mismo rango que en la búsqueda.
 
-Response `200`: colección de `PeliculaResumen`.
+Response `200`: colección de `PeliculaResumen` con `limit` fijo en 20.
 
-Errores: `TMDB_NO_DISPONIBLE`.
+Errores: `VALIDACION_FALLIDA`, `TMDB_NO_DISPONIBLE`.
 
 ### `GET /api/peliculas/:peliculaId`
 

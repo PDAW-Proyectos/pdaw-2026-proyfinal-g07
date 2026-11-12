@@ -21,30 +21,50 @@ export class PeliculaRepository {
    * Si ya existe una con el mismo tmdbId, conserva el id interno original.
    */
   async guardar(pelicula) {
+    const [guardada] = await this.guardarVarias([pelicula]);
+
+    return guardada;
+  }
+
+  /**
+   * Guarda o actualiza varias películas con una sola escritura en el store.
+   * Devuelve las instancias persistidas, con el id interno original cuando ya existían.
+   */
+  async guardarVarias(peliculas) {
+    if (peliculas.length === 0) {
+      return [];
+    }
+
     return this.#store.actualizar(COLECCION, (registros) => {
-      const indiceTmdb = registros.findIndex((registro) => registro.tmdbId === pelicula.tmdbId);
+      const guardadas = [];
 
-      if (indiceTmdb >= 0) {
-        const existente = registros[indiceTmdb];
-        const actualizada = Pelicula.fromJSON({
-          ...pelicula.toJSON(),
-          id: existente.id,
-        });
+      for (const pelicula of peliculas) {
+        const indiceTmdb = registros.findIndex((registro) => registro.tmdbId === pelicula.tmdbId);
 
-        registros[indiceTmdb] = actualizada.toJSON();
-        return actualizada;
+        if (indiceTmdb >= 0) {
+          const actualizada = Pelicula.fromJSON({
+            ...pelicula.toJSON(),
+            id: registros[indiceTmdb].id,
+          });
+
+          registros[indiceTmdb] = actualizada.toJSON();
+          guardadas.push(actualizada);
+          continue;
+        }
+
+        const hayIdDuplicado = registros.some((registro) => registro.id === pelicula.id);
+
+        if (hayIdDuplicado) {
+          throw new ErrorDominio('ID_DUPLICADO', 'Ya existe una película con ese id interno.', {
+            campo: 'id',
+          });
+        }
+
+        registros.push(pelicula.toJSON());
+        guardadas.push(pelicula);
       }
 
-      const hayIdDuplicado = registros.some((registro) => registro.id === pelicula.id);
-
-      if (hayIdDuplicado) {
-        throw new ErrorDominio('ID_DUPLICADO', 'Ya existe una película con ese id interno.', {
-          campo: 'id',
-        });
-      }
-
-      registros.push(pelicula.toJSON());
-      return pelicula;
+      return guardadas;
     });
   }
 

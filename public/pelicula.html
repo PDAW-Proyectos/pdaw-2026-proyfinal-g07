@@ -47,7 +47,7 @@
         </div>
 
         <!-- Buscador Global -->
-        <form id="form-busqueda" class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
+        <form id="form-busqueda" novalidate class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
           <div class="input-group">
             <input
               type="search"
@@ -56,6 +56,9 @@
               class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
               placeholder="Buscar película..."
               aria-label="Buscar película"
+              maxlength="100"
+              autocomplete="off"
+              required
             />
             <button class="btn btn-success rounded-end-pill px-3" type="submit">
               <i class="bi bi-search"></i>
@@ -145,22 +148,15 @@
 
     <!-- ÁREA PRINCIPAL -->
     <main class="container-fluid max-w-content py-4 px-3 px-md-5">
-      <!-- SECCIÓN HERO: FOTOGRAMA / BACKDROP DEL FILM -->
-      <section class="movie-backdrop-section mb-4">
-        <div
-          id="backdrop-container"
-          class="movie-backdrop-hero rounded-4 overflow-hidden border border-dark-subtle position-relative shadow d-flex align-items-end p-4"
-        >
-          <div
-            class="spinner-border text-success mx-auto my-5"
-            role="status"
-            id="backdrop-spinner"
-          ></div>
-        </div>
+      <!-- AVISO CUANDO LA PELÍCULA NO SE PUEDE MOSTRAR (sin id, inexistente o error de red) -->
+      <section id="pelicula-no-disponible" class="text-center py-5 d-none">
+        <i class="bi bi-film display-1 text-secondary d-block mb-3"></i>
+        <p id="pelicula-no-disponible-texto" class="text-secondary fs-5 mb-3" role="alert"></p>
+        <a href="index.html" class="btn btn-success rounded-pill px-4">Volver al inicio</a>
       </section>
 
       <!-- DETALLE DE LA PELÍCULA -->
-      <section class="movie-details-section mb-5">
+      <section id="ficha-pelicula" class="movie-details-section mb-5">
         <div class="row g-4">
           <!-- COLUMNA IZQUIERDA: PÓSTER Y GÉNEROS -->
           <div class="col-12 col-md-4 col-lg-3 text-center text-md-start">
@@ -180,24 +176,21 @@
             </div>
           </div>
 
-          <!-- COLUMNA DERECHA: TÍTULO, RATING, DESCRIPCIÓN, ACTORES Y RESEÑAS -->
+          <!-- COLUMNA DERECHA: TÍTULO, ACCIONES, SINOPSIS Y RESEÑAS -->
           <div class="col-12 col-md-8 col-lg-9">
-            <!-- FILA SUPERIOR: TÍTULO (AÑO) + RATING Y ACCIONES -->
+            <!-- FILA SUPERIOR: TÍTULO (AÑO) + ACCIONES -->
             <div
               class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 border-bottom border-dark-subtle pb-3 mb-4"
             >
               <div>
-                <h1 id="movie-title" class="display-6 text-white fw-bold m-0">
-                  <!-- Título (Año) -->
+                <h1 class="display-6 text-white fw-bold m-0">
+                  <span id="movie-title"></span>
+                  <span id="movie-year" class="text-secondary fw-normal"></span>
                 </h1>
               </div>
 
-              <!-- RATING Y ACCIONES PROTEGIDAS POR SESIÓN -->
+              <!-- ACCIONES PROTEGIDAS POR SESIÓN -->
               <div class="text-sm-end d-flex flex-column align-items-sm-end gap-2">
-                <div class="d-flex align-items-center gap-2 mb-1">
-                  <span class="text-warning fs-5">★</span>
-                  <span id="movie-rating" class="h5 text-white fw-bold m-0"></span>
-                </div>
                 <div class="d-flex flex-wrap gap-2">
                   <button
                     id="btn-add-watchlist"
@@ -229,26 +222,24 @@
 
             <hr class="border-dark-subtle my-4" />
 
-            <!-- 3 ACTORES (REPARTO PRINCIPAL) -->
-            <div class="mb-4">
-              <h2 class="h6 text-success fw-bold text-uppercase micro-text mb-3">
-                3 Actores Principales
-              </h2>
-              <div id="cast-container" class="row g-3" aria-live="polite">
-                <!-- Inyectado desde la API -->
-              </div>
-            </div>
-
-            <hr class="border-dark-subtle my-4" />
-
             <!-- SECCIÓN RESEÑAS DE LA PELÍCULA -->
-            <div class="movie-reviews-section">
+            <div id="movie-reviews-section" class="movie-reviews-section">
               <h2 class="h5 text-white fw-bold mb-4 d-flex align-items-center gap-2">
                 <i class="bi bi-chat-left-quote text-success"></i> Reseñas
               </h2>
 
               <div id="movie-reviews-container" class="row g-3" aria-live="polite">
                 <div class="text-secondary py-3">Cargando reseñas...</div>
+              </div>
+
+              <div class="text-center mt-3">
+                <button
+                  id="btn-mas-resenas"
+                  type="button"
+                  class="btn btn-sm btn-outline-light rounded-pill px-3 d-none"
+                >
+                  Ver más reseñas
+                </button>
               </div>
             </div>
           </div>
@@ -478,25 +469,15 @@
       ></span>
     </template>
 
-    <template id="tpl-cast-item">
-      <div class="col-4 col-sm-4">
-        <div class="p-2 bg-dark-custom rounded-3 border border-dark-subtle text-center">
-          <span class="actor-name fw-medium text-white d-block fs-7 text-truncate"></span>
-          <span class="character-name text-secondary micro-text d-block text-truncate"></span>
-        </div>
-      </div>
-    </template>
-
     <template id="tpl-movie-review-card">
       <div class="col-12">
         <div class="review-card p-3 rounded-3">
           <div class="d-flex align-items-center gap-2 mb-2">
-            <div class="author-avatar user-avatar-sm rounded-circle"></div>
             <span class="author-name text-white fw-semibold fs-7"></span>
-            <div class="stars-rating text-warning fs-7 ms-2"></div>
+            <span class="author-username text-secondary micro-text"></span>
             <span class="review-date text-secondary micro-text ms-auto"></span>
           </div>
-          <p class="review-content text-secondary mb-0 fs-7"></p>
+          <p class="review-content text-secondary text-break mb-0 fs-7"></p>
         </div>
       </div>
     </template>
@@ -504,5 +485,7 @@
     <!-- Scripts de Bootstrap y Cliente JS (auth.js para manejar sesión pública/notificaciones) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/paginaPelicula.js"></script>
   </body>
 </html>

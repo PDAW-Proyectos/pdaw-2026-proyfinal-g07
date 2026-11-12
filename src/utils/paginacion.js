@@ -30,14 +30,23 @@ function leerEntero(valor, campo, { min, max }) {
 }
 
 /**
- * Normaliza los parámetros de paginación de una colección.
+ * Normaliza el parámetro `page` de una colección.
  */
-export function leerPaginacion(query = {}) {
+export function leerPagina(query = {}) {
   return {
     page:
       query.page === undefined
         ? PAGINA_PREDETERMINADA
         : leerEntero(query.page, 'page', { min: 1, max: Number.MAX_SAFE_INTEGER }),
+  };
+}
+
+/**
+ * Normaliza los parámetros de paginación de una colección.
+ */
+export function leerPaginacion(query = {}) {
+  return {
+    ...leerPagina(query),
     limit:
       query.limit === undefined
         ? LIMITE_PREDETERMINADO

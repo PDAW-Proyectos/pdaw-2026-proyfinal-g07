@@ -28,7 +28,7 @@ describe('Usuario', () => {
     });
   });
 
-  test('toPrivateJSON incluye el email pero no el hash', () => {
+  test('toPrivateJSON incluye el email y el rol pero no el hash', () => {
     const usuario = new Usuario(datosBase);
 
     expect(usuario.toPrivateJSON()).toEqual({
@@ -36,8 +36,28 @@ describe('Usuario', () => {
       nombre: 'Lucía',
       nombreUsuario: 'lucia',
       email: 'lucia@example.com',
+      rol: 'usuario',
     });
     expect(usuario.toPrivateJSON()).not.toHaveProperty('hashContrasena');
+  });
+
+  test('asigna rol usuario por defecto y admite admin', () => {
+    expect(new Usuario(datosBase).rol).toBe('usuario');
+    expect(new Usuario({ ...datosBase, rol: 'admin' }).rol).toBe('admin');
+  });
+
+  test('toPublicJSON no incluye el rol', () => {
+    const usuario = new Usuario({ ...datosBase, rol: 'admin' });
+
+    expect(usuario.toPublicJSON()).not.toHaveProperty('rol');
+  });
+
+  test('rechaza un rol inválido', () => {
+    expect(() => new Usuario({ ...datosBase, rol: 'superadmin' })).toThrow(ErrorDominio);
+  });
+
+  test('fromJSON interpreta los registros viejos sin rol como usuario', () => {
+    expect(Usuario.fromJSON(datosBase).rol).toBe('usuario');
   });
 
   test('toJSON y fromJSON conservan los datos', () => {

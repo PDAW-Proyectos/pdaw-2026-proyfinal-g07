@@ -16,7 +16,7 @@ Proyecto del equipo **7** para **7513 · Proyecto de Desarrollo de Aplicaciones 
 
 ### Alcance inicial
 
-Películas, cuentas de usuario, historial personal, puntuaciones y reseñas públicas. Las estadísticas básicas son deseables. Series, perfiles públicos completos, seguimiento, me gusta, watchlist y moderación quedan fuera de esta versión. El alcance se revisa en cada planificación.
+Películas, cuentas de usuario, historial personal, puntuaciones y reseñas públicas. Las estadísticas básicas son deseables. La administración de cuentas y la moderación de reseñas se incorporaron como panel administrativo. Series, perfiles públicos completos, seguimiento, me gusta y watchlist quedan fuera de esta versión. El alcance se revisa en cada planificación.
 
 ## Equipo y roles
 
@@ -33,6 +33,7 @@ Copiar `.env.example` a `.env` y definir antes de iniciar el servidor:
 
 - `SESSION_SECRET`: secreto largo y aleatorio para firmar la cookie de sesión.
 - `TMDB_API_KEY`: clave de la API de TMDB. Se pide en [themoviedb.org](https://www.themoviedb.org/settings/api) y solo se usa en el servidor: nunca llega al navegador.
+- `ADMIN_EMAIL` y `ADMIN_PASSWORD` (opcionales): si se definen juntos, al iniciar se crea una cuenta administradora si el email no existe. `ADMIN_NOMBRE` y `ADMIN_USUARIO` permiten personalizar el nombre visible y el alias. Una cuenta común con ese email no se promueve automáticamente.
 
 Sin `TMDB_API_KEY`, la búsqueda y las tendencias responden `502` con el código `TMDB_NO_DISPONIBLE`; el resto de la aplicación sigue funcionando. Las pruebas no necesitan la clave ni acceso a la red: inyectan un adaptador falso.
 
@@ -44,7 +45,7 @@ npm test
 npm start
 ```
 
-Servidor: **http://localhost:3000**.
+Servidor: **http://localhost:3000**. Panel de administración: **http://localhost:3000/admin.html** (solo cuentas con rol `admin`; permite eliminar cuentas y moderar reseñas).
 
 La integración continua ejecuta `npm ci`, `npm run format:check`, `npm run lint` y `npm test -- --coverage` en cada push a `main` y en cada pull request.
 
@@ -79,6 +80,9 @@ Todas las rutas usan el prefijo `/api`. El detalle de campos, validaciones y err
 | `PATCH`  | `/api/visualizaciones/:id`           | Dueño       | `200` | Edita una visualización propia.                  |
 | `DELETE` | `/api/visualizaciones/:id`           | Dueño       | `204` | Elimina una visualización propia.                |
 | `GET`    | `/api/estadisticas/me`               | Autenticado | `200` | Estadísticas del usuario autenticado.            |
+| `GET`    | `/api/admin/usuarios`                | Admin       | `200` | Lista las cuentas registradas.                   |
+| `DELETE` | `/api/admin/usuarios/:id`            | Admin       | `204` | Elimina una cuenta y su contenido asociado.      |
+| `DELETE` | `/api/admin/resenas/:id`             | Admin       | `204` | Elimina cualquier reseña.                        |
 
 ## Errores
 

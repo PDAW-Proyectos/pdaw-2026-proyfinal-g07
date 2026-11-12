@@ -19,6 +19,7 @@ const ERRORES_HTTP = new Map([
   ['NOMBRE_USUARIO_DUPLICADO', { status: 409, title: 'Conflicto con el estado actual' }],
   ['RESENA_DUPLICADA', { status: 409, title: 'Conflicto con el estado actual' }],
   ['ID_DUPLICADO', { status: 409, title: 'Conflicto con el estado actual' }],
+  ['ULTIMO_ADMIN', { status: 409, title: 'Conflicto con el estado actual' }],
   ['CONTENIDO_NO_SOPORTADO', { status: 415, title: 'Tipo de contenido no soportado' }],
   ['DEMASIADOS_INTENTOS', { status: 429, title: 'Demasiadas solicitudes' }],
   ['ERROR_INTERNO', { status: 500, title: 'Error interno' }],

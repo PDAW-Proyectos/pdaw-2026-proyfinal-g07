@@ -32,10 +32,48 @@ function aplicarSesion(usuario) {
 
   elementos.btnMenu.classList.toggle('d-none', !autenticado);
   elementos.btnMenu.classList.toggle('d-flex', autenticado);
-  // "Recomendadas" solo existe en index.html.
-  elementos.recomendadas?.classList.toggle('d-none', !autenticado);
+  // "Recomendadas" solo existe en index.html y es contenido para usuarios comunes.
+  elementos.recomendadas?.classList.toggle('d-none', !autenticado || usuario.rol === 'admin');
   elementos.textoAuth.textContent = autenticado ? usuario.nombreUsuario : 'Iniciar sesión';
-  elementos.btnAuth.title = autenticado ? 'Ir a mi perfil' : 'Iniciar sesión';
+  elementos.btnAuth.title = autenticado
+    ? usuario.rol === 'admin'
+      ? 'Ir al panel de administración'
+      : 'Ir a mi perfil'
+    : 'Iniciar sesión';
+  actualizarEnlaceAdmin(usuario);
+}
+
+/**
+ * Agrega el acceso a administración al menú lateral solo para cuentas admin.
+ */
+function actualizarEnlaceAdmin(usuario) {
+  const lista = elementos.aside?.querySelector('.offcanvas-body nav ul');
+
+  if (!lista) {
+    return;
+  }
+
+  const esAdmin = usuario?.rol === 'admin';
+  const enlacesDeUsuario = lista.querySelectorAll(
+    'a[href="perfil.html"], a[href="watchlist.html"], a[href="reviews.html"]',
+  );
+
+  for (const enlace of enlacesDeUsuario) {
+    enlace.closest('.nav-item')?.classList.toggle('d-none', esAdmin);
+  }
+
+  let item = document.getElementById('nav-item-admin');
+
+  if (!item) {
+    item = document.createElement('li');
+    item.id = 'nav-item-admin';
+    item.className = 'nav-item';
+    item.innerHTML =
+      '<a href="admin.html" class="nav-link text-secondary rounded d-flex align-items-center gap-3"><i class="bi bi-shield-lock"></i> Administración</a>';
+    lista.append(item);
+  }
+
+  item.classList.toggle('d-none', !esAdmin);
 }
 
 function limpiarErrores(formulario) {
@@ -95,6 +133,10 @@ function manejarEnvio({ modal, accion }) {
 
       aplicarSesion(usuario);
       Modal.getOrCreateInstance(modal).hide();
+
+      if (usuario.rol === 'admin') {
+        window.location.href = 'admin.html';
+      }
     } catch (error) {
       mostrarErrores(formulario, error);
     } finally {
@@ -137,7 +179,7 @@ function abrirLogin(motivo = null) {
 
 function abrirLoginOPerfil() {
   if (usuarioActual) {
-    window.location.href = 'perfil.html';
+    window.location.href = usuarioActual.rol === 'admin' ? 'admin.html' : 'perfil.html';
     return;
   }
 

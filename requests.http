@@ -184,5 +184,14 @@ DELETE {{base}}/visualizaciones/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
 ### Estadísticas propias
 GET {{base}}/estadisticas/me
 
+### Listar usuarios (requiere sesión admin)
+GET {{base}}/admin/usuarios?page=1&limit=20
+
+### Eliminar usuario (requiere sesión admin)
+DELETE {{base}}/admin/usuarios/3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33
+
+### Moderar reseña (requiere sesión admin)
+DELETE {{base}}/admin/resenas/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
+
 ### Ruta inexistente (error 404)
 GET {{base}}/ruta-inexistente

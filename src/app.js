@@ -8,6 +8,7 @@ import { requireJson } from './middlewares/requireJson.js';
 import { cabecerasSeguridad } from './middlewares/seguridad.js';
 import { createSessionMiddleware } from './middlewares/session.js';
 import { crearAuthRouter } from './routes/authRoutes.js';
+import { crearAdminRouter } from './routes/adminRoutes.js';
 import { crearPeliculaRouter } from './routes/peliculaRoutes.js';
 import { crearResenaRouter } from './routes/resenaRoutes.js';
 import { crearVisualizacionRouter } from './routes/visualizacionRoutes.js';
@@ -24,18 +25,37 @@ function montarRutas(app, container = {}) {
     app.use('/api/auth', crearAuthRouter({ usuarioService: container.usuarioService }));
   }
 
-  if (container.resenaService) {
-    app.use('/api/resenas', crearResenaRouter({ resenaService: container.resenaService }));
+  if (container.adminService && container.usuarioService) {
+    app.use(
+      '/api/admin',
+      crearAdminRouter({
+        adminService: container.adminService,
+        usuarioService: container.usuarioService,
+      }),
+    );
+  }
+
+  if (container.resenaService && container.usuarioService) {
+    app.use(
+      '/api/resenas',
+      crearResenaRouter({
+        resenaService: container.resenaService,
+        usuarioService: container.usuarioService,
+      }),
+    );
   }
 
   if (container.peliculaService) {
     app.use('/api/peliculas', crearPeliculaRouter({ peliculaService: container.peliculaService }));
   }
 
-  if (container.visualizacionService) {
+  if (container.visualizacionService && container.usuarioService) {
     app.use(
       '/api/visualizaciones',
-      crearVisualizacionRouter({ visualizacionService: container.visualizacionService }),
+      crearVisualizacionRouter({
+        visualizacionService: container.visualizacionService,
+        usuarioService: container.usuarioService,
+      }),
     );
   }
 }

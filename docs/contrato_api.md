@@ -85,13 +85,14 @@ Las listas `Errores:` de cada endpoint mencionan los casos más frecuentes; seg�
 | `CREDENCIALES_INVALIDAS` | 401 | Email/Usuario o contraseña incorrectos. El mensaje no distingue cuál falló. |
 | `SESION_REQUERIDA` | 401 | La ruta requiere sesión y no hay cookie válida. |
 | `SESION_EXPIRADA` | 401 | La sesión existió pero venció. |
-| `NO_AUTORIZADO` | 403 | El usuario autenticado no es dueño del recurso. |
+| `NO_AUTORIZADO` | 403 | El usuario autenticado no tiene permiso para la operación: no es dueño del recurso o no es administrador. |
 | `NO_ENCONTRADO` | 404 | El recurso no existe o no pertenece al usuario. |
 | `PELICULA_NO_ENCONTRADA` | 404 | No existe una película local con ese `peliculaId`. |
 | `EMAIL_DUPLICADO` | 409 | Ya hay una cuenta con ese email. |
 | `NOMBRE_USUARIO_DUPLICADO` | 409 | Ya hay una cuenta con ese nombre de usuario. |
 | `RESENA_DUPLICADA` | 409 | El usuario ya escribió una reseña para esa película. |
 | `ID_DUPLICADO` | 409 | Colisión interna de identificadores al guardar una película. |
+| `ULTIMO_ADMIN` | 409 | La operación dejaría al sistema sin administradores. |
 | `CONTENIDO_NO_SOPORTADO` | 415 | El cuerpo no usa `application/json` cuando el endpoint espera JSON. |
 | `DEMASIADOS_INTENTOS` | 429 | Se superaron los 5 intentos fallidos por IP y cuenta (o identificador si la cuenta no existe) en 15 minutos. |
 | `ERROR_INTERNO` | 500 | Error no controlado. |
@@ -122,11 +123,12 @@ El usuario público no incluye `email` ni `hashContrasena`.
   "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
   "nombre": "Lucía Gómez",
   "nombreUsuario": "lucia",
-  "email": "lucia@example.com"
+  "email": "lucia@example.com",
+  "rol": "usuario"
 }
 ```
 
-Incluye el email porque representa a la propia cuenta. Se devuelve solo en `/api/auth/registro`, `/api/auth/login` y `/api/auth/sesion`; nunca en autores de reseñas ni en otros datos públicos.
+Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cuenta. Se devuelve en `/api/auth/registro`, `/api/auth/login`, `/api/auth/sesion` y en el listado de administración; nunca en autores de reseñas ni en otros datos públicos.
 
 ### Película resumida
 
@@ -240,7 +242,8 @@ Response `201` con `Location: /api/auth/sesion`:
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
     "nombre": "Lucía Gómez",
     "nombreUsuario": "lucia",
-    "email": "lucia@example.com"
+    "email": "lucia@example.com",
+    "rol": "usuario"
   }
 }
 ```
@@ -270,7 +273,8 @@ Response `200`:
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
     "nombre": "Lucía Gómez",
     "nombreUsuario": "lucia",
-    "email": "lucia@example.com"
+    "email": "lucia@example.com",
+    "rol": "usuario"
   }
 }
 ```
@@ -314,7 +318,8 @@ Response `200` siempre que la petición sea válida:
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
     "nombre": "Lucía Gómez",
     "nombreUsuario": "lucia",
-    "email": "lucia@example.com"
+    "email": "lucia@example.com",
+    "rol": "usuario"
   }
 }
 ```
@@ -334,8 +339,65 @@ Sin sesión:
 - El login responde siempre `CREDENCIALES_INVALIDAS`, sin indicar si falló el usuario o la contraseña.
 - El login compara siempre con bcrypt, incluso cuando el identificador no existe, para que el tiempo de respuesta no revele si la cuenta está registrada.
 - El servidor toma el usuario de la sesión; nunca acepta `usuarioId` desde el cuerpo.
+- El rol también se toma de la sesión. El frontend solo oculta el enlace al panel; las rutas `/api/admin` validan el rol en el servidor con `requireAdmin`.
 - Límite de intentos: 5 fallos por IP y cuenta cada 15 minutos. Si el identificador no corresponde a una cuenta, se agrupa por el identificador normalizado. En el registro se agrupa por email. Cuentan las respuestas `401` y `409`; un intento exitoso libera el contador. Al superar el límite la API responde `429` con `Retry-After`.
 - Los contadores de intentos son por proceso y se reinician al reiniciar el servidor; no se comparten entre instancias. Es una limitación aceptada por el alcance del proyecto.
+
+## Administración
+
+Todas las rutas requieren una sesión con `rol: "admin"`. Un usuario autenticado común recibe `403 NO_AUTORIZADO`; sin sesión, `401 SESION_REQUERIDA`. La cuenta inicial se crea al arrancar cuando `ADMIN_EMAIL` y `ADMIN_PASSWORD` están definidos juntos. Si el email ya pertenece a una cuenta común, no se promueve ni se le cambia la contraseña.
+
+En el frontend, una cuenta admin ve solo el acceso al panel de administración: los enlaces a perfil, watchlist y reviews se ocultan y esas páginas redirigen a `/admin.html`.
+
+### `GET /api/admin/usuarios`
+
+Lista las cuentas registradas, ordenadas por nombre de usuario. Acepta `page` y `limit`.
+
+Response `200`: colección paginada de usuarios autenticados (incluye `email` y `rol`, nunca `hashContrasena`).
+
+```json
+{
+  "page": 1,
+  "limit": 20,
+  "total": 2,
+  "data": [
+    {
+      "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
+      "nombre": "Administrador",
+      "nombreUsuario": "admin",
+      "email": "admin@example.com",
+      "rol": "admin"
+    },
+    {
+      "id": "8e4d3b2a-1c0f-4e9d-8b7a-6c5d4e3f2a10",
+      "nombre": "Lucía Gómez",
+      "nombreUsuario": "lucia",
+      "email": "lucia@example.com",
+      "rol": "usuario"
+    }
+  ]
+}
+```
+
+Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `VALIDACION_FALLIDA`.
+
+### `DELETE /api/admin/usuarios/:id`
+
+Elimina la cuenta indicada y, en cascada, sus visualizaciones y reseñas. Las sesiones abiertas de esa cuenta dejan de ser válidas.
+
+Response `204`.
+
+Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `NO_ENCONTRADO`, `ULTIMO_ADMIN`.
+
+No se puede eliminar la propia cuenta (`NO_AUTORIZADO`) ni al último administrador (`ULTIMO_ADMIN`).
+
+### `DELETE /api/admin/resenas/:id`
+
+Elimina cualquier reseña sin comprobar autoría.
+
+Response `204`.
+
+Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `NO_ENCONTRADO`.
 
 ## Películas e integración TMDB
 
@@ -554,17 +616,19 @@ Response `200`:
 
 ## Matriz de permisos
 
-| Recurso | Público | Autenticado | Autor/Dueño |
-| --- | --- | --- | --- |
-| Buscar y ver películas | Sí | Sí | — |
-| Ver reseñas y últimas reseñas | Sí | Sí | — |
-| Registrarse e iniciar sesión | Sí | — | — |
-| Ver sesión actual | Sí | Sí | — |
-| Crear visualización | No | Sí | — |
-| Ver, editar o borrar historial | No | No | Sí |
-| Crear reseña | No | Sí | — |
-| Editar o borrar reseña | No | No | Sí |
-| Ver estadísticas propias | No | No | Sí |
+| Recurso | Público | Autenticado | Autor/Dueño | Admin |
+| --- | --- | --- | --- | --- |
+| Buscar y ver películas | Sí | Sí | — | Sí |
+| Ver reseñas y últimas reseñas | Sí | Sí | — | Sí |
+| Registrarse e iniciar sesión | Sí | — | — | — |
+| Ver sesión actual | Sí | Sí | — | Sí |
+| Crear visualización | No | Sí | — | Sí |
+| Ver, editar o borrar historial | No | No | Sí | No |
+| Crear reseña | No | Sí | — | Sí |
+| Editar o borrar reseña | No | No | Sí | Borrar |
+| Ver estadísticas propias | No | No | Sí | No |
+| Listar y eliminar cuentas | No | No | No | Sí |
+| Moderar cualquier reseña | No | No | No | Sí |
 
 ## Flujo esperado del frontend
 
@@ -582,9 +646,9 @@ No forman parte del contrato inicial:
 - Watchlist, seguimiento entre usuarios, me gusta y comentarios sobre reseñas.
 - Perfiles públicos completos.
 - Series, temporadas y episodios.
-- Moderación y reportes.
+- Reportes de contenido.
 - Recuperación de contraseña.
-- Roles administrativos.
+- Roles adicionales al administrador (por ejemplo, moderador).
 
 Estas funciones requieren nuevas rutas y deben agregarse al contrato antes de implementarse.
 
@@ -596,5 +660,6 @@ Estas funciones requieren nuevas rutas y deben agregarse al contrato antes de im
 - `PeliculaRepository` debe ofrecer búsqueda por `id` y por `tmdbId`, y guardar o actualizar películas normalizadas.
 - El Adapter de TMDB nunca debe exponer su estructura interna: transforma a `Pelicula` y normaliza errores.
 - La API key de TMDB se lee del entorno en el servidor y nunca se envía al cliente.
+- Si `ADMIN_EMAIL` y `ADMIN_PASSWORD` están definidos, al arrancar se crea la cuenta administradora. `ADMIN_NOMBRE` y `ADMIN_USUARIO` son opcionales; una cuenta común con ese email no se promueve automáticamente.
 - Las búsquedas y tendencias se cachean en memoria 60 segundos y 5 minutos por proceso; el catálogo local sigue siendo la fuente de las fichas.
 - Los tests de integración deben usar un store en memoria y un cliente HTTP contra una instancia de prueba.

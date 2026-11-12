@@ -99,6 +99,7 @@ describe('auth', () => {
         nombre: 'Lucía Gómez',
         nombreUsuario: 'lucia',
         email: 'lucia@example.com',
+        rol: 'usuario',
       });
       expect(cuerpo.usuario).not.toHaveProperty('hashContrasena');
 

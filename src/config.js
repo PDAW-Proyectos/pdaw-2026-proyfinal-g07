@@ -16,4 +16,8 @@ export const config = {
   esProduccion,
   tmdbApiKey: process.env.TMDB_API_KEY ?? '',
   tmdbBaseUrl: process.env.TMDB_BASE_URL ?? 'https://api.themoviedb.org/3',
+  adminEmail: process.env.ADMIN_EMAIL ?? '',
+  adminPassword: process.env.ADMIN_PASSWORD ?? '',
+  adminNombre: process.env.ADMIN_NOMBRE ?? 'Administrador',
+  adminUsuario: process.env.ADMIN_USUARIO ?? 'admin',
 };

@@ -5,6 +5,27 @@
 ### Salud del servicio
 GET {{base}}/salud
 
+### Buscar películas por título
+GET {{base}}/peliculas/buscar?q=matrix&page=1
+
+### Buscar sin consulta (error 400)
+GET {{base}}/peliculas/buscar?q=
+
+### Buscar con página fuera de rango (error 400)
+GET {{base}}/peliculas/buscar?q=matrix&page=501
+
+### Tendencias de la semana
+GET {{base}}/peliculas/tendencias?page=1
+
+### Detalle de una película del catálogo local
+GET {{base}}/peliculas/8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f
+
+### Película inexistente (error 404)
+GET {{base}}/peliculas/p-inexistente
+
+### Reseñas públicas de una película
+GET {{base}}/peliculas/8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f/resenas?page=1&limit=20
+
 ### Sesión actual
 GET {{base}}/auth/sesion
 

@@ -29,7 +29,12 @@ Películas, cuentas de usuario, historial personal, puntuaciones y reseñas púb
 
 Requiere **Node.js 22.13 o superior**.
 
-Copiar `.env.example` a `.env` y definir `SESSION_SECRET` antes de iniciar el servidor.
+Copiar `.env.example` a `.env` y definir antes de iniciar el servidor:
+
+- `SESSION_SECRET`: secreto largo y aleatorio para firmar la cookie de sesión.
+- `TMDB_API_KEY`: clave de la API de TMDB. Se pide en [themoviedb.org](https://www.themoviedb.org/settings/api) y solo se usa en el servidor: nunca llega al navegador.
+
+Sin `TMDB_API_KEY`, la búsqueda y las tendencias responden `502` con el código `TMDB_NO_DISPONIBLE`; el resto de la aplicación sigue funcionando. Las pruebas no necesitan la clave ni acceso a la red: inyectan un adaptador falso.
 
 ```bash
 npm install
@@ -91,6 +96,7 @@ Los errores usan `application/problem+json` según RFC 9457. La respuesta incluy
 
 ## Uso de herramientas de IA
 
-| Fecha    | Herramienta | Aplicación                                    |
-| -------- | ----------- | --------------------------------------------- |
-| Semana 1 | ChatGPT     | Redacción y organización de la documentación. |
+| Fecha    | Herramienta | Aplicación                                                     |
+| -------- | ----------- | -------------------------------------------------------------- |
+| Semana 1 | ChatGPT     | Redacción y organización de la documentación.                  |
+| Semana 5 | OpenCode    | Implementación del catálogo con TMDB y testing. Documentacion. |

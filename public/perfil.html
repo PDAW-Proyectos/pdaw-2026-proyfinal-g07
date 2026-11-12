@@ -47,7 +47,7 @@
         </div>
 
         <!-- Buscador Global -->
-        <form id="form-busqueda" class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
+        <form id="form-busqueda" novalidate class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
           <div class="input-group">
             <input
               type="search"
@@ -56,6 +56,8 @@
               class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
               placeholder="Buscar película..."
               aria-label="Buscar película"
+              maxlength="100"
+              autocomplete="off"
               required
             />
             <button class="btn btn-success rounded-end-pill px-3" type="submit">
@@ -316,5 +318,6 @@
     <!-- Scripts de Bootstrap y Cliente JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/paginaProtegida.js"></script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>

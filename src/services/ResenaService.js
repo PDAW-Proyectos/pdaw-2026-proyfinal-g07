@@ -71,6 +71,19 @@ export class ResenaService {
     return this.#paginarConDatos(resenas, { page, limit });
   }
 
+  /**
+   * Devuelve las reseñas públicas de una película; si la película no existe, 404.
+   */
+  async listarPorPelicula(peliculaId, { page = 1, limit = 20 } = {}) {
+    await this.#buscarPelicula(peliculaId);
+
+    const resenas = await this.#resenaRepository.listarPorPelicula(peliculaId);
+
+    resenas.sort(porFechaDescendente);
+
+    return this.#paginarConDatos(resenas, { page, limit });
+  }
+
   async obtener(id) {
     const resena = await this.#resenaRepository.buscarPorId(id);
 

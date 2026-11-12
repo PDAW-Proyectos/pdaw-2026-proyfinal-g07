@@ -14,4 +14,6 @@ export const config = {
   dataFile: process.env.DATA_FILE ?? archivoPorDefecto,
   sessionSecret,
   esProduccion,
+  tmdbApiKey: process.env.TMDB_API_KEY ?? '',
+  tmdbBaseUrl: process.env.TMDB_BASE_URL ?? 'https://api.themoviedb.org/3',
 };

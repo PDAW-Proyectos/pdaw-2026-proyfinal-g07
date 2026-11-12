@@ -7,11 +7,37 @@ import { requestContext } from './middlewares/requestContext.js';
 import { requireJson } from './middlewares/requireJson.js';
 import { createSessionMiddleware } from './middlewares/session.js';
 import { crearAuthRouter } from './routes/authRoutes.js';
+import { crearPeliculaRouter } from './routes/peliculaRoutes.js';
 import { crearResenaRouter } from './routes/resenaRoutes.js';
 import { crearVisualizacionRouter } from './routes/visualizacionRoutes.js';
 import { logger as loggerPredeterminado } from './utils/logger.js';
 
 const publicPath = fileURLToPath(new URL('../public/', import.meta.url));
+
+/**
+ * Monta un router por cada servicio disponible en el contenedor.
+ * Permite crear la app con un contenedor parcial en las pruebas.
+ */
+function montarRutas(app, container = {}) {
+  if (container.usuarioService) {
+    app.use('/api/auth', crearAuthRouter({ usuarioService: container.usuarioService }));
+  }
+
+  if (container.resenaService) {
+    app.use('/api/resenas', crearResenaRouter({ resenaService: container.resenaService }));
+  }
+
+  if (container.peliculaService) {
+    app.use('/api/peliculas', crearPeliculaRouter({ peliculaService: container.peliculaService }));
+  }
+
+  if (container.visualizacionService) {
+    app.use(
+      '/api/visualizaciones',
+      crearVisualizacionRouter({ visualizacionService: container.visualizacionService }),
+    );
+  }
+}
 
 export function createApp({ logger = loggerPredeterminado, container } = {}) {
   const app = express();
@@ -33,20 +59,7 @@ export function createApp({ logger = loggerPredeterminado, container } = {}) {
     res.json({ estado: 'ok' });
   });
 
-  if (container?.usuarioService) {
-    app.use('/api/auth', crearAuthRouter({ usuarioService: container.usuarioService }));
-  }
-
-  if (container?.resenaService) {
-    app.use('/api/resenas', crearResenaRouter({ resenaService: container.resenaService }));
-  }
-
-  if (container?.visualizacionService) {
-    app.use(
-      '/api/visualizaciones',
-      crearVisualizacionRouter({ visualizacionService: container.visualizacionService }),
-    );
-  }
+  montarRutas(app, container);
 
   app.use(express.static(publicPath));
 

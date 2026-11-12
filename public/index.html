@@ -41,13 +41,17 @@
           >
             <i class="bi bi-list fs-4"></i>
           </button>
-          <a class="navbar-brand fw-bold m-0 d-flex align-items-center gap-2" href="#">
+          <a
+            class="navbar-brand fw-bold m-0 d-flex align-items-center gap-2"
+            href="index.html"
+            title="Ir al inicio"
+          >
             <span class="logo-icon"></span> Fotograma<span class="text-success">.</span>
           </a>
         </div>
 
         <!-- Formulario de búsqueda global -->
-        <form id="form-busqueda" class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
+        <form id="form-busqueda" novalidate class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
           <div class="input-group">
             <input
               type="search"
@@ -56,6 +60,9 @@
               class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
               placeholder="Buscar película..."
               aria-label="Buscar película"
+              maxlength="100"
+              autocomplete="off"
+              required
             />
             <button class="btn btn-success rounded-end-pill px-3" type="submit">
               <i class="bi bi-search"></i>
@@ -186,9 +193,13 @@
       <!-- SECCIÓN DE PELÍCULAS EN TENDENCIA (TRENDING) -->
       <section class="trending-section mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="h4 text-white fw-bold m-0">
-            <i class="bi bi-fire text-warning me-2"></i>Trending
-          </h2>
+          <div>
+            <h2 class="h4 text-white fw-bold m-0">
+              <i id="listado-icono" class="bi bi-fire text-warning me-2"></i
+              ><span id="listado-titulo">Trending</span>
+            </h2>
+            <p id="listado-estado" class="text-secondary fs-7 m-0 mt-1" aria-live="polite"></p>
+          </div>
           <div class="d-flex gap-2">
             <button id="btn-prev" class="btn btn-outline-custom btn-sm text-white px-3" disabled>
               Anterior
@@ -451,8 +462,28 @@
       </div>
     </div>
 
+    <!-- Plantilla de tarjeta de película (paginaInicio.js) -->
+    <template id="tpl-movie-card">
+      <div class="col-6 col-sm-3">
+        <a class="movie-card text-decoration-none d-block" href="#">
+          <div class="poster-container shadow-sm">
+            <img class="poster-img d-none" src="" alt="" />
+            <div
+              class="poster-placeholder d-flex align-items-center justify-content-center h-100 text-secondary"
+            >
+              <i class="bi bi-film display-4"></i>
+            </div>
+          </div>
+          <h3 class="movie-title"></h3>
+          <p class="movie-meta"></p>
+        </a>
+      </div>
+    </template>
+
     <!-- Scripts de Bootstrap y lógica cliente -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/paginaInicio.js"></script>
   </body>
 </html>

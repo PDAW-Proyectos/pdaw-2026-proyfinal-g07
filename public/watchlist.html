@@ -21,17 +21,18 @@
     <!-- Hoja de estilos principal -->
     <link rel="stylesheet" href="css/styles.css" />
   </head>
-  <body>
+  <!-- La página queda oculta hasta que js/paginaProtegida.js confirma la sesión -->
+  <body class="invisible">
     <!-- NAVEGACIÓN SUPERIOR / ENCABEZADO -->
     <header
       class="navbar navbar-dark bg-dark-custom sticky-top border-bottom border-dark-subtle px-3 px-md-4 py-2"
     >
       <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
-        <!-- Identidad Visual y Activador del Menú Lateral (Oculto si no hay sesión iniciada) -->
+        <!-- Identidad Visual y Activador del Menú Lateral (siempre visible: la página exige sesión iniciada) -->
         <div class="d-flex align-items-center gap-3">
           <button
             id="btn-menu-offcanvas"
-            class="btn btn-menu-toggle d-none align-items-center justify-content-center"
+            class="btn btn-menu-toggle d-flex align-items-center justify-content-center"
             type="button"
             data-bs-toggle="offcanvas"
             data-bs-target="#asideDesplegable"
@@ -68,11 +69,11 @@
         <div class="d-flex align-items-center">
           <a
             id="btn-auth-action"
-            href="login.html"
+            href="perfil.html"
             class="btn btn-sm btn-success rounded-pill px-3 fw-medium"
           >
             <i class="bi bi-person-fill me-1"></i>
-            <span id="auth-btn-text">Iniciar sesión</span>
+            <span id="auth-btn-text">Perfil</span>
           </a>
         </div>
       </div>
@@ -210,6 +211,6 @@
 
     <!-- Scripts de Bootstrap y Cliente JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../src/app.js" type="module"></script>
+    <script type="module" src="js/paginaProtegida.js"></script>
   </body>
 </html>

@@ -28,7 +28,7 @@
       class="navbar navbar-dark bg-dark-custom sticky-top border-bottom border-dark-subtle px-3 px-md-4 py-2"
     >
       <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
-        <!-- Identidad visual y activador del menú lateral (Oculto por defecto si no hay sesión iniciada) -->
+        <!-- Logotipo e iniciador del menú lateral (Oculto por defecto si no hay sesión iniciada) -->
         <div class="d-flex align-items-center gap-3">
           <button
             id="btn-menu-offcanvas"
@@ -56,7 +56,6 @@
               class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
               placeholder="Buscar película..."
               aria-label="Buscar película"
-              required
             />
             <button class="btn btn-success rounded-end-pill px-3" type="submit">
               <i class="bi bi-search"></i>
@@ -67,14 +66,15 @@
 
         <!-- Botón dinámico de acceso/perfil de usuario -->
         <div class="d-flex align-items-center">
-          <a
+          <button
             id="btn-auth-action"
-            href="login.html"
+            type="button"
             class="btn btn-sm btn-success rounded-pill px-3 fw-medium"
+            title="Iniciar sesión"
           >
             <i class="bi bi-person-fill me-1"></i>
             <span id="auth-btn-text">Iniciar sesión</span>
-          </a>
+          </button>
         </div>
       </div>
     </header>
@@ -114,7 +114,7 @@
             </li>
             <li class="nav-item">
               <a
-                href="perfil.html#watchlists"
+                href="watchlist.html"
                 class="nav-link text-secondary rounded d-flex align-items-center gap-3"
               >
                 <i class="bi bi-bookmark-heart"></i> Watchlist
@@ -122,7 +122,7 @@
             </li>
             <li class="nav-item">
               <a
-                href="perfil.html#reviews"
+                href="reviews.html"
                 class="nav-link text-secondary rounded d-flex align-items-center gap-3"
               >
                 <i class="bi bi-chat-square-text"></i> Reviews
@@ -132,19 +132,20 @@
         </nav>
 
         <div class="sidebar-footer pt-3 border-top border-dark-subtle">
-          <button
+          <a
+            href="#"
             id="btn-logout"
-            class="btn btn-link nav-link text-danger w-100 text-start rounded d-flex align-items-center gap-3 fs-6 p-2 text-decoration-none"
+            class="nav-link text-danger rounded d-flex align-items-center gap-3 fs-6 p-2 text-decoration-none"
           >
             <i class="bi bi-box-arrow-left"></i> Logout
-          </button>
+          </a>
         </div>
       </div>
     </aside>
 
     <!-- ÁREA PRINCIPAL -->
     <main class="container-fluid max-w-content py-4 px-3 px-md-5">
-      <!-- SECCIÓN HERO: FOTOGRAMA / BACKDROP DEL FILM (Boceto: Hero Fotograma del Film) -->
+      <!-- SECCIÓN HERO: FOTOGRAMA / BACKDROP DEL FILM -->
       <section class="movie-backdrop-section mb-4">
         <div
           id="backdrop-container"
@@ -158,7 +159,7 @@
         </div>
       </section>
 
-      <!-- DETALLE DE LA PELÍCULA (Boceto: Póster + Géneros a la Izquierda | Información a la Derecha) -->
+      <!-- DETALLE DE LA PELÍCULA -->
       <section class="movie-details-section mb-5">
         <div class="row g-4">
           <!-- COLUMNA IZQUIERDA: PÓSTER Y GÉNEROS -->
@@ -173,7 +174,7 @@
             <!-- GÉNEROS DE LA PELÍCULA -->
             <div
               id="movie-genres"
-              class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start"
+              class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start mb-3"
             >
               <!-- Inyectado dinámicamente desde la API -->
             </div>
@@ -181,7 +182,7 @@
 
           <!-- COLUMNA DERECHA: TÍTULO, RATING, DESCRIPCIÓN, ACTORES Y RESEÑAS -->
           <div class="col-12 col-md-8 col-lg-9">
-            <!-- FILA SUPERIOR: TÍTULO (AÑO) + RATING Y BOTÓN AGREGAR RESEÑA -->
+            <!-- FILA SUPERIOR: TÍTULO (AÑO) + RATING Y ACCIONES -->
             <div
               class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 border-bottom border-dark-subtle pb-3 mb-4"
             >
@@ -191,15 +192,28 @@
                 </h1>
               </div>
 
-              <!-- RATING Y ACCIÓN DE RESEÑAR -->
-              <div class="text-sm-end">
-                <div class="d-flex align-items-center gap-2 mb-2">
+              <!-- RATING Y ACCIONES PROTEGIDAS POR SESIÓN -->
+              <div class="text-sm-end d-flex flex-column align-items-sm-end gap-2">
+                <div class="d-flex align-items-center gap-2 mb-1">
                   <span class="text-warning fs-5">★</span>
                   <span id="movie-rating" class="h5 text-white fw-bold m-0"></span>
                 </div>
-                <button id="btn-add-review" class="btn btn-sm btn-success rounded-pill px-3">
-                  <i class="bi bi-pencil-square me-1"></i> Agregar Reseña
-                </button>
+                <div class="d-flex flex-wrap gap-2">
+                  <button
+                    id="btn-add-watchlist"
+                    class="btn btn-sm btn-outline-light rounded-pill px-3"
+                    data-requiere-sesion="guardar la película en tu watchlist"
+                  >
+                    <i class="bi bi-bookmark-plus me-1"></i> Watchlist
+                  </button>
+                  <button
+                    id="btn-add-review"
+                    class="btn btn-sm btn-success rounded-pill px-3"
+                    data-requiere-sesion="escribir una reseña"
+                  >
+                    <i class="bi bi-pencil-square me-1"></i> Agregar Reseña
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -250,18 +264,220 @@
       </footer>
     </main>
 
-    <!-- ================================================================= -->
-    <!-- PLANTILLAS HTML (<template>) PARA INYECCIÓN DINÁMICA DESDE LA API -->
-    <!-- ================================================================= -->
+    <!-- MODAL: INICIAR SESIÓN -->
+    <div
+      class="modal fade"
+      id="modalLogin"
+      tabindex="-1"
+      aria-labelledby="modalLoginLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark-custom text-white border border-dark-subtle rounded-4">
+          <div class="modal-header border-bottom border-dark-subtle">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalLoginLabel">
+              <span class="logo-icon"></span> Iniciar sesión
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
 
-    <!-- Plantilla de Género (Badge) -->
+          <form id="form-login" novalidate>
+            <div class="modal-body p-4">
+              <!-- Mensaje informativo cuando el login se abre tras intentar una acción protegida -->
+              <div class="alert alert-info py-2 fs-7 d-none" role="alert" data-aviso-sesion></div>
+
+              <!-- Aviso de errores generales -->
+              <div
+                class="alert alert-danger py-2 fs-7 d-none"
+                role="alert"
+                data-error-general
+              ></div>
+
+              <div class="mb-3">
+                <label for="login-identificador" class="form-label fs-7 text-secondary">
+                  Email o nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  id="login-identificador"
+                  name="identificador"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="username"
+                  maxlength="254"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="identificador"></div>
+              </div>
+
+              <div class="mb-1">
+                <label for="login-contrasena" class="form-label fs-7 text-secondary">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="login-contrasena"
+                  name="contrasena"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="current-password"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="contrasena"></div>
+              </div>
+            </div>
+
+            <div class="modal-footer border-top border-dark-subtle flex-column align-items-stretch">
+              <button type="submit" class="btn btn-success rounded-pill fw-medium">Ingresar</button>
+              <p class="text-secondary fs-7 text-center m-0 mt-2">
+                ¿No tenés cuenta?
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 align-baseline text-success text-decoration-none"
+                  data-bs-target="#modalRegistro"
+                  data-bs-toggle="modal"
+                >
+                  Registrate
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CREAR CUENTA -->
+    <div
+      class="modal fade"
+      id="modalRegistro"
+      tabindex="-1"
+      aria-labelledby="modalRegistroLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark-custom text-white border border-dark-subtle rounded-4">
+          <div class="modal-header border-bottom border-dark-subtle">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalRegistroLabel">
+              <span class="logo-icon"></span> Crear cuenta
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+
+          <form id="form-registro" novalidate>
+            <div class="modal-body p-4">
+              <div
+                class="alert alert-danger py-2 fs-7 d-none"
+                role="alert"
+                data-error-general
+              ></div>
+
+              <div class="mb-3">
+                <label for="registro-nombre" class="form-label fs-7 text-secondary">Nombre</label>
+                <input
+                  type="text"
+                  id="registro-nombre"
+                  name="nombre"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="name"
+                  maxlength="80"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="nombre"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="registro-nombre-usuario" class="form-label fs-7 text-secondary">
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  id="registro-nombre-usuario"
+                  name="nombreUsuario"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="username"
+                  minlength="3"
+                  maxlength="30"
+                  aria-describedby="ayuda-nombre-usuario"
+                  required
+                />
+                <div id="ayuda-nombre-usuario" class="form-text text-secondary fs-7">
+                  Entre 3 y 30 caracteres: letras, números, punto, guion o guion bajo.
+                </div>
+                <div class="invalid-feedback" data-error-para="nombreUsuario"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="registro-email" class="form-label fs-7 text-secondary">Email</label>
+                <input
+                  type="email"
+                  id="registro-email"
+                  name="email"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="email"
+                  maxlength="254"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="email"></div>
+              </div>
+
+              <div class="mb-1">
+                <label for="registro-contrasena" class="form-label fs-7 text-secondary">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="registro-contrasena"
+                  name="contrasena"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="new-password"
+                  minlength="8"
+                  maxlength="72"
+                  aria-describedby="ayuda-contrasena"
+                  required
+                />
+                <div id="ayuda-contrasena" class="form-text text-secondary fs-7">
+                  Mínimo 8 caracteres.
+                </div>
+                <div class="invalid-feedback" data-error-para="contrasena"></div>
+              </div>
+            </div>
+
+            <div class="modal-footer border-top border-dark-subtle flex-column align-items-stretch">
+              <button type="submit" class="btn btn-success rounded-pill fw-medium">
+                Crear cuenta
+              </button>
+              <p class="text-secondary fs-7 text-center m-0 mt-2">
+                ¿Ya tenés cuenta?
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 align-baseline text-success text-decoration-none"
+                  data-bs-target="#modalLogin"
+                  data-bs-toggle="modal"
+                >
+                  Iniciá sesión
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLANTILLAS HTML PARA INYECCIÓN DINÁMICA -->
     <template id="tpl-genre-badge">
       <span
         class="badge bg-secondary bg-opacity-25 text-white border border-secondary px-3 py-2 rounded-pill"
       ></span>
     </template>
 
-    <!-- Plantilla para Tarjeta de Actor -->
     <template id="tpl-cast-item">
       <div class="col-4 col-sm-4">
         <div class="p-2 bg-dark-custom rounded-3 border border-dark-subtle text-center">
@@ -271,7 +487,6 @@
       </div>
     </template>
 
-    <!-- Plantilla de Tarjeta de Reseña de Película -->
     <template id="tpl-movie-review-card">
       <div class="col-12">
         <div class="review-card p-3 rounded-3">
@@ -286,8 +501,8 @@
       </div>
     </template>
 
-    <!-- Scripts de Bootstrap y Cliente JS -->
+    <!-- Scripts de Bootstrap y Cliente JS (auth.js para manejar sesión pública/notificaciones) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../src/app.js" type="module"></script>
+    <script type="module" src="js/auth.js"></script>
   </body>
 </html>

@@ -1,10 +1,19 @@
 import { buscarPeliculas, obtenerTendencias } from './peliculasApi.js';
-import { leerPagina, mensajeDeError, mostrarPoster, urlImagen } from './utilidades.js';
+import { listarResenasRecientes } from './resenasApi.js';
+import {
+  formatearFecha,
+  leerPagina,
+  mensajeDeError,
+  mostrarPoster,
+  urlImagen,
+} from './utilidades.js';
 
 const TITULO_TENDENCIAS = 'Trending';
 const ICONO_TENDENCIAS = 'bi bi-fire text-warning me-2';
 const ICONO_BUSQUEDA = 'bi bi-search text-success me-2';
 const DESTACADOS_MAXIMOS = 5;
+const RESENAS_RECIENTES = 10;
+const LARGO_COMENTARIO = 220;
 
 /**
  * Grilla paginada de películas de index.html. Con una consulta muestra los
@@ -302,6 +311,101 @@ class ListadoPeliculas {
   }
 }
 
+/**
+ * Recorta un texto largo para que la tarjeta de reseña no ocupe media pantalla.
+ */
+function recortarTexto(texto, maximo) {
+  const limpio = texto.trim();
+
+  return limpio.length > maximo ? `${limpio.slice(0, maximo).trimEnd()}…` : limpio;
+}
+
+function crearMensajeResenas(texto, clases = 'text-secondary py-3 w-100') {
+  const mensaje = document.createElement('div');
+
+  mensaje.className = clases;
+  mensaje.setAttribute('role', 'status');
+  mensaje.textContent = texto;
+
+  return mensaje;
+}
+
+/**
+ * Clona la plantilla de reseña reciente y la completa con los datos públicos.
+ */
+function crearTarjetaResena(resena, plantilla) {
+  const tarjeta = plantilla.content.cloneNode(true);
+  const destino = new URL('pelicula.html', window.location.href);
+
+  destino.searchParams.set('id', resena.pelicula.id);
+
+  for (const enlace of tarjeta.querySelectorAll('a')) {
+    enlace.href = destino;
+  }
+
+  tarjeta.querySelector('.resena-reciente-titulo').textContent = resena.pelicula.titulo;
+  tarjeta.querySelector('.resena-reciente-meta').textContent =
+    `${resena.pelicula.anioEstreno} · ${formatearFecha(resena.fechaPublicacion)}`;
+  tarjeta.querySelector('.resena-reciente-comentario').textContent = recortarTexto(
+    resena.comentario,
+    LARGO_COMENTARIO,
+  );
+  tarjeta.querySelector('.resena-reciente-autor').textContent = `@${resena.autor.nombreUsuario}`;
+
+  mostrarPoster(
+    {
+      imagen: tarjeta.querySelector('.review-poster'),
+      marcador: tarjeta.querySelector('.resena-poster-marcador'),
+    },
+    resena.pelicula.rutaPoster,
+    resena.pelicula.titulo,
+  );
+
+  return tarjeta;
+}
+
+/**
+ * Carga las últimas reseñas públicas del index. No requiere sesión.
+ */
+async function cargarResenasRecientes() {
+  const contenedor = document.getElementById('reviews-container');
+  const plantilla = document.getElementById('tpl-resena-reciente');
+
+  if (!contenedor || !plantilla) {
+    return;
+  }
+
+  contenedor.replaceChildren(crearMensajeResenas('Cargando reseñas...'));
+
+  try {
+    const { data } = await listarResenasRecientes({ limit: RESENAS_RECIENTES });
+
+    if (data.length === 0) {
+      contenedor.replaceChildren(
+        crearMensajeResenas(
+          'Todavía no hay reseñas. Iniciá sesión, buscá una película y escribí la primera.',
+        ),
+      );
+      return;
+    }
+
+    contenedor.replaceChildren(...data.map((resena) => crearTarjetaResena(resena, plantilla)));
+  } catch (error) {
+    const aviso = crearMensajeResenas(
+      mensajeDeError(error),
+      'alert alert-danger py-2 fs-7 mb-2 w-100',
+    );
+    const reintentar = document.createElement('button');
+
+    reintentar.type = 'button';
+    reintentar.className = 'btn btn-sm btn-outline-light rounded-pill px-3';
+    reintentar.textContent = 'Reintentar';
+    reintentar.addEventListener('click', () => cargarResenasRecientes());
+
+    contenedor.replaceChildren(aviso, reintentar);
+  }
+}
+
 // Arranque de index.html: búsqueda por ?q= y página por ?page=.
 const parametros = new URLSearchParams(window.location.search);
 
@@ -322,4 +426,4 @@ const listado = new ListadoPeliculas({
   pagina: leerPagina(parametros.get('page')),
 });
 
-await listado.iniciar();
+await Promise.all([listado.iniciar(), cargarResenasRecientes()]);

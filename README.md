@@ -100,7 +100,7 @@ Los errores usan `application/problem+json` según RFC 9457. La respuesta incluy
 
 ## Uso de herramientas de IA
 
-| Fecha    | Herramienta | Aplicación                                                     |
-| -------- | ----------- | -------------------------------------------------------------- |
-| Semana 1 | ChatGPT     | Redacción y organización de la documentación.                  |
-| Semana 5 | OpenCode    | Implementación del catálogo con TMDB y testing. Documentacion. |
+| Fecha    | Herramienta | Aplicación                                                                              |
+| -------- | ----------- | --------------------------------------------------------------------------------------- |
+| Semana 1 | ChatGPT     | Redacción y organización de la documentación.                                           |
+| Semana 5 | OpenCode    | Implementación del catálogo con TMDB y testing. Revision de documentacion. Comentarios. |

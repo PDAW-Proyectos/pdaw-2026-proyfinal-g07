@@ -130,7 +130,9 @@ class PaginaPerfil {
 
     if (this.#watchlist.length === 0) {
       contenedorWatchlist.replaceChildren(
-        this.#crearMensaje('Tu watchlist está vacía. Buscá una película y guardala para verla más tarde.'),
+        this.#crearMensaje(
+          'Tu watchlist está vacía. Buscá una película y guardala para verla más tarde.',
+        ),
       );
       return;
     }

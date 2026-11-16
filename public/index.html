@@ -480,6 +480,32 @@
       </div>
     </template>
 
+    <!-- Plantilla de reseña reciente (paginaInicio.js) -->
+    <template id="tpl-resena-reciente">
+      <div class="col-md-6">
+        <article class="review-card resena-reciente p-3 rounded-3 h-100 d-flex gap-3">
+          <a class="resena-poster-contenedor rounded overflow-hidden flex-shrink-0" href="#">
+            <img src="" alt="" class="review-poster d-none" loading="lazy" />
+            <span
+              class="resena-poster-marcador d-flex align-items-center justify-content-center h-100 text-secondary"
+            >
+              <i class="bi bi-film"></i>
+            </span>
+          </a>
+          <div class="resena-contenido flex-grow-1">
+            <a class="text-decoration-none" href="#">
+              <h3 class="resena-reciente-titulo h6 text-white fw-bold mb-1"></h3>
+            </a>
+            <p class="resena-reciente-meta text-secondary fs-7 mb-2"></p>
+            <p
+              class="resena-reciente-comentario resena-comentario-recortado text-secondary fs-7 mb-2"
+            ></p>
+            <p class="resena-reciente-autor text-muted micro-text mb-0"></p>
+          </div>
+        </article>
+      </div>
+    </template>
+
     <!-- Scripts de Bootstrap y lógica cliente -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/auth.js"></script>

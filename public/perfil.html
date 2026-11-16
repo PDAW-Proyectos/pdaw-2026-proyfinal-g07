@@ -272,13 +272,18 @@
     <!-- PLANTILLAS HTML PARA INYECCIÓN DINÁMICA -->
     <template id="tpl-recent-movie">
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <div class="movie-card">
+        <a class="movie-card text-decoration-none d-block" href="#">
           <div class="poster-container">
-            <img src="" alt="" class="recent-poster img-fluid rounded-3" loading="lazy" />
+            <img src="" alt="" class="recent-poster poster-img d-none" loading="lazy" />
+            <div
+              class="poster-placeholder d-flex align-items-center justify-content-center h-100 text-secondary"
+            >
+              <i class="bi bi-film display-4"></i>
+            </div>
           </div>
           <h3 class="recent-title movie-title"></h3>
           <p class="recent-meta movie-meta"></p>
-        </div>
+        </a>
       </div>
     </template>
 
@@ -301,17 +306,26 @@
 
     <template id="tpl-user-review-card">
       <div class="col-md-6">
-        <div class="review-card p-3 rounded-3">
+        <article class="review-card p-3 rounded-3 h-100">
           <div class="d-flex gap-3 mb-3">
-            <img src="" alt="" class="review-poster rounded" />
-            <div>
-              <h4 class="movie-title-rev h6 text-white fw-bold mb-1"></h4>
+            <a class="resena-poster-contenedor rounded overflow-hidden flex-shrink-0" href="#">
+              <img src="" alt="" class="review-poster d-none" loading="lazy" />
+              <span
+                class="resena-poster-marcador d-flex align-items-center justify-content-center h-100 text-secondary"
+              >
+                <i class="bi bi-film"></i>
+              </span>
+            </a>
+            <div class="resena-contenido">
+              <a class="text-decoration-none" href="#">
+                <h4 class="movie-title-rev h6 text-white fw-bold mb-1"></h4>
+              </a>
               <span class="movie-year-rev text-secondary fs-7"></span>
-              <div class="stars-rating text-warning fs-7 mt-1"></div>
+              <p class="review-date text-muted micro-text mb-0"></p>
             </div>
           </div>
           <p class="review-content text-secondary mb-0"></p>
-        </div>
+        </article>
       </div>
     </template>
 
@@ -319,5 +333,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/paginaProtegida.js"></script>
     <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/paginaPerfil.js"></script>
   </body>
 </html>

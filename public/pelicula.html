@@ -462,6 +462,79 @@
       </div>
     </div>
 
+    <!-- MODAL: ESCRIBIR O EDITAR RESEÑA -->
+    <div
+      class="modal fade"
+      id="modalResena"
+      tabindex="-1"
+      aria-labelledby="modalResenaLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark-custom text-white border border-dark-subtle rounded-4">
+          <div class="modal-header border-bottom border-dark-subtle">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalResenaLabel">
+              <i class="bi bi-pencil-square text-success"></i>
+              <span id="resena-modal-titulo">Escribir reseña</span>
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+
+          <form id="formResena" novalidate>
+            <div class="modal-body p-4">
+              <!-- Aviso de errores generales -->
+              <div
+                class="alert alert-danger py-2 fs-7 d-none"
+                role="alert"
+                data-error-general
+              ></div>
+
+              <div class="mb-1">
+                <label for="resenaComentario" class="form-label fs-7 text-secondary">
+                  Tu reseña
+                </label>
+                <textarea
+                  id="resenaComentario"
+                  name="comentario"
+                  class="form-control bg-dark text-white border-secondary"
+                  rows="5"
+                  maxlength="5000"
+                  placeholder="¿Qué te pareció la película?"
+                  required
+                ></textarea>
+                <div class="invalid-feedback" data-error-para="comentario"></div>
+                <div id="contadorResena" class="form-text text-secondary fs-7 text-end">
+                  0 / 5000
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer border-top border-dark-subtle d-flex justify-content-between">
+              <button
+                type="button"
+                id="btnEliminarResena"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3 d-none"
+              >
+                <i class="bi bi-trash me-1"></i> Eliminar
+              </button>
+              <button
+                type="submit"
+                id="btnGuardarResena"
+                class="btn btn-success rounded-pill px-3 fw-medium"
+              >
+                Publicar reseña
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- PLANTILLAS HTML PARA INYECCIÓN DINÁMICA -->
     <template id="tpl-genre-badge">
       <span

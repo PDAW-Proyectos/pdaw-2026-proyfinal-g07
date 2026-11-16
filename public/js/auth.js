@@ -21,12 +21,15 @@ const elementos = {
 };
 
 let usuarioActual = null;
+let accionPendiente = null;
 
 /**
  * Muestra u oculta lo que depende de tener una sesión activa.
  * Recibe el usuario autenticado o null cuando no hay sesión.
  */
 function aplicarSesion(usuario) {
+  const idAnterior = usuarioActual?.id ?? null;
+
   usuarioActual = usuario;
   const autenticado = usuario !== null;
 
@@ -41,6 +44,18 @@ function aplicarSesion(usuario) {
       : 'Ir a mi perfil'
     : 'Iniciar sesión';
   actualizarEnlaceAdmin(usuario);
+  avisarCambioDeSesion(idAnterior);
+}
+
+/**
+ * Avisa a las páginas que escuchan cuando cambia el usuario autenticado.
+ */
+function avisarCambioDeSesion(idAnterior) {
+  if ((usuarioActual?.id ?? null) !== idAnterior) {
+    document.dispatchEvent(
+      new CustomEvent('fg:sesion-cambiada', { detail: { usuario: usuarioActual } }),
+    );
+  }
 }
 
 /**
@@ -135,14 +150,34 @@ function manejarEnvio({ modal, accion }) {
       Modal.getOrCreateInstance(modal).hide();
 
       if (usuario.rol === 'admin') {
+        accionPendiente = null;
         window.location.href = 'admin.html';
+        return;
       }
+
+      retomarAccionPendiente();
     } catch (error) {
       mostrarErrores(formulario, error);
     } finally {
       botonEnvio.disabled = false;
     }
   });
+}
+
+/**
+ * Después del login, vuelve a ejecutar la acción protegida que abrió el modal.
+ * Se espera a que termine la animación de cierre para no superponer modales.
+ */
+function retomarAccionPendiente() {
+  const accion = accionPendiente;
+
+  accionPendiente = null;
+
+  if (!accion || !document.contains(accion)) {
+    return;
+  }
+
+  window.setTimeout(() => accion.click(), 350);
 }
 
 /**
@@ -201,6 +236,7 @@ function exigirSesion(evento) {
 
   evento.preventDefault();
   evento.stopPropagation();
+  accionPendiente = accion;
   abrirLogin(accion.dataset.requiereSesion);
 }
 
@@ -239,6 +275,13 @@ async function iniciar() {
   prepararModal(elementos.modalRegistro);
   manejarEnvio({ modal: elementos.modalLogin, accion: iniciarSesion });
   manejarEnvio({ modal: elementos.modalRegistro, accion: registrarUsuario });
+
+  // Si se cierra el login sin autenticarse, no se retoma la acción pendiente.
+  elementos.modalLogin.addEventListener('hidden.bs.modal', () => {
+    if (!usuarioActual) {
+      accionPendiente = null;
+    }
+  });
 
   document.addEventListener('click', exigirSesion, true);
 

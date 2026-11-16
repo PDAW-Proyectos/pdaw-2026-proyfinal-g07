@@ -11,12 +11,12 @@ Proyecto del equipo **7** para **7513 · Proyecto de Desarrollo de Aplicaciones 
 | Problema               | Los aficionados al cine necesitan registrar las películas que ven, organizar su historial y compartir opiniones.                                                                                                                                                                                                    |
 | Usuarios               | Personas interesadas en el cine que desean registrar visualizaciones, calificar películas y consultar reseñas.                                                                                                                                                                                                      |
 | Funcionalidades núcleo | **1.** Buscar películas y consultar su información. **2.** Registrar visualizaciones con fecha y puntuación opcional y consultar el historial personal. **3.** Publicar y consultar reseñas.                                                                                                                        |
-| Reglas de negocio      | **1.** Solo usuarios autenticados pueden registrar visualizaciones y publicar reseñas. **2.** Las puntuaciones son enteras de 1 a 5. **3.** Solo el autor puede modificar o eliminar su reseña. **4.** No se permiten fechas futuras. **5.** No se admiten reseñas vacías. **6.** El historial personal es privado. |
+| Reglas de negocio      | **1.** Solo usuarios autenticados pueden registrar visualizaciones, publicar reseñas y usar la watchlist. **2.** Las puntuaciones son enteras de 1 a 5. **3.** Solo el autor puede modificar o eliminar su reseña. **4.** No se permiten fechas futuras. **5.** No se admiten reseñas vacías. **6.** El historial personal es privado. **7.** Cada usuario tiene una sola watchlist y no puede repetir una película. |
 | API externa            | **TMDB:** búsqueda y consulta de título, sinopsis, año de estreno, géneros y póster. [Documentación](https://developer.themoviedb.org/docs/getting-started).                                                                                                                                                        |
 
 ### Alcance inicial
 
-Películas, cuentas de usuario, historial personal, puntuaciones y reseñas públicas. Las estadísticas básicas son deseables. La administración de cuentas y la moderación de reseñas se incorporaron como panel administrativo. Series, perfiles públicos completos, seguimiento, me gusta y watchlist quedan fuera de esta versión. El alcance se revisa en cada planificación.
+Películas, cuentas de usuario, historial personal, puntuaciones, reseñas públicas y una watchlist privada por usuario. Las estadísticas básicas son deseables. La administración de cuentas y la moderación de reseñas se incorporaron como panel administrativo. Series, perfiles públicos completos, seguimiento y me gusta quedan fuera de esta versión. El alcance se revisa en cada planificación.
 
 ## Equipo y roles
 
@@ -49,7 +49,7 @@ Servidor: **http://localhost:3000**. Panel de administración: **http://localhos
 
 La integración continua ejecuta `npm ci`, `npm run format:check`, `npm run lint` y `npm test -- --coverage` en cada push a `main` y en cada pull request.
 
-Las sesiones y los contadores de intentos viven en memoria: se pierden al reiniciar el servidor. Los usuarios, películas, visualizaciones y reseñas se conservan en el archivo JSON configurado.
+Las sesiones y los contadores de intentos viven en memoria: se pierden al reiniciar el servidor. Los usuarios, películas, visualizaciones, reseñas y watchlist se conservan en el archivo JSON configurado.
 
 Tecnologías: JavaScript, Node.js, Express, Jest, ESLint, Prettier y GitHub Actions.
 

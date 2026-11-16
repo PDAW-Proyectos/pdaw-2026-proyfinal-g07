@@ -1,8 +1,11 @@
 import { obtenerPelicula, obtenerResenasDePelicula } from './peliculasApi.js';
 import { actualizarResena, crearResena, eliminarResena, listarMisResenas } from './resenasApi.js';
+import { agregarAWatchlist, consultarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
 import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const ESTADO_NO_ENCONTRADA = 404;
+const ESTADO_NO_AUTORIZADO = 401;
+const ESTADO_CONFLICTO = 409;
 const TEXTO_MAS_RESENAS = 'Ver más reseñas';
 const TEXTO_PUBLICAR = 'Publicar reseña';
 const TEXTO_GUARDAR = 'Guardar cambios';
@@ -17,6 +20,7 @@ class PaginaPelicula {
   #peliculaId;
   #paginaResenas = 0;
   #resenasMostradas = 0;
+  #enWatchlist = false;
   #resenaPropia = null;
   #modalResena = null;
   #guardando = false;
@@ -39,6 +43,7 @@ class PaginaPelicula {
       window.bootstrap?.Modal?.getOrCreateInstance(this.#elementos.modalResena) ?? null;
 
     this.#elementos.btnMasResenas.addEventListener('click', () => this.#cargarResenas());
+    this.#elementos.btnWatchlist.addEventListener('click', () => this.#alternarWatchlist());
     this.#elementos.btnResena.addEventListener('click', () => this.#abrirModalResena());
     this.#elementos.formResena.addEventListener('submit', (evento) => this.#guardarResena(evento));
     this.#elementos.btnEliminarResena.addEventListener('click', () => this.#eliminarResena());
@@ -64,6 +69,7 @@ class PaginaPelicula {
       this.#cargarPelicula(),
       this.#cargarResenas(),
       this.#cargarResenaPropia(),
+      this.#cargarEstadoWatchlist(),
     ]);
 
     if (!pelicula) {
@@ -128,6 +134,84 @@ class PaginaPelicula {
     ficha.classList.add('d-none');
     resenas.classList.add('d-none');
     aviso.classList.remove('d-none');
+  }
+
+  /**
+   * Consulta si la película ya está guardada. Sin sesión la API responde 401
+   * y el botón queda en su estado inicial: auth.js abre el login al hacer clic.
+   */
+  async #cargarEstadoWatchlist() {
+    try {
+      const { enWatchlist } = await consultarWatchlist(this.#peliculaId);
+
+      this.#actualizarBotonWatchlist(enWatchlist);
+    } catch (error) {
+      if (error.status !== ESTADO_NO_AUTORIZADO) {
+        this.#mostrarAvisoWatchlist(mensajeDeError(error));
+      }
+    }
+  }
+
+  /**
+   * Agrega o quita la película según el estado actual del botón.
+   */
+  async #alternarWatchlist() {
+    const { btnWatchlist } = this.#elementos;
+
+    if (btnWatchlist.disabled) {
+      return;
+    }
+
+    btnWatchlist.disabled = true;
+    this.#ocultarAvisoWatchlist();
+
+    try {
+      if (this.#enWatchlist) {
+        await quitarDeWatchlist(this.#peliculaId);
+        this.#actualizarBotonWatchlist(false);
+      } else {
+        await agregarAWatchlist(this.#peliculaId);
+        this.#actualizarBotonWatchlist(true);
+      }
+    } catch (error) {
+      // Un 409 significa que la película ya estaba guardada: el estado correcto es "activo".
+      if (error.status === ESTADO_CONFLICTO) {
+        this.#actualizarBotonWatchlist(true);
+      } else {
+        this.#mostrarAvisoWatchlist(mensajeDeError(error));
+      }
+    } finally {
+      btnWatchlist.disabled = false;
+    }
+  }
+
+  /**
+   * Refleja el estado de la watchlist en el botón y en el texto que pide sesión.
+   */
+  #actualizarBotonWatchlist(enWatchlist) {
+    const { btnWatchlist, iconoWatchlist, textoWatchlist } = this.#elementos;
+
+    this.#enWatchlist = enWatchlist;
+    btnWatchlist.setAttribute('aria-pressed', String(enWatchlist));
+    btnWatchlist.classList.toggle('btn-success', enWatchlist);
+    btnWatchlist.classList.toggle('btn-outline-light', !enWatchlist);
+    btnWatchlist.dataset.requiereSesion = enWatchlist
+      ? 'quitar la película de tu watchlist'
+      : 'guardar la película en tu watchlist';
+    btnWatchlist.title = enWatchlist ? 'Quitar de tu watchlist' : 'Guardar en tu watchlist';
+    iconoWatchlist.className = enWatchlist
+      ? 'bi bi-bookmark-check-fill me-1'
+      : 'bi bi-bookmark-plus me-1';
+    textoWatchlist.textContent = enWatchlist ? 'En watchlist' : 'Watchlist';
+  }
+
+  #mostrarAvisoWatchlist(texto) {
+    this.#elementos.avisoWatchlist.textContent = texto;
+    this.#elementos.avisoWatchlist.classList.remove('d-none');
+  }
+
+  #ocultarAvisoWatchlist() {
+    this.#elementos.avisoWatchlist.classList.add('d-none');
   }
 
   /**
@@ -390,6 +474,10 @@ const pagina = new PaginaPelicula({
     contenedorResenas: document.getElementById('movie-reviews-container'),
     plantillaResena: document.getElementById('tpl-movie-review-card'),
     btnMasResenas: document.getElementById('btn-mas-resenas'),
+    btnWatchlist: document.getElementById('btn-add-watchlist'),
+    iconoWatchlist: document.getElementById('watchlist-btn-icon'),
+    textoWatchlist: document.getElementById('watchlist-btn-text'),
+    avisoWatchlist: document.getElementById('watchlist-aviso'),
     btnResena: document.getElementById('btn-add-review'),
     modalResena: document.getElementById('modalResena'),
     formResena: document.getElementById('formResena'),

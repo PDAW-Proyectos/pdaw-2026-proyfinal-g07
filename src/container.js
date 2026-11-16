@@ -5,10 +5,12 @@ import { UsuarioRepository } from './repositories/UsuarioRepository.js';
 import { PeliculaRepository } from './repositories/PeliculaRepository.js';
 import { VisualizacionRepository } from './repositories/VisualizacionRepository.js';
 import { ResenaRepository } from './repositories/ResenaRepository.js';
+import { WatchlistRepository } from './repositories/WatchlistRepository.js';
 import { PeliculaService } from './services/PeliculaService.js';
 import { ResenaService } from './services/ResenaService.js';
 import { UsuarioService } from './services/UsuarioService.js';
 import { VisualizacionService } from './services/VisualizacionService.js';
+import { WatchlistService } from './services/WatchlistService.js';
 import { AdminService } from './services/AdminService.js';
 
 /**
@@ -30,6 +32,7 @@ export async function createContainer({
   const peliculaRepository = new PeliculaRepository({ store: almacen });
   const visualizacionRepository = new VisualizacionRepository({ store: almacen });
   const resenaRepository = new ResenaRepository({ store: almacen });
+  const watchlistRepository = new WatchlistRepository({ store: almacen });
 
   const adaptadorTmdb =
     tmdbAdapter ?? new TMDBAdapter({ apiKey: config.tmdbApiKey, baseUrl: config.tmdbBaseUrl });
@@ -46,6 +49,11 @@ export async function createContainer({
     usuarioRepository,
     ahora,
   });
+  const watchlistService = new WatchlistService({
+    watchlistRepository,
+    peliculaRepository,
+    ahora,
+  });
   const peliculaService = new PeliculaService({
     peliculaRepository,
     tmdbAdapter: adaptadorTmdb,
@@ -56,6 +64,7 @@ export async function createContainer({
     usuarioRepository,
     resenaRepository,
     visualizacionRepository,
+    watchlistRepository,
     rondasHash,
   });
 
@@ -70,8 +79,10 @@ export async function createContainer({
     tmdbAdapter: adaptadorTmdb,
     visualizacionRepository,
     resenaRepository,
+    watchlistRepository,
     visualizacionService,
     resenaService,
+    watchlistService,
     adminService,
   };
 }

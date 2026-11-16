@@ -122,6 +122,10 @@ function crearVisualizacion(baseUrl, cookie, cuerpo) {
   return pedir(baseUrl, '/api/visualizaciones', { cookie, metodo: 'POST', cuerpo });
 }
 
+function agregarAWatchlist(baseUrl, cookie, cuerpo) {
+  return pedir(baseUrl, '/api/watchlist', { cookie, metodo: 'POST', cuerpo });
+}
+
 describe('administración', () => {
   test('crea el administrador desde el entorno sin duplicarlo', async () => {
     const { container, server } = await iniciarEntorno();
@@ -283,6 +287,8 @@ describe('administración', () => {
         fecha: '2020-01-01',
       });
 
+      await agregarAWatchlist(baseUrl, lucia.cookie, { peliculaId: pelicula.id });
+
       await crearAdmin(container);
       const sesionAdmin = await iniciarSesion(baseUrl, {
         identificador: ADMIN.email,
@@ -298,6 +304,7 @@ describe('administración', () => {
       expect(container.store.leer('usuarios').some((u) => u.id === lucia.usuario.id)).toBe(false);
       expect(container.store.leer('resenas')).toHaveLength(0);
       expect(container.store.leer('visualizaciones')).toHaveLength(0);
+      expect(container.store.leer('watchlist')).toHaveLength(0);
 
       // La cookie vieja ya no sirve para las rutas protegidas.
       expect((await pedir(baseUrl, '/api/resenas/mias', { cookie: lucia.cookie })).status).toBe(

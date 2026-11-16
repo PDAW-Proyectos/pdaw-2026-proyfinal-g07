@@ -18,6 +18,7 @@ const ERRORES_HTTP = new Map([
   ['EMAIL_DUPLICADO', { status: 409, title: 'Conflicto con el estado actual' }],
   ['NOMBRE_USUARIO_DUPLICADO', { status: 409, title: 'Conflicto con el estado actual' }],
   ['RESENA_DUPLICADA', { status: 409, title: 'Conflicto con el estado actual' }],
+  ['PELICULA_YA_EN_WATCHLIST', { status: 409, title: 'Conflicto con el estado actual' }],
   ['ID_DUPLICADO', { status: 409, title: 'Conflicto con el estado actual' }],
   ['ULTIMO_ADMIN', { status: 409, title: 'Conflicto con el estado actual' }],
   ['CONTENIDO_NO_SOPORTADO', { status: 415, title: 'Tipo de contenido no soportado' }],

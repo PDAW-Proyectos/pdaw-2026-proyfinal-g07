@@ -194,10 +194,13 @@
                 <div class="d-flex flex-wrap gap-2">
                   <button
                     id="btn-add-watchlist"
+                    type="button"
                     class="btn btn-sm btn-outline-light rounded-pill px-3"
                     data-requiere-sesion="guardar la película en tu watchlist"
+                    aria-pressed="false"
                   >
-                    <i class="bi bi-bookmark-plus me-1"></i> Watchlist
+                    <i id="watchlist-btn-icon" class="bi bi-bookmark-plus me-1"></i>
+                    <span id="watchlist-btn-text">Watchlist</span>
                   </button>
                   <button
                     id="btn-add-review"
@@ -207,6 +210,7 @@
                     <i class="bi bi-pencil-square me-1"></i> Agregar Reseña
                   </button>
                 </div>
+                <p id="watchlist-aviso" class="text-danger fs-7 mb-0 d-none" role="alert"></p>
               </div>
             </div>
 

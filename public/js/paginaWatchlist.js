@@ -1,0 +1,158 @@
+import { listarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
+import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
+
+const MENSAJE_VACIO =
+  'Tu watchlist está vacía. Buscá una película y guardala para verla más tarde.';
+
+/**
+ * Página watchlist.html: lista las películas pendientes del usuario y permite quitarlas.
+ */
+class PaginaWatchlist {
+  #elementos;
+  #pagina = 0;
+  #mostradas = 0;
+
+  /**
+   * `elementos` reúne el contenedor, la plantilla, el botón de paginación y el aviso.
+   */
+  constructor({ elementos }) {
+    this.#elementos = elementos;
+  }
+
+  /**
+   * Conecta la paginación y carga la primera página.
+   */
+  async iniciar() {
+    this.#elementos.btnMas.addEventListener('click', () => this.#cargarSiguiente());
+
+    await this.#cargarSiguiente();
+  }
+
+  /**
+   * Pide la siguiente página y la agrega al final de la lista.
+   */
+  async #cargarSiguiente() {
+    const { contenedor, btnMas } = this.#elementos;
+    const pagina = this.#pagina + 1;
+
+    btnMas.disabled = true;
+    this.#ocultarAviso();
+
+    try {
+      const { data, total } = await listarWatchlist({ page: pagina });
+
+      this.#pagina = pagina;
+      this.#mostradas += data.length;
+
+      if (pagina === 1) {
+        contenedor.replaceChildren(
+          ...(total === 0
+            ? [this.#crearMensaje(MENSAJE_VACIO)]
+            : data.map((entrada) => this.#crearTarjeta(entrada))),
+        );
+      } else {
+        contenedor.append(...data.map((entrada) => this.#crearTarjeta(entrada)));
+      }
+
+      btnMas.classList.toggle('d-none', data.length === 0 || this.#mostradas >= total);
+    } catch (error) {
+      // Si falla la primera página se muestra el aviso en el contenedor; si falla una
+      // página siguiente, se conserva lo ya mostrado y se permite reintentar.
+      if (pagina === 1) {
+        contenedor.replaceChildren(this.#crearMensaje(mensajeDeError(error)));
+      } else {
+        this.#mostrarAviso(mensajeDeError(error));
+      }
+    } finally {
+      btnMas.disabled = false;
+    }
+  }
+
+  /**
+   * Clona la plantilla y completa la tarjeta con la película y su fecha de agregado.
+   */
+  #crearTarjeta({ pelicula, fechaAgregado }) {
+    const tarjeta = this.#elementos.plantilla.content.cloneNode(true);
+    const enlace = tarjeta.querySelector('.watchlist-link');
+    const destino = new URL('pelicula.html', window.location.href);
+
+    destino.searchParams.set('id', pelicula.id);
+    enlace.href = destino;
+    enlace.title = pelicula.titulo;
+
+    tarjeta.querySelector('.watchlist-movie-title').textContent = pelicula.titulo;
+    tarjeta.querySelector('.watchlist-movie-meta').textContent =
+      `${pelicula.anioEstreno} · Agregada el ${formatearFecha(fechaAgregado)}`;
+
+    mostrarPoster(
+      {
+        imagen: tarjeta.querySelector('.watchlist-poster'),
+        marcador: tarjeta.querySelector('.poster-placeholder'),
+      },
+      pelicula.rutaPoster,
+      pelicula.titulo,
+    );
+
+    const btnQuitar = tarjeta.querySelector('.btn-remove-watchlist');
+
+    btnQuitar.addEventListener('click', () => this.#quitar(pelicula, btnQuitar));
+
+    return tarjeta;
+  }
+
+  /**
+   * Quita la película de la watchlist y retira la tarjeta de la pantalla.
+   */
+  async #quitar(pelicula, boton) {
+    boton.disabled = true;
+    this.#ocultarAviso();
+
+    try {
+      await quitarDeWatchlist(pelicula.id);
+      boton.closest('.watchlist-card-item')?.remove();
+      this.#mostradas -= 1;
+
+      // Si se vació la página visible puede haber más entradas: se recarga la primera
+      // página para traer las que quedaron. Si la watchlist está vacía, muestra el aviso.
+      if (this.#elementos.contenedor.children.length === 0) {
+        this.#pagina = 0;
+        this.#mostradas = 0;
+        await this.#cargarSiguiente();
+      }
+    } catch (error) {
+      boton.disabled = false;
+      this.#mostrarAviso(mensajeDeError(error));
+    }
+  }
+
+  #crearMensaje(texto) {
+    const mensaje = document.createElement('div');
+
+    mensaje.className = 'col-12 text-secondary py-4 text-center';
+    mensaje.setAttribute('role', 'status');
+    mensaje.textContent = texto;
+
+    return mensaje;
+  }
+
+  #mostrarAviso(texto) {
+    this.#elementos.aviso.textContent = texto;
+    this.#elementos.aviso.classList.remove('d-none');
+  }
+
+  #ocultarAviso() {
+    this.#elementos.aviso.classList.add('d-none');
+  }
+}
+
+// Arranque de watchlist.html.
+const pagina = new PaginaWatchlist({
+  elementos: {
+    contenedor: document.getElementById('watchlist-movies-container'),
+    plantilla: document.getElementById('tpl-watchlist-movie-card'),
+    btnMas: document.getElementById('btn-mas-watchlist'),
+    aviso: document.getElementById('watchlist-aviso'),
+  },
+});
+
+await pagina.iniciar();

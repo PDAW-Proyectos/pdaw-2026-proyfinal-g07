@@ -91,6 +91,7 @@ Las listas `Errores:` de cada endpoint mencionan los casos más frecuentes; seg�
 | `EMAIL_DUPLICADO` | 409 | Ya hay una cuenta con ese email. |
 | `NOMBRE_USUARIO_DUPLICADO` | 409 | Ya hay una cuenta con ese nombre de usuario. |
 | `RESENA_DUPLICADA` | 409 | El usuario ya escribió una reseña para esa película. |
+| `PELICULA_YA_EN_WATCHLIST` | 409 | La película ya está en la watchlist del usuario. |
 | `ID_DUPLICADO` | 409 | Colisión interna de identificadores al guardar una película. |
 | `ULTIMO_ADMIN` | 409 | La operación dejaría al sistema sin administradores. |
 | `CONTENIDO_NO_SOPORTADO` | 415 | El cuerpo no usa `application/json` cuando el endpoint espera JSON. |
@@ -199,6 +200,25 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
 }
 ```
 
+### Entrada de watchlist
+
+```json
+{
+  "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+  "fechaAgregado": "2026-10-30T12:00:00.000Z",
+  "pelicula": {
+    "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+    "tmdbId": 603,
+    "titulo": "Matrix",
+    "anioEstreno": 1999,
+    "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+  }
+}
+```
+
+No incluye `usuarioId`: la watchlist siempre pertenece al usuario de la sesión.
+
 ## Autenticación y sesión
 
 La sesión se guarda en memoria del servidor y se identifica con una cookie:
@@ -210,7 +230,7 @@ HttpOnly; SameSite=Lax; Path=/; Expires=<7 días>
 
 En producción se agrega `Secure`; el servidor configura `trust proxy` para detectar HTTPS detrás del proxy del hosting. La sesión dura 7 días.
 
-Las sesiones y los contadores de intentos se guardan en memoria del servidor. Al reiniciar se pierden, pero los usuarios, películas, visualizaciones y reseñas persistidos en el archivo JSON se conservan.
+Las sesiones y los contadores de intentos se guardan en memoria del servidor. Al reiniciar se pierden, pero los usuarios, películas, visualizaciones, reseñas y watchlist persistidos en el archivo JSON se conservan.
 
 ### `POST /api/auth/registro`
 
@@ -383,7 +403,7 @@ Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `VALIDACION_FALLIDA`.
 
 ### `DELETE /api/admin/usuarios/:id`
 
-Elimina la cuenta indicada y, en cascada, sus visualizaciones y reseñas. Las sesiones abiertas de esa cuenta dejan de ser válidas.
+Elimina la cuenta indicada y, en cascada, sus visualizaciones, reseñas y watchlist. Las sesiones abiertas de esa cuenta dejan de ser válidas.
 
 Response `204`.
 
@@ -493,6 +513,82 @@ Response `200`: `Visualización` actualizada.
 Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`, `FECHA_FUTURA`, `PUNTUACION_INVALIDA`, `SOLICITUD_INVALIDA`.
 
 ### `DELETE /api/visualizaciones/:id`
+
+Response `204`.
+
+Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`.
+
+## Watchlist
+
+Todas las rutas requieren sesión. Cada usuario tiene una única watchlist implícita y como máximo una entrada por película. La watchlist es privada: un usuario nunca puede ver ni modificar la de otro. “Pendiente de ver” es un estado distinto de una visualización, por eso se guarda en su propia colección.
+
+### `GET /api/watchlist`
+
+Devuelve la watchlist del usuario autenticado, de la entrada más reciente a la más antigua.
+
+Parámetros: `page`, `limit`.
+
+Response `200`: colección de entradas de watchlist.
+
+Errores: `SESION_REQUERIDA`, `SESION_EXPIRADA`, `VALIDACION_FALLIDA`.
+
+### `GET /api/watchlist/:peliculaId`
+
+Indica si una película está en la watchlist del usuario autenticado.
+
+Response `200` cuando está guardada:
+
+```json
+{
+  "enWatchlist": true,
+  "entrada": {
+    "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+    "fechaAgregado": "2026-10-30T12:00:00.000Z",
+    "pelicula": {
+      "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+      "tmdbId": 603,
+      "titulo": "Matrix",
+      "anioEstreno": 1999,
+      "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+      "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+    }
+  }
+}
+```
+
+Response `200` cuando no está guardada:
+
+```json
+{
+  "enWatchlist": false
+}
+```
+
+No falla si la película no existe en el catálogo local: en ese caso también devuelve `enWatchlist: false`.
+
+Errores: `SESION_REQUERIDA`, `SESION_EXPIRADA`, `VALIDACION_FALLIDA`.
+
+### `POST /api/watchlist`
+
+Agrega una película a la watchlist del usuario autenticado.
+
+Request:
+
+```json
+{
+  "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f"
+}
+```
+
+Response `201` con `Location: /api/watchlist/:peliculaId`: entrada de watchlist.
+
+Errores: `SESION_REQUERIDA`, `PELICULA_NO_ENCONTRADA`, `PELICULA_YA_EN_WATCHLIST`, `SOLICITUD_INVALIDA`, `CONTENIDO_NO_SOPORTADO`.
+
+La unicidad por usuario y película se verifica al persistir, no solo en el servicio, para que dos solicitudes simultáneas no creen duplicados.
+
+### `DELETE /api/watchlist/:peliculaId`
+
+Quita una película de la watchlist del usuario autenticado.
 
 Response `204`.
 
@@ -624,6 +720,7 @@ Response `200`:
 | Ver sesión actual | Sí | Sí | — | Sí |
 | Crear visualización | No | Sí | — | Sí |
 | Ver, editar o borrar historial | No | No | Sí | No |
+| Ver, agregar o quitar watchlist | No | No | Sí | Sí |
 | Crear reseña | No | Sí | — | Sí |
 | Editar o borrar reseña | No | No | Sí | Borrar |
 | Ver estadísticas propias | No | No | Sí | No |
@@ -637,13 +734,14 @@ Response `200`:
 3. Si una acción protegida devuelve `401`, pedir login y retomar la acción después de autenticarse.
 4. No enviar `usuarioId`; el servidor lo obtiene de la sesión.
 5. Para reseñar o registrar una visualización, primero buscar la película y usar el `id` interno devuelto.
+6. Para la watchlist, consultar `GET /api/watchlist/:peliculaId` antes de mostrar el botón y reflejar el estado en `aria-pressed`.
 
 ## Fuera de esta versión
 
 No forman parte del contrato inicial:
 
 - Recomendadas personalizadas.
-- Watchlist, seguimiento entre usuarios, me gusta y comentarios sobre reseñas.
+- Seguimiento entre usuarios, me gusta y comentarios sobre reseñas.
 - Perfiles públicos completos.
 - Series, temporadas y episodios.
 - Reportes de contenido.

@@ -1,20 +1,23 @@
 import { obtenerSesion } from './authApi.js';
 import { listarMisResenas } from './resenasApi.js';
 import { listarVisualizaciones } from './visualizacionesApi.js';
+import { listarWatchlist } from './watchlistApi.js';
 import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const CANTIDAD_RECIENTES = 6;
 const CANTIDAD_RESENAS = 6;
 const LIMITE_RESENAS = 50;
+const LIMITE_WATCHLIST = 6;
 
 /**
- * Perfil del usuario: métricas, últimas películas reseñadas y últimas reseñas.
- * La watchlist queda pendiente de implementación y solo se informa en su sección.
+ * Perfil del usuario: métricas, últimas películas reseñadas, watchlist y reseñas.
  */
 class PaginaPerfil {
   #elementos;
   #resenas = [];
+  #watchlist = [];
   #totalResenas = 0;
+  #totalWatchlist = 0;
   #totalVisualizaciones = 0;
 
   /**
@@ -25,10 +28,11 @@ class PaginaPerfil {
   }
 
   async iniciar() {
-    const [sesion, resenas, visualizaciones] = await Promise.allSettled([
+    const [sesion, resenas, visualizaciones, watchlist] = await Promise.allSettled([
       obtenerSesion(),
       listarMisResenas({ page: 1, limit: LIMITE_RESENAS }),
       listarVisualizaciones({ page: 1, limit: 1 }),
+      listarWatchlist({ page: 1, limit: LIMITE_WATCHLIST }),
     ]);
 
     if (sesion.status === 'fulfilled' && sesion.value.autenticado) {
@@ -48,8 +52,17 @@ class PaginaPerfil {
       this.#totalVisualizaciones = visualizaciones.value.total;
     }
 
+    if (watchlist.status === 'fulfilled') {
+      this.#watchlist = watchlist.value.data;
+      this.#totalWatchlist = watchlist.value.total;
+      this.#mostrarWatchlist();
+    } else {
+      this.#elementos.contenedorWatchlist.replaceChildren(
+        this.#crearMensaje(mensajeDeError(watchlist.reason)),
+      );
+    }
+
     this.#mostrarMetricas();
-    this.#mostrarWatchlistPendiente();
   }
 
   #mostrarUsuario(usuario) {
@@ -59,7 +72,7 @@ class PaginaPerfil {
 
   #mostrarMetricas() {
     this.#elementos.statPeliculas.textContent = String(this.#totalVisualizaciones);
-    this.#elementos.statListas.textContent = '0';
+    this.#elementos.statWatchlist.textContent = String(this.#totalWatchlist);
     this.#elementos.statResenas.textContent = String(this.#totalResenas);
   }
 
@@ -78,7 +91,16 @@ class PaginaPerfil {
     }
 
     contenedorRecientes.replaceChildren(
-      ...peliculas.map((pelicula) => this.#crearTarjetaPelicula(pelicula, plantillaPelicula)),
+      ...peliculas.map((pelicula) =>
+        this.#crearTarjetaPelicula(pelicula, {
+          plantilla: plantillaPelicula,
+          imagen: '.recent-poster',
+          marcador: '.poster-placeholder',
+          titulo: '.recent-title',
+          meta: '.recent-meta',
+          textoMeta: String(pelicula.anioEstreno),
+        }),
+      ),
     );
   }
 
@@ -101,11 +123,29 @@ class PaginaPerfil {
   }
 
   /**
-   * La watchlist todavía no tiene API: se deja su sección con un aviso claro.
+   * Muestra hasta seis películas de la watchlist con su fecha de agregado.
    */
-  #mostrarWatchlistPendiente() {
-    this.#elementos.contenedorWatchlist.replaceChildren(
-      this.#crearMensaje('La watchlist va a estar disponible próximamente.'),
+  #mostrarWatchlist() {
+    const { contenedorWatchlist, plantillaWatchlist } = this.#elementos;
+
+    if (this.#watchlist.length === 0) {
+      contenedorWatchlist.replaceChildren(
+        this.#crearMensaje('Tu watchlist está vacía. Buscá una película y guardala para verla más tarde.'),
+      );
+      return;
+    }
+
+    contenedorWatchlist.replaceChildren(
+      ...this.#watchlist.map(({ pelicula, fechaAgregado }) =>
+        this.#crearTarjetaPelicula(pelicula, {
+          plantilla: plantillaWatchlist,
+          imagen: '.watchlist-poster',
+          marcador: '.poster-placeholder',
+          titulo: '.watchlist-title',
+          meta: '.watchlist-meta',
+          textoMeta: `${pelicula.anioEstreno} · ${formatearFecha(fechaAgregado)}`,
+        }),
+      ),
     );
   }
 
@@ -142,19 +182,23 @@ class PaginaPerfil {
     return mensaje;
   }
 
-  #crearTarjetaPelicula(pelicula, plantilla) {
+  /**
+   * Clona una plantilla de tarjeta de película y la completa.
+   * `selectores` indica qué nodo recibe cada dato dentro de la plantilla.
+   */
+  #crearTarjetaPelicula(pelicula, { plantilla, imagen, marcador, titulo, meta, textoMeta }) {
     const tarjeta = plantilla.content.cloneNode(true);
     const destino = new URL('pelicula.html', window.location.href);
 
     destino.searchParams.set('id', pelicula.id);
     tarjeta.querySelector('a').href = destino;
-    tarjeta.querySelector('.recent-title').textContent = pelicula.titulo;
-    tarjeta.querySelector('.recent-meta').textContent = pelicula.anioEstreno;
+    tarjeta.querySelector(titulo).textContent = pelicula.titulo;
+    tarjeta.querySelector(meta).textContent = textoMeta;
 
     mostrarPoster(
       {
-        imagen: tarjeta.querySelector('.recent-poster'),
-        marcador: tarjeta.querySelector('.poster-placeholder'),
+        imagen: tarjeta.querySelector(imagen),
+        marcador: tarjeta.querySelector(marcador),
       },
       pelicula.rutaPoster,
       pelicula.titulo,
@@ -196,12 +240,13 @@ const perfil = new PaginaPerfil({
     nombre: document.getElementById('user-display-name'),
     desde: document.getElementById('user-member-since'),
     statPeliculas: document.getElementById('stat-movies-count'),
-    statListas: document.getElementById('stat-lists-count'),
+    statWatchlist: document.getElementById('stat-watchlist-count'),
     statResenas: document.getElementById('stat-reviews-count'),
     contenedorRecientes: document.getElementById('recent-movies-container'),
     contenedorWatchlist: document.getElementById('watchlists-container'),
     contenedorResenas: document.getElementById('user-reviews-container'),
     plantillaPelicula: document.getElementById('tpl-recent-movie'),
+    plantillaWatchlist: document.getElementById('tpl-watchlist-card'),
     plantillaResena: document.getElementById('tpl-user-review-card'),
   },
 });

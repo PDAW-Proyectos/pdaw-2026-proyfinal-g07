@@ -15,6 +15,7 @@ Visitantes y usuarios autenticados pueden consultar películas y opiniones. La s
 ![Diagrama de clases](diagrama_clase.png)
 
 - Cada visualización y reseña se asocia a un usuario y una película.
+- La watchlist guarda películas pendientes de ver en una entrada por usuario y película; es privada y distinta de una visualización.
 - La puntuación pertenece a la visualización: es opcional y entera de 1 a 5.
 - La reseña es independiente de la visualización. El historial es privado; las reseñas son públicas.
 - `Pelicula` separa su `id` interno del `tmdbId` externo. Los registros usan `peliculaId`.

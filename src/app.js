@@ -12,6 +12,7 @@ import { crearAdminRouter } from './routes/adminRoutes.js';
 import { crearPeliculaRouter } from './routes/peliculaRoutes.js';
 import { crearResenaRouter } from './routes/resenaRoutes.js';
 import { crearVisualizacionRouter } from './routes/visualizacionRoutes.js';
+import { crearWatchlistRouter } from './routes/watchlistRoutes.js';
 import { logger as loggerPredeterminado } from './utils/logger.js';
 
 const publicPath = fileURLToPath(new URL('../public/', import.meta.url));
@@ -54,6 +55,16 @@ function montarRutas(app, container = {}) {
       '/api/visualizaciones',
       crearVisualizacionRouter({
         visualizacionService: container.visualizacionService,
+        usuarioService: container.usuarioService,
+      }),
+    );
+  }
+
+  if (container.watchlistService && container.usuarioService) {
+    app.use(
+      '/api/watchlist',
+      crearWatchlistRouter({
+        watchlistService: container.watchlistService,
         usuarioService: container.usuarioService,
       }),
     );

@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { ErrorDominio } from '../utils/ErrorDominio.js';
 
-const COLECCIONES = ['usuarios', 'peliculas', 'visualizaciones', 'resenas'];
+const COLECCIONES = ['usuarios', 'peliculas', 'visualizaciones', 'resenas', 'watchlist'];
 
 /**
  * Crea un snapshot válido con todas las colecciones.

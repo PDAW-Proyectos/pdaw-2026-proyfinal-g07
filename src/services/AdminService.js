@@ -20,17 +20,20 @@ export class AdminService {
   #usuarioRepository;
   #resenaRepository;
   #visualizacionRepository;
+  #watchlistRepository;
   #rondasHash;
 
   constructor({
     usuarioRepository,
     resenaRepository,
     visualizacionRepository,
+    watchlistRepository,
     rondasHash = RONDAS_HASH_PREDETERMINADAS,
   }) {
     this.#usuarioRepository = usuarioRepository;
     this.#resenaRepository = resenaRepository;
     this.#visualizacionRepository = visualizacionRepository;
+    this.#watchlistRepository = watchlistRepository;
     this.#rondasHash = rondasHash;
   }
 
@@ -49,7 +52,7 @@ export class AdminService {
   }
 
   /**
-   * Elimina una cuenta y, en cascada, sus visualizaciones y reseñas.
+   * Elimina una cuenta y, en cascada, sus visualizaciones, reseñas y watchlist.
    */
   async eliminarUsuario(adminId, id) {
     const usuario = await this.#usuarioRepository.buscarPorId(id);
@@ -74,10 +77,11 @@ export class AdminService {
 
     const visualizacionesEliminadas = await this.#visualizacionRepository.eliminarPorUsuario(id);
     const resenasEliminadas = await this.#resenaRepository.eliminarPorUsuario(id);
+    const watchlistEliminadas = await this.#watchlistRepository.eliminarPorUsuario(id);
 
     await this.#usuarioRepository.eliminar(id);
 
-    return { visualizacionesEliminadas, resenasEliminadas };
+    return { visualizacionesEliminadas, resenasEliminadas, watchlistEliminadas };
   }
 
   /**

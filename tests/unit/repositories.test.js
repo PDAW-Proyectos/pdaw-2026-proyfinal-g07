@@ -7,6 +7,7 @@ import { Usuario } from '../../src/models/Usuario.js';
 import { Pelicula } from '../../src/models/Pelicula.js';
 import { Visualizacion } from '../../src/models/Visualizacion.js';
 import { Resena } from '../../src/models/Resena.js';
+import { EntradaWatchlist } from '../../src/models/EntradaWatchlist.js';
 import { JsonStore, MemoryStore } from '../../src/repositories/JsonStore.js';
 
 function crearUsuario(overrides = {}) {
@@ -58,6 +59,16 @@ function crearResena(overrides = {}) {
   });
 }
 
+function crearEntradaWatchlist(overrides = {}) {
+  return new EntradaWatchlist({
+    id: 'w1',
+    usuarioId: 'u1',
+    peliculaId: 'p1',
+    fechaAgregado: new Date('2020-01-01T12:00:00.000Z'),
+    ...overrides,
+  });
+}
+
 /**
  * Ejecuta la misma suite de contrato contra distintos stores.
  */
@@ -67,6 +78,7 @@ function suiteRepositorios(nombre, crearRecurso) {
     let peliculaRepository;
     let visualizacionRepository;
     let resenaRepository;
+    let watchlistRepository;
     let limpiar;
 
     beforeEach(async () => {
@@ -78,6 +90,7 @@ function suiteRepositorios(nombre, crearRecurso) {
       peliculaRepository = contenedor.peliculaRepository;
       visualizacionRepository = contenedor.visualizacionRepository;
       resenaRepository = contenedor.resenaRepository;
+      watchlistRepository = contenedor.watchlistRepository;
     });
 
     afterEach(async () => {
@@ -214,6 +227,27 @@ function suiteRepositorios(nombre, crearRecurso) {
       expect(await resenaRepository.listarPorUsuario('u1')).toHaveLength(1);
       expect(await resenaRepository.eliminar('r1')).toBe(true);
       expect(await resenaRepository.buscarPorId('r1')).toBeNull();
+    });
+
+    test('WatchlistRepository rechaza duplicados por usuario y película', async () => {
+      await watchlistRepository.crear(crearEntradaWatchlist());
+
+      expect((await watchlistRepository.buscarPorUsuarioYPelicula('u1', 'p1')).id).toBe('w1');
+
+      await expect(
+        watchlistRepository.crear(crearEntradaWatchlist({ id: 'w2' })),
+      ).rejects.toMatchObject({ codigo: 'PELICULA_YA_EN_WATCHLIST' });
+    });
+
+    test('WatchlistRepository lista y elimina entradas por usuario y película', async () => {
+      await watchlistRepository.crear(crearEntradaWatchlist());
+      await watchlistRepository.crear(crearEntradaWatchlist({ id: 'w2', usuarioId: 'u2' }));
+
+      expect(await watchlistRepository.listarPorUsuario('u1')).toHaveLength(1);
+      expect(await watchlistRepository.eliminarPorUsuarioYPelicula('u2', 'p1')).toBe(true);
+      expect(await watchlistRepository.eliminarPorUsuarioYPelicula('u2', 'p1')).toBe(false);
+      expect(await watchlistRepository.eliminarPorUsuario('u1')).toBe(1);
+      expect(await watchlistRepository.listarPorUsuario('u1')).toHaveLength(0);
     });
   });
 }

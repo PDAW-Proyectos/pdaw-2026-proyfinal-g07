@@ -55,6 +55,17 @@ export function formatearFecha(iso) {
 }
 
 /**
+ * Devuelve la fecha local de hoy en formato `YYYY-MM-DD`, que es el que espera la API.
+ */
+export function fechaDeHoy() {
+  const ahora = new Date();
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const dia = String(ahora.getDate()).padStart(2, '0');
+
+  return `${ahora.getFullYear()}-${mes}-${dia}`;
+}
+
+/**
  * Lee un entero positivo de un parámetro de la URL; si no es válido devuelve 1.
  */
 export function leerPagina(valor) {

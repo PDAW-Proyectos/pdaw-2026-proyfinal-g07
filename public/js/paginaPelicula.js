@@ -1,7 +1,8 @@
 import { obtenerPelicula, obtenerResenasDePelicula } from './peliculasApi.js';
 import { actualizarResena, crearResena, eliminarResena, listarMisResenas } from './resenasApi.js';
+import { fechaDeHoy, formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
+import { crearVisualizacion } from './visualizacionesApi.js';
 import { agregarAWatchlist, consultarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
-import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const ESTADO_NO_ENCONTRADA = 404;
 const ESTADO_NO_AUTORIZADO = 401;
@@ -36,6 +37,7 @@ class PaginaPelicula {
   #modalResena = null;
   #guardando = false;
   #estadoResenaListo = false;
+  #registrandoVista = false;
 
   /**
    * `elementos` reúne los nodos del DOM que usa la página; `peliculaId` es el id interno
@@ -55,6 +57,7 @@ class PaginaPelicula {
 
     this.#elementos.btnMasResenas.addEventListener('click', () => this.#cargarResenas());
     this.#elementos.btnWatchlist.addEventListener('click', () => this.#alternarWatchlist());
+    this.#elementos.btnVisualizacion.addEventListener('click', () => this.#marcarComoVista());
     this.#elementos.btnResena.addEventListener('click', () => this.#abrirModalResena());
     this.#elementos.formResena.addEventListener('submit', (evento) => this.#guardarResena(evento));
     this.#elementos.btnEliminarResena.addEventListener('click', () => this.#eliminarResena());
@@ -69,7 +72,10 @@ class PaginaPelicula {
     this.#elementos.modalResena.addEventListener('hidden.bs.modal', () => this.#limpiarErrores());
 
     // Si la sesión cambia (login o logout), se vuelve a consultar la reseña propia.
-    document.addEventListener('fg:sesion-cambiada', () => this.#cargarResenaPropia());
+    document.addEventListener('fg:sesion-cambiada', () => {
+      this.#cargarResenaPropia();
+      this.#reiniciarBotonVisualizacion();
+    });
 
     if (!this.#peliculaId) {
       this.#mostrarFichaNoDisponible('No indicaste qué película querés ver.');
@@ -251,6 +257,89 @@ class PaginaPelicula {
 
   #ocultarAvisoWatchlist() {
     this.#elementos.avisoWatchlist.classList.add('d-none');
+  }
+
+  /**
+   * Registra que el usuario vio la película con la fecha de hoy.
+   * Sin sesión, auth.js intercepta el clic y abre el login.
+   */
+  async #marcarComoVista() {
+    const { btnVisualizacion, textoVisualizacion } = this.#elementos;
+
+    if (this.#registrandoVista || btnVisualizacion.disabled) {
+      return;
+    }
+
+    this.#registrandoVista = true;
+    btnVisualizacion.disabled = true;
+    this.#ocultarAvisoVisualizacion();
+    textoVisualizacion.textContent = 'Registrando...';
+
+    try {
+      await crearVisualizacion({
+        peliculaId: this.#peliculaId,
+        fecha: fechaDeHoy(),
+      });
+
+      this.#actualizarBotonVisualizacion(true);
+      this.#mostrarAvisoVisualizacion(
+        'Visualización registrada. Ya podés verla en tu perfil.',
+        'text-success',
+      );
+    } catch (error) {
+      this.#actualizarBotonVisualizacion(false);
+      this.#mostrarAvisoVisualizacion(mensajeDeError(error), 'text-danger');
+    } finally {
+      this.#registrandoVista = false;
+    }
+  }
+
+  /**
+   * Refleja si la película ya se registró como vista durante esta visita.
+   */
+  #actualizarBotonVisualizacion(registrada) {
+    const { btnVisualizacion, iconoVisualizacion, textoVisualizacion } = this.#elementos;
+
+    btnVisualizacion.classList.toggle('btn-success', registrada);
+    btnVisualizacion.classList.toggle('btn-outline-light', !registrada);
+    btnVisualizacion.disabled = registrada;
+    iconoVisualizacion.className = registrada
+      ? 'bi bi-check2-circle-fill me-1'
+      : 'bi bi-check2-circle me-1';
+    textoVisualizacion.textContent = registrada ? 'Vista' : 'Marcar como vista';
+
+    if (registrada) {
+      btnVisualizacion.removeAttribute('data-requiere-sesion');
+      btnVisualizacion.title = 'Ya registraste esta película como vista';
+    } else {
+      btnVisualizacion.dataset.requiereSesion = 'marcar la película como vista';
+      btnVisualizacion.title = 'Registrar que viste esta película';
+    }
+  }
+
+  /**
+   * Vuelve el botón a su estado inicial cuando cambia la sesión.
+   */
+  #reiniciarBotonVisualizacion() {
+    this.#registrandoVista = false;
+    this.#ocultarAvisoVisualizacion();
+    this.#actualizarBotonVisualizacion(false);
+  }
+
+  #mostrarAvisoVisualizacion(texto, clase) {
+    const aviso = this.#elementos.avisoVisualizacion;
+
+    aviso.textContent = texto;
+    aviso.classList.remove('d-none', 'text-danger', 'text-success');
+    aviso.classList.add(clase);
+  }
+
+  #ocultarAvisoVisualizacion() {
+    const aviso = this.#elementos.avisoVisualizacion;
+
+    aviso.textContent = '';
+    aviso.classList.add('d-none');
+    aviso.classList.remove('text-danger', 'text-success');
   }
 
   /**
@@ -548,6 +637,10 @@ const pagina = new PaginaPelicula({
     iconoWatchlist: document.getElementById('watchlist-btn-icon'),
     textoWatchlist: document.getElementById('watchlist-btn-text'),
     avisoWatchlist: document.getElementById('watchlist-aviso'),
+    btnVisualizacion: document.getElementById('btn-add-visualizacion'),
+    iconoVisualizacion: document.getElementById('visualizacion-btn-icon'),
+    textoVisualizacion: document.getElementById('visualizacion-btn-text'),
+    avisoVisualizacion: document.getElementById('visualizacion-aviso'),
     btnResena: document.getElementById('btn-add-review'),
     modalResena: document.getElementById('modalResena'),
     formResena: document.getElementById('formResena'),

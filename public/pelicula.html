@@ -204,6 +204,16 @@
                     <span id="watchlist-btn-text">Watchlist</span>
                   </button>
                   <button
+                    id="btn-add-visualizacion"
+                    type="button"
+                    class="btn btn-sm btn-outline-light rounded-pill px-3"
+                    data-requiere-sesion="marcar la película como vista"
+                    title="Registrar que viste esta película"
+                  >
+                    <i id="visualizacion-btn-icon" class="bi bi-check2-circle me-1"></i>
+                    <span id="visualizacion-btn-text">Marcar como vista</span>
+                  </button>
+                  <button
                     id="btn-add-review"
                     class="btn btn-sm btn-success rounded-pill px-3"
                     data-requiere-sesion="escribir una reseña"
@@ -212,6 +222,12 @@
                   </button>
                 </div>
                 <p id="watchlist-aviso" class="text-danger fs-7 mb-0 d-none" role="alert"></p>
+                <p
+                  id="visualizacion-aviso"
+                  class="fs-7 mb-0 d-none"
+                  role="status"
+                  aria-live="polite"
+                ></p>
               </div>
             </div>
 

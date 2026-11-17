@@ -1,5 +1,6 @@
 import { listarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
-import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
+import { fechaDeHoy, formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
+import { crearVisualizacion } from './visualizacionesApi.js';
 
 const MENSAJE_VACIO =
   'Tu watchlist está vacía. Buscá una película y guardala para verla más tarde.';
@@ -97,6 +98,10 @@ class PaginaWatchlist {
 
     btnQuitar.addEventListener('click', () => this.#quitar(pelicula, btnQuitar));
 
+    const btnVista = tarjeta.querySelector('.btn-mark-watched');
+
+    btnVista.addEventListener('click', () => this.#marcarVista(pelicula, btnVista));
+
     return tarjeta;
   }
 
@@ -121,6 +126,28 @@ class PaginaWatchlist {
       }
     } catch (error) {
       boton.disabled = false;
+      this.#mostrarAviso(mensajeDeError(error));
+    }
+  }
+
+  /**
+   * Registra la película como vista con la fecha de hoy.
+   */
+  async #marcarVista(pelicula, boton) {
+    boton.disabled = true;
+    this.#ocultarAviso();
+    boton.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Registrando...';
+
+    try {
+      await crearVisualizacion({ peliculaId: pelicula.id, fecha: fechaDeHoy() });
+      boton.classList.remove('btn-outline-success');
+      boton.classList.add('btn-success');
+      boton.innerHTML = '<i class="bi bi-check2-circle-fill me-1"></i> Vista';
+      boton.title = 'Visualización registrada';
+    } catch (error) {
+      boton.disabled = false;
+      boton.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Ya la vi';
       this.#mostrarAviso(mensajeDeError(error));
     }
   }

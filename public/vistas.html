@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fotograma - Películas Vistas</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="invisible">
+    <header
+      class="navbar navbar-dark bg-dark-custom sticky-top border-bottom border-dark-subtle px-3 px-md-4 py-2"
+    >
+      <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <button
+            id="btn-menu-offcanvas"
+            class="btn btn-menu-toggle d-flex align-items-center justify-content-center"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#asideDesplegable"
+            aria-controls="asideDesplegable"
+            aria-label="Abrir menú de usuario"
+          >
+            <i class="bi bi-list fs-4"></i>
+          </button>
+          <a class="navbar-brand fw-bold m-0 d-flex align-items-center gap-2" href="index.html">
+            <span class="logo-icon"></span> Fotograma<span class="text-success">.</span>
+          </a>
+        </div>
+
+        <form id="form-busqueda" novalidate class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
+          <div class="input-group">
+            <input
+              type="search"
+              id="busqueda-pelicula"
+              name="q"
+              class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
+              placeholder="Buscar película..."
+              aria-label="Buscar película"
+              maxlength="100"
+              autocomplete="off"
+              required
+            />
+            <button class="btn btn-success rounded-end-pill px-3" type="submit">
+              <i class="bi bi-search"></i>
+              <span class="d-none d-md-inline ms-1">Buscar</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="d-flex align-items-center">
+          <a
+            id="btn-auth-action"
+            href="perfil.html"
+            class="btn btn-sm btn-success rounded-pill px-3 fw-medium"
+          >
+            <i class="bi bi-person-fill me-1"></i>
+            <span id="auth-btn-text">Perfil</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <aside
+      class="offcanvas offcanvas-start bg-sidebar text-white border-end border-dark-subtle"
+      tabindex="-1"
+      id="asideDesplegable"
+      aria-labelledby="asideDesplegableLabel"
+    >
+      <div class="offcanvas-header border-bottom border-dark-subtle p-3">
+        <h5
+          class="offcanvas-title fw-bold text-white d-flex align-items-center gap-2"
+          id="asideDesplegableLabel"
+        >
+          <span class="logo-icon"></span> Fotograma<span class="text-success">.</span>
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Cerrar menú"
+        ></button>
+      </div>
+
+      <div class="offcanvas-body d-flex flex-column justify-content-between p-4">
+        <nav>
+          <ul class="nav flex-column gap-2 p-0 fs-6">
+            <li class="nav-item">
+              <a
+                href="perfil.html"
+                class="nav-link text-white active rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-person-circle"></i> Perfil
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="watchlist.html"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-bookmark-heart"></i> Watchlist
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="reviews.html"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-chat-square-text"></i> Reviews
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-footer pt-3 border-top border-dark-subtle">
+          <button
+            id="btn-logout"
+            class="btn btn-link nav-link text-danger w-100 text-start rounded d-flex align-items-center gap-3 fs-6 p-2 text-decoration-none"
+          >
+            <i class="bi bi-box-arrow-left"></i> Logout
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="container-fluid max-w-content py-4 px-3 px-md-5">
+      <section class="mb-4">
+        <div
+          class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-3 mb-4"
+        >
+          <div>
+            <h1 class="h3 text-white fw-bold m-0 d-flex align-items-center gap-2">
+              <i class="bi bi-eye text-success"></i> Películas vistas
+            </h1>
+            <p class="text-secondary small m-0 mt-1">
+              Tu historial completo, con filtros por género, puntuación y año.
+            </p>
+          </div>
+          <a href="index.html" class="btn btn-sm btn-outline-success rounded-pill px-3">
+            <i class="bi bi-plus-lg"></i> Agregar película
+          </a>
+        </div>
+      </section>
+
+      <section class="mb-5">
+        <div
+          id="vistas-filtros"
+          class="catalog-filters row g-2 align-items-end bg-dark-custom border border-dark-subtle rounded-3 p-3 mb-3 d-none"
+        >
+          <div class="col-6 col-lg-3">
+            <label class="form-label fs-7 text-secondary mb-1" for="filtro-genero">Género</label>
+            <select
+              id="filtro-genero"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="">Todos los géneros</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label fs-7 text-secondary mb-1" for="filtro-puntuacion"
+              >Puntuación</label
+            >
+            <select
+              id="filtro-puntuacion"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="">Todas</option>
+              <option value="5">5 estrellas</option>
+              <option value="4">4 o más estrellas</option>
+              <option value="3">3 o más estrellas</option>
+              <option value="2">2 o más estrellas</option>
+              <option value="1">1 o más estrellas</option>
+              <option value="sin">Sin puntuación</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label fs-7 text-secondary mb-1" for="filtro-anio">Año</label>
+            <select
+              id="filtro-anio"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="">Todos los años</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-3">
+            <label class="form-label fs-7 text-secondary mb-1" for="orden-vistas"
+              >Ordenar por</label
+            >
+            <select
+              id="orden-vistas"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="fecha_desc">Vistas: más recientes</option>
+              <option value="puntuacion_desc">Puntuación: mayor</option>
+              <option value="puntuacion_asc">Puntuación: menor</option>
+              <option value="anio_desc">Año: más reciente</option>
+              <option value="anio_asc">Año: más antiguo</option>
+              <option value="titulo_asc">Título A-Z</option>
+            </select>
+          </div>
+          <div class="col-12 col-lg-2">
+            <button
+              id="btn-limpiar-filtros"
+              type="button"
+              class="btn btn-sm btn-outline-light rounded-pill w-100"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+
+        <p id="vistas-estado" class="text-secondary fs-7" aria-live="polite"></p>
+
+        <div id="vistas-container" class="row g-3" aria-live="polite">
+          <div class="text-secondary py-4 text-center w-100">
+            <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+            Cargando películas vistas...
+          </div>
+        </div>
+      </section>
+
+      <footer
+        class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center text-secondary fs-7 gap-2 border-top border-dark-subtle my-4"
+      >
+        <p class="m-0">Fotograma &copy; 2026 · Hecho para mirar y recordar.</p>
+        <a href="#" class="text-secondary text-decoration-none">Acerca de y créditos &#x2197;</a>
+      </footer>
+    </main>
+
+    <template id="tpl-vista-card">
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <a class="movie-card text-decoration-none d-block" href="#">
+          <div class="poster-container">
+            <img src="" alt="" class="vista-poster poster-img d-none" loading="lazy" />
+            <div
+              class="poster-placeholder d-flex align-items-center justify-content-center h-100 text-secondary"
+            >
+              <i class="bi bi-film display-4"></i>
+            </div>
+          </div>
+          <h3 class="vista-title movie-title"></h3>
+          <p class="vista-meta movie-meta"></p>
+          <p class="vista-rating micro-text mb-0"></p>
+        </a>
+      </div>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/paginaProtegida.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/paginaVistas.js"></script>
+  </body>
+</html>

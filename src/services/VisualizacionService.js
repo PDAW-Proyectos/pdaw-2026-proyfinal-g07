@@ -47,11 +47,18 @@ function comparar(a, b, orden) {
 export class VisualizacionService {
   #visualizacionRepository;
   #peliculaRepository;
+  #puntuacionService;
   #hoy;
 
-  constructor({ visualizacionRepository, peliculaRepository, hoy = () => new Date() }) {
+  constructor({
+    visualizacionRepository,
+    peliculaRepository,
+    puntuacionService,
+    hoy = () => new Date(),
+  }) {
     this.#visualizacionRepository = visualizacionRepository;
     this.#peliculaRepository = peliculaRepository;
+    this.#puntuacionService = puntuacionService;
     this.#hoy = hoy;
   }
 
@@ -61,7 +68,11 @@ export class VisualizacionService {
     const peliculaId = validarId(datos.peliculaId, 'peliculaId');
     const pelicula = await this.#buscarPelicula(peliculaId);
     const fecha = validarFechaNoFutura(datos.fecha, this.#hoy());
-    const puntuacion = validarPuntuacion(datos.puntuacion);
+    let puntuacion = validarPuntuacion(datos.puntuacion);
+
+    if (puntuacion === null) {
+      puntuacion = await this.#puntuacionService.obtenerPuntuacionDeResena(usuarioId, peliculaId);
+    }
 
     const visualizacion = new Visualizacion(
       { id: randomUUID(), usuarioId, peliculaId, fecha, puntuacion },
@@ -69,6 +80,10 @@ export class VisualizacionService {
     );
 
     await this.#visualizacionRepository.crear(visualizacion);
+
+    if (puntuacion !== null) {
+      await this.#puntuacionService.sincronizarResena(usuarioId, peliculaId, puntuacion);
+    }
 
     return { visualizacion, pelicula };
   }
@@ -93,6 +108,21 @@ export class VisualizacionService {
     return { data, page, limit, total };
   }
 
+  async obtenerPorPelicula(usuarioId, peliculaId) {
+    const id = validarId(peliculaId, 'peliculaId');
+    const pelicula = await this.#buscarPelicula(id);
+    const visualizacion = await this.#visualizacionRepository.buscarUltimaPorUsuarioYPelicula(
+      usuarioId,
+      id,
+    );
+
+    if (!visualizacion) {
+      throw new ErrorDominio('NO_ENCONTRADO', 'No registraste esta película como vista.');
+    }
+
+    return { visualizacion, pelicula };
+  }
+
   async obtener(usuarioId, id) {
     const visualizacion = await this.#buscarPropia(usuarioId, id);
     const pelicula = await this.#peliculaRepository.buscarPorId(visualizacion.peliculaId);
@@ -104,16 +134,25 @@ export class VisualizacionService {
     validarCuerpo(datos, CAMPOS_ACTUALIZACION);
 
     const visualizacion = await this.#buscarPropia(usuarioId, id);
+    const cambiaPuntuacion = Object.hasOwn(datos, 'puntuacion');
 
     if (Object.hasOwn(datos, 'fecha')) {
       visualizacion.cambiarFecha(datos.fecha, this.#hoy());
     }
 
-    if (Object.hasOwn(datos, 'puntuacion')) {
+    if (cambiaPuntuacion) {
       visualizacion.cambiarPuntuacion(datos.puntuacion);
     }
 
     await this.#visualizacionRepository.actualizar(visualizacion);
+
+    if (cambiaPuntuacion) {
+      await this.#puntuacionService.sincronizarResena(
+        usuarioId,
+        visualizacion.peliculaId,
+        visualizacion.puntuacion,
+      );
+    }
 
     const pelicula = await this.#peliculaRepository.buscarPorId(visualizacion.peliculaId);
 

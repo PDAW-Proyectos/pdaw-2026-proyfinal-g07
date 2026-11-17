@@ -9,7 +9,9 @@ import { cabecerasSeguridad } from './middlewares/seguridad.js';
 import { createSessionMiddleware } from './middlewares/session.js';
 import { crearAuthRouter } from './routes/authRoutes.js';
 import { crearAdminRouter } from './routes/adminRoutes.js';
+import { crearEstadisticaRouter } from './routes/estadisticaRoutes.js';
 import { crearPeliculaRouter } from './routes/peliculaRoutes.js';
+import { crearPerfilRouter } from './routes/perfilRoutes.js';
 import { crearResenaRouter } from './routes/resenaRoutes.js';
 import { crearVisualizacionRouter } from './routes/visualizacionRoutes.js';
 import { crearWatchlistRouter } from './routes/watchlistRoutes.js';
@@ -46,6 +48,17 @@ function montarRutas(app, container = {}) {
     );
   }
 
+  if (container.perfilService && container.resenaService && container.usuarioService) {
+    app.use(
+      '/api/usuarios',
+      crearPerfilRouter({
+        perfilService: container.perfilService,
+        resenaService: container.resenaService,
+        usuarioService: container.usuarioService,
+      }),
+    );
+  }
+
   if (container.peliculaService) {
     app.use(
       '/api/peliculas',
@@ -71,6 +84,16 @@ function montarRutas(app, container = {}) {
       '/api/watchlist',
       crearWatchlistRouter({
         watchlistService: container.watchlistService,
+        usuarioService: container.usuarioService,
+      }),
+    );
+  }
+
+  if (container.estadisticaService && container.usuarioService) {
+    app.use(
+      '/api/estadisticas',
+      crearEstadisticaRouter({
+        estadisticaService: container.estadisticaService,
         usuarioService: container.usuarioService,
       }),
     );

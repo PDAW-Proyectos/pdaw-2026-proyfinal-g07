@@ -190,13 +190,13 @@
         </div>
       </section>
 
-      <!-- SECCIÓN DE PELÍCULAS EN TENDENCIA (TRENDING) -->
+      <!-- SECCIÓN DE CATÁLOGO DE PELÍCULAS -->
       <section class="trending-section mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h2 class="h4 text-white fw-bold m-0">
-              <i id="listado-icono" class="bi bi-fire text-warning me-2"></i
-              ><span id="listado-titulo">Trending</span>
+              <i id="listado-icono" class="bi bi-collection-play text-success me-2"></i
+              ><span id="listado-titulo">Catálogo</span>
             </h2>
             <p id="listado-estado" class="text-secondary fs-7 m-0 mt-1" aria-live="polite"></p>
           </div>
@@ -206,6 +206,71 @@
             </button>
             <button id="btn-next" class="btn btn-outline-custom btn-sm text-white px-3">
               Siguiente
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="trending-filters"
+          class="catalog-filters row g-2 align-items-end bg-dark-custom border border-dark-subtle rounded-3 p-3 mb-3"
+        >
+          <div class="col-6 col-lg-3">
+            <label class="form-label fs-7 text-secondary mb-1" for="trending-genero">Género</label>
+            <select
+              id="trending-genero"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="">Todos los géneros</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label fs-7 text-secondary mb-1" for="trending-puntuacion"
+              >Puntuación TMDB</label
+            >
+            <select
+              id="trending-puntuacion"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="">Todas</option>
+              <option value="8">8 o más</option>
+              <option value="7">7 o más</option>
+              <option value="6">6 o más</option>
+              <option value="5">5 o más</option>
+              <option value="sin">Sin puntuación</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label fs-7 text-secondary mb-1" for="trending-anio">Año</label>
+            <select
+              id="trending-anio"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="">Todos los años</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-3">
+            <label class="form-label fs-7 text-secondary mb-1" for="trending-orden"
+              >Ordenar por</label
+            >
+            <select
+              id="trending-orden"
+              class="form-select form-select-sm bg-dark text-white border-secondary"
+            >
+              <option value="tendencia">Más populares</option>
+              <option value="puntuacion_desc">Puntuación TMDB: mayor</option>
+              <option value="puntuacion_asc">Puntuación TMDB: menor</option>
+              <option value="anio_desc">Año: más reciente</option>
+              <option value="anio_asc">Año: más antiguo</option>
+              <option value="titulo_asc">Título A-Z</option>
+            </select>
+          </div>
+          <div class="col-12 col-lg-2">
+            <button
+              id="trending-limpiar"
+              type="button"
+              class="btn btn-sm btn-outline-light rounded-pill w-100"
+            >
+              Limpiar filtros
             </button>
           </div>
         </div>
@@ -484,7 +549,10 @@
     <template id="tpl-resena-reciente">
       <div class="col-md-6">
         <article class="review-card resena-reciente p-3 rounded-3 h-100 d-flex gap-3">
-          <a class="resena-poster-contenedor rounded overflow-hidden flex-shrink-0" href="#">
+          <a
+            class="resena-pelicula-link resena-poster-contenedor rounded overflow-hidden flex-shrink-0"
+            href="#"
+          >
             <img src="" alt="" class="review-poster d-none" loading="lazy" />
             <span
               class="resena-poster-marcador d-flex align-items-center justify-content-center h-100 text-secondary"
@@ -493,14 +561,17 @@
             </span>
           </a>
           <div class="resena-contenido flex-grow-1">
-            <a class="text-decoration-none" href="#">
+            <a class="resena-pelicula-link text-decoration-none" href="#">
               <h3 class="resena-reciente-titulo h6 text-white fw-bold mb-1"></h3>
             </a>
             <p class="resena-reciente-meta text-secondary fs-7 mb-2"></p>
             <p
               class="resena-reciente-comentario resena-comentario-recortado text-secondary fs-7 mb-2"
             ></p>
-            <p class="resena-reciente-autor text-muted micro-text mb-0"></p>
+            <a
+              class="resena-reciente-autor text-muted micro-text mb-0 d-inline-block text-decoration-none"
+              href="#"
+            ></a>
           </div>
         </article>
       </div>

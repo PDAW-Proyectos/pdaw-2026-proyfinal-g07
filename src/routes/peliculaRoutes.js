@@ -10,6 +10,7 @@ export function crearPeliculaRouter({ peliculaService, usuarioService }) {
   // Las rutas fijas van antes de /:peliculaId para que no las capture el parámetro.
   router.get('/buscar', controller.buscar);
   router.get('/tendencias', controller.tendencias);
+  router.get('/catalogo', controller.catalogo);
 
   if (usuarioService) {
     router.get(
@@ -21,6 +22,7 @@ export function crearPeliculaRouter({ peliculaService, usuarioService }) {
   }
 
   router.get('/:peliculaId/resenas', controller.resenas);
+  router.get('/:peliculaId/trailer', controller.trailer);
   router.get('/:peliculaId', controller.obtener);
 
   return router;

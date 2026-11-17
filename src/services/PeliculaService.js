@@ -1,3 +1,4 @@
+import { Pelicula } from '../models/Pelicula.js';
 import { ErrorDominio } from '../utils/ErrorDominio.js';
 import { validarId } from '../utils/validaciones.js';
 
@@ -6,6 +7,8 @@ const LIMITE_POR_PAGINA = 20;
 const MAXIMO_PAGINA_TMDB = 500;
 const TTL_BUSQUEDA_MS = 60 * 1000;
 const TTL_TENDENCIAS_MS = 5 * 60 * 1000;
+const TTL_CATALOGO_MS = 5 * 60 * 1000;
+const TTL_TRAILER_MS = 24 * 60 * 60 * 1000;
 const MAX_ENTRADAS_CACHE = 200;
 
 /**
@@ -18,6 +21,7 @@ export class PeliculaService {
   #peliculaRepository;
   #tmdbAdapter;
   #resenaService;
+  #puntuacionService;
   #watchlistRepository;
   #visualizacionRepository;
   #ahora;
@@ -27,6 +31,7 @@ export class PeliculaService {
     peliculaRepository,
     tmdbAdapter,
     resenaService,
+    puntuacionService,
     watchlistRepository,
     visualizacionRepository,
     ahora = () => new Date(),
@@ -34,6 +39,7 @@ export class PeliculaService {
     this.#peliculaRepository = peliculaRepository;
     this.#tmdbAdapter = tmdbAdapter;
     this.#resenaService = resenaService;
+    this.#puntuacionService = puntuacionService;
     this.#watchlistRepository = watchlistRepository;
     this.#visualizacionRepository = visualizacionRepository;
     this.#ahora = ahora;
@@ -74,6 +80,42 @@ export class PeliculaService {
     const coleccion = await this.#guardarColeccion(resultado, pagina);
 
     return this.#guardarCache(clave, coleccion, TTL_TENDENCIAS_MS);
+  }
+
+  /**
+   * Devuelve un catálogo amplio de películas populares de todas las épocas.
+   */
+  async catalogo({ page = 1 } = {}) {
+    const pagina = this.#validarPagina(page);
+    const clave = `catalogo:${pagina}`;
+    const cacheada = this.#leerCache(clave);
+
+    if (cacheada) {
+      return cacheada;
+    }
+
+    const resultado = await this.#tmdbAdapter.catalogo({ page: pagina });
+    const coleccion = await this.#guardarColeccion(resultado, pagina);
+    const total = Math.min(coleccion.total, MAXIMO_PAGINA_TMDB * LIMITE_POR_PAGINA);
+
+    return this.#guardarCache(clave, { ...coleccion, total }, TTL_CATALOGO_MS);
+  }
+
+  /**
+   * Devuelve el trailer oficial de una película o `trailer: null` si no hay.
+   */
+  async trailer(peliculaId) {
+    const pelicula = await this.obtener(peliculaId);
+    const clave = `trailer:${pelicula.id}`;
+    const cacheada = this.#leerCache(clave);
+
+    if (cacheada) {
+      return cacheada;
+    }
+
+    const trailer = await this.#tmdbAdapter.trailer({ tmdbId: pelicula.tmdbId });
+
+    return this.#guardarCache(clave, { trailer }, TTL_TRAILER_MS);
   }
 
   /**
@@ -121,13 +163,12 @@ export class PeliculaService {
 
   /**
    * Devuelve la ficha de una película junto con el promedio de las puntuaciones
-   * de sus reseñas.
+   * de sus reseñas y visualizaciones.
    */
   async obtenerDetalle(peliculaId) {
-    const pelicula = await this.obtener(peliculaId);
-    const { promedioPuntuacion, totalPuntuaciones } = await this.#resenaService.promedioPorPelicula(
-      pelicula.id,
-    );
+    const pelicula = await this.#enriquecerConTmdb(await this.obtener(peliculaId));
+    const { promedioPuntuacion, totalPuntuaciones } =
+      await this.#puntuacionService.promedioPorPelicula(pelicula.id);
 
     return { pelicula, promedioPuntuacion, totalPuntuaciones };
   }
@@ -137,6 +178,30 @@ export class PeliculaService {
    */
   listarResenas(peliculaId, paginacion) {
     return this.#resenaService.listarPorPelicula(validarId(peliculaId, 'peliculaId'), paginacion);
+  }
+
+  async #enriquecerConTmdb(pelicula) {
+    if (
+      pelicula.director !== null &&
+      pelicula.puntuacionTmdb !== null &&
+      pelicula.votosTmdb !== null
+    ) {
+      return pelicula;
+    }
+
+    try {
+      const detalle = await this.#tmdbAdapter.obtenerDetalle({ tmdbId: pelicula.tmdbId });
+      const actualizada = new Pelicula({
+        ...pelicula.toJSON(),
+        director: detalle.director ?? pelicula.director,
+        puntuacionTmdb: detalle.puntuacionTmdb ?? pelicula.puntuacionTmdb,
+        votosTmdb: detalle.votosTmdb ?? pelicula.votosTmdb,
+      });
+
+      return await this.#peliculaRepository.guardar(actualizada);
+    } catch {
+      return pelicula;
+    }
   }
 
   /**

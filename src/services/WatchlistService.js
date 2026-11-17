@@ -22,11 +22,18 @@ function porFechaDescendente(a, b) {
 export class WatchlistService {
   #watchlistRepository;
   #peliculaRepository;
+  #visualizacionRepository;
   #ahora;
 
-  constructor({ watchlistRepository, peliculaRepository, ahora = () => new Date() }) {
+  constructor({
+    watchlistRepository,
+    peliculaRepository,
+    visualizacionRepository,
+    ahora = () => new Date(),
+  }) {
     this.#watchlistRepository = watchlistRepository;
     this.#peliculaRepository = peliculaRepository;
+    this.#visualizacionRepository = visualizacionRepository;
     this.#ahora = ahora;
   }
 
@@ -48,7 +55,7 @@ export class WatchlistService {
 
     await this.#watchlistRepository.crear(entrada);
 
-    return { entrada, pelicula };
+    return { entrada, pelicula, vista: await this.#estaVista(usuarioId, peliculaId) };
   }
 
   /**
@@ -67,12 +74,15 @@ export class WatchlistService {
       .filter((entrada) => peliculasPorId.has(entrada.peliculaId))
       .sort(porFechaDescendente);
     const pagina = paginar(vigentes, { page, limit });
+    const visualizaciones = await this.#visualizacionRepository.listarPorUsuario(usuarioId);
+    const vistas = new Set(visualizaciones.map((visualizacion) => visualizacion.peliculaId));
 
     return {
       ...pagina,
       data: pagina.data.map((entrada) => ({
         entrada,
         pelicula: peliculasPorId.get(entrada.peliculaId),
+        vista: vistas.has(entrada.peliculaId),
       })),
     };
   }
@@ -91,7 +101,11 @@ export class WatchlistService {
 
     const pelicula = await this.#peliculaRepository.buscarPorId(id);
 
-    return pelicula ? { entrada, pelicula } : { entrada: null, pelicula: null };
+    if (!pelicula) {
+      return { entrada: null, pelicula: null };
+    }
+
+    return { entrada, pelicula, vista: await this.#estaVista(usuarioId, id) };
   }
 
   /**
@@ -104,6 +118,18 @@ export class WatchlistService {
     if (!eliminada) {
       throw new ErrorDominio('NO_ENCONTRADO', 'La película no está en tu watchlist.');
     }
+  }
+
+  /**
+   * Indica si el usuario ya registró una visualización de la película.
+   */
+  async #estaVista(usuarioId, peliculaId) {
+    const visualizacion = await this.#visualizacionRepository.buscarUltimaPorUsuarioYPelicula(
+      usuarioId,
+      peliculaId,
+    );
+
+    return Boolean(visualizacion);
   }
 
   /**

@@ -121,6 +121,81 @@ describe('TMDBAdapter', () => {
     expect(new URL(llamadas[2]).searchParams.get('page')).toBe('3');
   });
 
+  test('usa discover para el catálogo amplio de todas las épocas', async () => {
+    const { fetchFalso, llamadas } = crearFetchFalso({
+      '/discover/movie': respuestaJson({ page: 2, total_results: 500, results: [] }),
+      '/genre/movie/list': GENEROS,
+    });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const resultado = await adaptador.catalogo({ page: 2 });
+    const url = new URL(llamadas[0]);
+
+    expect(resultado).toMatchObject({ page: 2, total: 500 });
+    expect(rutaDe(llamadas[0])).toBe('/discover/movie');
+    expect(url.searchParams.get('page')).toBe('2');
+    expect(url.searchParams.get('include_adult')).toBe('false');
+    expect(url.searchParams.get('sort_by')).toBe('vote_count.desc');
+    expect(url.searchParams.get('vote_count.gte')).toBe('100');
+  });
+
+  test('elige el trailer oficial de YouTube priorizando español', async () => {
+    const videos = respuestaJson({
+      results: [
+        {
+          key: 'esNoOficial',
+          site: 'YouTube',
+          type: 'Trailer',
+          official: false,
+          iso_639_1: 'es',
+          name: 'Trailer no oficial',
+          published_at: '2022-01-01T00:00:00.000Z',
+        },
+        {
+          key: 'esOficial123',
+          site: 'YouTube',
+          type: 'Trailer',
+          official: true,
+          iso_639_1: 'es',
+          name: 'Trailer oficial',
+          published_at: '2020-01-01T00:00:00.000Z',
+        },
+        {
+          key: 'enOficial123',
+          site: 'YouTube',
+          type: 'Trailer',
+          official: true,
+          iso_639_1: 'en',
+          name: 'Official Trailer',
+          published_at: '2021-01-01T00:00:00.000Z',
+        },
+        { key: 'vimeo123456', site: 'Vimeo', type: 'Trailer', official: true },
+      ],
+    });
+    const { fetchFalso, llamadas } = crearFetchFalso({ '/movie/603/videos': videos });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const trailer = await adaptador.trailer({ tmdbId: 603 });
+    const url = new URL(llamadas[0]);
+
+    expect(trailer).toEqual({
+      youtubeKey: 'esOficial123',
+      titulo: 'Trailer oficial',
+      idioma: 'es',
+    });
+    expect(rutaDe(llamadas[0])).toBe('/movie/603/videos');
+    expect(url.searchParams.get('include_video_language')).toBe('es,en');
+  });
+
+  test('devuelve null cuando no hay trailer de YouTube', async () => {
+    const { fetchFalso } = crearFetchFalso({
+      '/movie/603/videos': respuestaJson({ results: [] }),
+    });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    await expect(adaptador.trailer({ tmdbId: 603 })).resolves.toBeNull();
+  });
+
   test('pide las recomendaciones de una película semilla', async () => {
     const { fetchFalso, llamadas } = crearFetchFalso({
       '/movie/603/recommendations': BUSQUEDA,
@@ -133,6 +208,44 @@ describe('TMDBAdapter', () => {
     expect(resultado.peliculas[0].tmdbId).toBe(603);
     expect(rutaDe(llamadas[0])).toBe('/movie/603/recommendations');
     expect(new URL(llamadas[0]).searchParams.get('page')).toBe('2');
+  });
+
+  test('obtiene director y puntuación desde el detalle de TMDB', async () => {
+    const { fetchFalso, llamadas } = crearFetchFalso({
+      '/movie/603': respuestaJson({
+        id: 603,
+        title: 'Matrix',
+        overview: 'Un programador descubre la verdadera naturaleza de su realidad.',
+        release_date: '1999-03-31',
+        poster_path: '/matrix.jpg',
+        backdrop_path: '/matrix-backdrop.jpg',
+        genres: [
+          { id: 28, name: 'Acción' },
+          { id: 878, name: 'Ciencia ficción' },
+        ],
+        vote_average: 8.234,
+        vote_count: 25_000,
+        credits: {
+          crew: [
+            { job: 'Director', name: 'Lana Wachowski' },
+            { job: 'Director', name: 'Lilly Wachowski' },
+            { job: 'Producer', name: 'Joel Silver' },
+          ],
+        },
+      }),
+      '/genre/movie/list': GENEROS,
+    });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const pelicula = await adaptador.obtenerDetalle({ tmdbId: 603 });
+
+    expect(pelicula.toJSON()).toMatchObject({
+      director: 'Lana Wachowski, Lilly Wachowski',
+      puntuacionTmdb: 8.2,
+      votosTmdb: 25_000,
+    });
+    expect(rutaDe(llamadas[0])).toBe('/movie/603');
+    expect(new URL(llamadas[0]).searchParams.get('append_to_response')).toBe('credits');
   });
 
   test('normaliza un error HTTP de TMDB sin exponer la API key', async () => {

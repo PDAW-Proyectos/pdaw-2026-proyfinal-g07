@@ -58,6 +58,22 @@ export class UsuarioRepository {
   }
 
   /**
+   * Reemplaza los datos persistidos de un usuario existente.
+   */
+  async actualizar(usuario) {
+    return this.#store.actualizar(COLECCION, (registros) => {
+      const indice = registros.findIndex((registro) => registro.id === usuario.id);
+
+      if (indice < 0) {
+        throw new ErrorDominio('NO_ENCONTRADO', 'El usuario no existe.');
+      }
+
+      registros[indice] = usuario.toJSON();
+      return usuario;
+    });
+  }
+
+  /**
    * Busca un usuario por su identificador interno.
    */
   async buscarPorId(id) {

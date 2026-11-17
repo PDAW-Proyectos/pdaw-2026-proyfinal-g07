@@ -11,6 +11,7 @@ export function crearVisualizacionRouter({ visualizacionService, usuarioService 
 
   router.get('/', controller.listar);
   router.post('/', controller.crear);
+  router.get('/mia/:peliculaId', controller.obtenerPorPelicula);
   router.get('/:id', controller.obtener);
   router.patch('/:id', controller.actualizar);
   router.delete('/:id', controller.eliminar);

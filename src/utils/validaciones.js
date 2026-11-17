@@ -2,6 +2,7 @@ import { ErrorDominio } from './ErrorDominio.js';
 
 const BYTES_MAXIMOS_CONTRASENA = 72;
 const ROLES = new Set(['usuario', 'admin']);
+export const MAXIMO_FAVORITAS = 5;
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGEX_NOMBRE_USUARIO = /^[\p{L}\p{N}._-]{3,30}$/u;
 const REGEX_FECHA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -186,6 +187,38 @@ export function validarPuntuacion(valor) {
   return valor;
 }
 
+export function validarPuntuacionTmdb(valor) {
+  if (valor === null || valor === undefined) {
+    return null;
+  }
+
+  if (typeof valor !== 'number' || !Number.isFinite(valor) || valor < 0 || valor > 10) {
+    throw new ErrorDominio(
+      'PUNTUACION_INVALIDA',
+      'La puntuacion de TMDB debe ser un numero entre 0 y 10.',
+      { campo: 'puntuacionTmdb' },
+    );
+  }
+
+  return Math.round(valor * 10) / 10;
+}
+
+export function validarVotosTmdb(valor) {
+  if (valor === null || valor === undefined) {
+    return null;
+  }
+
+  if (!Number.isInteger(valor) || valor < 0) {
+    throw new ErrorDominio(
+      'VALOR_FUERA_DE_RANGO',
+      'La cantidad de votos de TMDB debe ser un entero mayor o igual a 0.',
+      { campo: 'votosTmdb', min: 0 },
+    );
+  }
+
+  return valor;
+}
+
 /**
  * Valida una fecha en formato YYYY-MM-DD y que exista en el calendario.
  * Devuelve el mismo texto normalizado.
@@ -306,6 +339,26 @@ export function validarArrayTexto(valor, campo, { min = 0 } = {}) {
   return valor.map((elemento, indice) =>
     validarTexto(elemento, `${campo}[${indice}]`, { max: 100 }),
   );
+}
+
+export function validarFavoritas(valor = []) {
+  const favoritas = validarArrayTexto(valor, 'favoritas');
+
+  if (favoritas.length > MAXIMO_FAVORITAS) {
+    throw new ErrorDominio(
+      'LONGITUD_INVALIDA',
+      `El campo favoritas no puede superar los ${MAXIMO_FAVORITAS} elementos.`,
+      { campo: 'favoritas', max: MAXIMO_FAVORITAS },
+    );
+  }
+
+  if (new Set(favoritas).size !== favoritas.length) {
+    throw new ErrorDominio('FORMATO_INVALIDO', 'No se puede repetir una película favorita.', {
+      campo: 'favoritas',
+    });
+  }
+
+  return favoritas;
 }
 
 /**

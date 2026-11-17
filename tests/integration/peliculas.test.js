@@ -103,7 +103,10 @@ function crearAdaptadorFalso() {
     falla: false,
     busquedas: [],
     consultasTendencias: [],
+    consultasCatalogo: [],
+    consultasTrailer: [],
     consultasRecomendaciones: [],
+    trailerResultado: { youtubeKey: 'esOficial123', titulo: 'Trailer oficial', idioma: 'es' },
 
     async buscar({ q, page }) {
       if (this.falla) {
@@ -127,6 +130,30 @@ function crearAdaptadorFalso() {
         page,
         total: 1,
       };
+    },
+
+    async catalogo({ page }) {
+      if (this.falla) {
+        throw new ErrorDominio('TMDB_NO_DISPONIBLE', 'TMDB no está disponible.');
+      }
+
+      this.consultasCatalogo.push({ page });
+
+      return {
+        peliculas: [crearPelicula({ tmdbId: 603, anioEstreno: 1999 })],
+        page,
+        total: 500,
+      };
+    },
+
+    async trailer({ tmdbId }) {
+      if (this.falla) {
+        throw new ErrorDominio('TMDB_NO_DISPONIBLE', 'TMDB no está disponible.');
+      }
+
+      this.consultasTrailer.push({ tmdbId });
+
+      return this.trailerResultado;
     },
 
     async recomendaciones({ tmdbId, page }) {
@@ -165,11 +192,12 @@ describe('peliculas', () => {
         tmdbId: 603,
         titulo: 'Matrix',
         anioEstreno: 1999,
+        generos: ['Acción', 'Ciencia ficción'],
         rutaPoster: '/matrix.jpg',
         rutaBackdrop: '/matrix-backdrop.jpg',
+        puntuacionTmdb: null,
       });
       expect(coleccion.data[0]).not.toHaveProperty('sinopsis');
-      expect(coleccion.data[0]).not.toHaveProperty('generos');
       expect(adaptador.busquedas).toEqual([{ q: 'matrix', page: 1 }]);
 
       const detalle = await pedir(baseUrl, `/api/peliculas/${coleccion.data[0].id}`);
@@ -248,6 +276,60 @@ describe('peliculas', () => {
     }
   });
 
+  test('devuelve el catálogo amplio paginado', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const response = await pedir(baseUrl, '/api/peliculas/catalogo?page=3');
+      const coleccion = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(coleccion).toMatchObject({ page: 3, limit: 20, total: 500 });
+      expect(coleccion.data[0]).toMatchObject({ tmdbId: 603, anioEstreno: 1999 });
+      expect(adaptador.consultasCatalogo).toEqual([{ page: 3 }]);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('devuelve el trailer oficial de una película guardada', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { container, server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const pelicula = await container.peliculaRepository.guardar(crearPelicula());
+      const response = await pedir(baseUrl, `/api/peliculas/${pelicula.id}/trailer`);
+      const cuerpo = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(cuerpo).toEqual({
+        trailer: { youtubeKey: 'esOficial123', titulo: 'Trailer oficial', idioma: 'es' },
+      });
+      expect(adaptador.consultasTrailer).toEqual([{ tmdbId: 603 }]);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('devuelve trailer null cuando la película no tiene uno', async () => {
+    const adaptador = crearAdaptadorFalso();
+
+    adaptador.trailerResultado = null;
+
+    const { container, server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const pelicula = await container.peliculaRepository.guardar(crearPelicula());
+      const response = await pedir(baseUrl, `/api/peliculas/${pelicula.id}/trailer`);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ trailer: null });
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
   test('responde 502 cuando TMDB no está disponible', async () => {
     const adaptador = crearAdaptadorFalso();
 
@@ -256,7 +338,11 @@ describe('peliculas', () => {
     const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
 
     try {
-      for (const ruta of ['/api/peliculas/buscar?q=matrix', '/api/peliculas/tendencias']) {
+      for (const ruta of [
+        '/api/peliculas/buscar?q=matrix',
+        '/api/peliculas/tendencias',
+        '/api/peliculas/catalogo',
+      ]) {
         const response = await pedir(baseUrl, ruta);
         const problema = await response.json();
 
@@ -321,7 +407,7 @@ describe('peliculas', () => {
     }
   });
 
-  test('la ficha incluye el promedio de las reseñas puntuadas', async () => {
+  test('la ficha incluye el promedio de las puntuaciones', async () => {
     const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: crearAdaptadorFalso() });
 
     try {
@@ -364,6 +450,52 @@ describe('peliculas', () => {
       expect(resenas.data.map((resena) => resena.puntuacion)).toEqual(
         expect.arrayContaining([4, 5, null]),
       );
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('la ficha suma las estrellas sin reseña una sola vez por usuario', async () => {
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: crearAdaptadorFalso() });
+
+    try {
+      const peliculaId = (await (await pedir(baseUrl, '/api/peliculas/buscar?q=matrix')).json())
+        .data[0].id;
+      const cookies = [];
+
+      for (const [nombreUsuario, email] of [
+        ['lucia', 'lucia@example.com'],
+        ['tomas', 'tomas@example.com'],
+        ['caro', 'caro@example.com'],
+      ]) {
+        cookies.push(await registrar(baseUrl, { nombreUsuario, email }));
+      }
+
+      await pedir(baseUrl, '/api/resenas', {
+        cookie: cookies[0],
+        metodo: 'POST',
+        cuerpo: { peliculaId, comentario: 'Reseña puntuada.', puntuacion: 5 },
+      });
+      await pedir(baseUrl, '/api/visualizaciones', {
+        cookie: cookies[1],
+        metodo: 'POST',
+        cuerpo: { peliculaId, fecha: '2020-01-01', puntuacion: 3 },
+      });
+      await pedir(baseUrl, '/api/visualizaciones', {
+        cookie: cookies[2],
+        metodo: 'POST',
+        cuerpo: { peliculaId, fecha: '2020-01-02', puntuacion: 2 },
+      });
+      await pedir(baseUrl, '/api/resenas', {
+        cookie: cookies[2],
+        metodo: 'POST',
+        cuerpo: { peliculaId, comentario: 'Cambié de opinión.', puntuacion: 4 },
+      });
+
+      const detalle = await (await pedir(baseUrl, `/api/peliculas/${peliculaId}`)).json();
+
+      expect(detalle.promedioPuntuacion).toBe(4);
+      expect(detalle.totalPuntuaciones).toBe(3);
     } finally {
       await detenerEntorno(server);
     }

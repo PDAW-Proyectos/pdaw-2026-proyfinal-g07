@@ -2,7 +2,12 @@ import { cerrarSesion, obtenerSesion } from './authApi.js';
 
 const PAGINA_ACCESO = 'index.html';
 const PAGINA_ADMIN = 'admin.html';
-const PAGINAS_SOLO_USUARIO = new Set(['perfil.html', 'watchlist.html', 'reviews.html']);
+const PAGINAS_SOLO_USUARIO = new Set([
+  'perfil.html',
+  'watchlist.html',
+  'reviews.html',
+  'vistas.html',
+]);
 
 function volverAlAcceso() {
   // replace() evita que el botón "Atrás" regrese a una página que exige sesión.

@@ -22,3 +22,14 @@ export function crearVisualizacion({ peliculaId, fecha, puntuacion = null }) {
     },
   });
 }
+
+export function obtenerMiVisualizacion(peliculaId) {
+  return solicitar(`/visualizaciones/mia/${encodeURIComponent(peliculaId)}`);
+}
+
+export function actualizarVisualizacion(id, { puntuacion }) {
+  return solicitar(`/visualizaciones/${encodeURIComponent(id)}`, {
+    metodo: 'PATCH',
+    cuerpo: { puntuacion },
+  });
+}

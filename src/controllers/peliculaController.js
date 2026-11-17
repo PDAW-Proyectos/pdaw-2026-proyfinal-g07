@@ -27,6 +27,16 @@ export function crearPeliculaController({ peliculaService }) {
       res.json(aColeccionPeliculas(await peliculaService.tendencias({ page })));
     },
 
+    async catalogo(req, res) {
+      const { page } = leerPagina(req.query);
+
+      res.json(aColeccionPeliculas(await peliculaService.catalogo({ page })));
+    },
+
+    async trailer(req, res) {
+      res.json(await peliculaService.trailer(req.params.peliculaId));
+    },
+
     async recomendadas(req, res) {
       res.json(aColeccionPeliculas(await peliculaService.recomendadas(req.session.userId)));
     },

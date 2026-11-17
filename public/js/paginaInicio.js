@@ -1,16 +1,31 @@
 import { usuarioDeSesion } from './auth.js';
-import { buscarPeliculas, obtenerRecomendadas, obtenerTendencias } from './peliculasApi.js';
+import {
+  actualizarOpciones,
+  compararPuntuacion,
+  compararTitulo,
+  cumpleFiltroPuntuacion,
+  filtrarPorAnio,
+  filtrarPorGenero,
+} from './filtrosPeliculas.js';
+import {
+  buscarPeliculas,
+  obtenerCatalogo,
+  obtenerRecomendadas,
+  obtenerTendencias,
+} from './peliculasApi.js';
 import { listarResenasRecientes } from './resenasApi.js';
 import {
+  enlazarResenaAPerfil,
   formatearFecha,
   leerPagina,
   mensajeDeError,
   mostrarPoster,
   urlImagen,
+  urlPerfilUsuario,
 } from './utilidades.js';
 
-const TITULO_TENDENCIAS = 'Trending';
-const ICONO_TENDENCIAS = 'bi bi-fire text-warning me-2';
+const TITULO_CATALOGO = 'Catálogo';
+const ICONO_CATALOGO = 'bi bi-collection-play text-success me-2';
 const ICONO_BUSQUEDA = 'bi bi-search text-success me-2';
 const DESTACADOS_MAXIMOS = 5;
 const RESENAS_RECIENTES = 10;
@@ -19,14 +34,17 @@ const ESTADO_NO_AUTORIZADO = 401;
 
 /**
  * Grilla paginada de películas de index.html. Con una consulta muestra los
- * resultados de la búsqueda; sin consulta, las películas en tendencia.
+ * resultados de la búsqueda; sin consulta, un catálogo amplio para explorar.
  */
 class ListadoPeliculas {
   #elementos;
   #consulta;
   #pagina;
   #solicitudActual = 0;
-  #destacadosMostrados = false;
+  #peliculasPagina = [];
+  #generos = new Set();
+  #anios = new Set();
+  #total = 0;
 
   /**
    * `elementos` reúne los nodos del DOM que usa el listado: contenedor, plantilla,
@@ -45,20 +63,27 @@ class ListadoPeliculas {
     const { titulo, icono, btnAnterior, btnSiguiente } = this.#elementos;
 
     if (this.#consulta) {
-      titulo.textContent = `Resultados para «${this.#consulta}»`;
+      titulo.textContent = `Resultados para “${this.#consulta}”`;
       icono.className = ICONO_BUSQUEDA;
       document.title = `Fotograma - ${this.#consulta}`;
-      // Los destacados son tendencias: no tienen sentido en una búsqueda.
       this.#ocultarDestacados();
+      this.#ocultarFiltros();
     } else {
-      titulo.textContent = TITULO_TENDENCIAS;
-      icono.className = ICONO_TENDENCIAS;
+      titulo.textContent = TITULO_CATALOGO;
+      icono.className = ICONO_CATALOGO;
+      this.#conectarFiltros();
     }
 
     btnAnterior.addEventListener('click', () => this.cargar(this.#pagina - 1));
     btnSiguiente.addEventListener('click', () => this.cargar(this.#pagina + 1));
 
-    await this.cargar(this.#pagina);
+    const tareas = [this.cargar(this.#pagina)];
+
+    if (!this.#consulta) {
+      tareas.push(this.#cargarDestacados());
+    }
+
+    await Promise.all(tareas);
   }
 
   /**
@@ -73,7 +98,7 @@ class ListadoPeliculas {
     try {
       const coleccion = this.#consulta
         ? await buscarPeliculas({ q: this.#consulta, page: pagina })
-        : await obtenerTendencias({ page: pagina });
+        : await obtenerCatalogo({ page: pagina });
 
       if (solicitud === this.#solicitudActual) {
         this.#mostrar(coleccion);
@@ -83,6 +108,129 @@ class ListadoPeliculas {
         this.#mostrarError(error, pagina);
       }
     }
+  }
+
+  /**
+   * Carga solo el carrusel con las tendencias semanales, independiente de la grilla.
+   */
+  async #cargarDestacados() {
+    try {
+      const { data } = await obtenerTendencias({ page: 1 });
+
+      this.#mostrarDestacados(data);
+    } catch {
+      this.#ocultarDestacados();
+    }
+  }
+
+  #conectarFiltros() {
+    const { filtros, filtroGenero, filtroPuntuacion, filtroAnio, orden, btnLimpiarFiltros } =
+      this.#elementos;
+
+    filtros?.classList.remove('d-none');
+
+    for (const select of [filtroGenero, filtroPuntuacion, filtroAnio, orden]) {
+      select?.addEventListener('change', () => this.#renderizarPagina());
+    }
+
+    btnLimpiarFiltros?.addEventListener('click', () => {
+      filtroGenero.value = '';
+      filtroPuntuacion.value = '';
+      filtroAnio.value = '';
+      orden.value = 'tendencia';
+      this.#renderizarPagina();
+    });
+  }
+
+  #ocultarFiltros() {
+    this.#elementos.filtros?.classList.add('d-none');
+  }
+
+  #actualizarFiltros(peliculas) {
+    for (const pelicula of peliculas) {
+      for (const genero of pelicula.generos ?? []) {
+        this.#generos.add(genero);
+      }
+
+      if (Number.isInteger(pelicula.anioEstreno)) {
+        this.#anios.add(pelicula.anioEstreno);
+      }
+    }
+
+    const generos = [...this.#generos].sort(compararTitulo);
+    const anios = [...this.#anios].sort((a, b) => b - a);
+
+    actualizarOpciones(this.#elementos.filtroGenero, generos, 'Todos los géneros');
+    actualizarOpciones(this.#elementos.filtroAnio, anios, 'Todos los años');
+  }
+
+  #filtrarPagina() {
+    const { filtroGenero, filtroPuntuacion, filtroAnio } = this.#elementos;
+    const genero = filtroGenero?.value ?? '';
+    const puntuacion = filtroPuntuacion?.value ?? '';
+    const anio = filtroAnio?.value ?? '';
+    const filtradas = this.#peliculasPagina.filter(
+      (pelicula) =>
+        filtrarPorGenero(pelicula, genero) &&
+        filtrarPorAnio(pelicula, anio) &&
+        cumpleFiltroPuntuacion(pelicula.puntuacionTmdb, puntuacion),
+    );
+
+    return this.#ordenarPagina(filtradas);
+  }
+
+  #ordenarPagina(peliculas) {
+    const orden = this.#elementos.orden?.value;
+    const descendente = orden === 'puntuacion_desc';
+
+    if (descendente || orden === 'puntuacion_asc') {
+      peliculas.sort((a, b) => compararPuntuacion(a.puntuacionTmdb, b.puntuacionTmdb, descendente));
+    } else if (orden === 'anio_desc') {
+      peliculas.sort((a, b) => b.anioEstreno - a.anioEstreno);
+    } else if (orden === 'anio_asc') {
+      peliculas.sort((a, b) => a.anioEstreno - b.anioEstreno);
+    } else if (orden === 'titulo_asc') {
+      peliculas.sort((a, b) => compararTitulo(a.titulo, b.titulo));
+    }
+
+    return peliculas;
+  }
+
+  #hayFiltrosActivos() {
+    const { filtroGenero, filtroPuntuacion, filtroAnio, orden } = this.#elementos;
+
+    return Boolean(
+      filtroGenero?.value ||
+      filtroPuntuacion?.value ||
+      filtroAnio?.value ||
+      (orden?.value && orden.value !== 'tendencia'),
+    );
+  }
+
+  #renderizarPagina() {
+    const { contenedor } = this.#elementos;
+    const visibles = this.#consulta ? this.#peliculasPagina : this.#filtrarPagina();
+
+    if (visibles.length === 0) {
+      contenedor.replaceChildren(this.#crearMensaje(this.#textoSinResultados()));
+    } else {
+      contenedor.replaceChildren(...visibles.map((pelicula) => this.#crearTarjeta(pelicula)));
+    }
+
+    this.#actualizarEstado(visibles);
+  }
+
+  #actualizarEstado(visibles) {
+    const { estado } = this.#elementos;
+
+    if (this.#consulta) {
+      estado.textContent = `${this.#total} ${this.#total === 1 ? 'resultado' : 'resultados'}`;
+      return;
+    }
+
+    estado.textContent = this.#hayFiltrosActivos()
+      ? `${visibles.length} de ${this.#peliculasPagina.length} en esta página`
+      : '';
   }
 
   #mostrarCargando() {
@@ -95,38 +243,27 @@ class ListadoPeliculas {
   }
 
   #mostrar({ data, page, limit, total }) {
-    const { contenedor, estado, btnAnterior, btnSiguiente } = this.#elementos;
+    const { btnAnterior, btnSiguiente } = this.#elementos;
 
     this.#pagina = page;
+    this.#peliculasPagina = data;
+    this.#total = total;
     this.#actualizarUrl();
 
-    if (!this.#consulta && !this.#destacadosMostrados) {
-      this.#destacadosMostrados = this.#mostrarDestacados(data);
+    if (!this.#consulta) {
+      this.#actualizarFiltros(data);
     }
 
-    if (data.length === 0) {
-      contenedor.replaceChildren(this.#crearMensaje(this.#textoSinResultados()));
-      btnAnterior.disabled = page <= 1;
-      btnSiguiente.disabled = true;
-      return;
-    }
+    this.#renderizarPagina();
 
-    contenedor.replaceChildren(...data.map((pelicula) => this.#crearTarjeta(pelicula)));
-    estado.textContent = this.#consulta
-      ? `${total} ${total === 1 ? 'resultado' : 'resultados'}`
-      : '';
     btnAnterior.disabled = page <= 1;
-    btnSiguiente.disabled = page * limit >= total;
+    btnSiguiente.disabled = data.length === 0 || page * limit >= total;
   }
 
   #mostrarError(error, pagina) {
     const { contenedor, btnAnterior, btnSiguiente } = this.#elementos;
     const aviso = this.#crearMensaje(mensajeDeError(error), 'alert alert-danger py-2 fs-7 mb-2');
     const reintentar = document.createElement('button');
-
-    if (!this.#consulta && !this.#destacadosMostrados) {
-      this.#ocultarDestacados();
-    }
 
     reintentar.type = 'button';
     reintentar.className = 'btn btn-sm btn-outline-light rounded-pill px-3';
@@ -139,8 +276,12 @@ class ListadoPeliculas {
   }
 
   #textoSinResultados() {
-    return this.#consulta
-      ? `No encontramos películas para «${this.#consulta}». Probá con otro título.`
+    if (this.#consulta) {
+      return `No encontramos películas para “${this.#consulta}”. Probá con otro título.`;
+    }
+
+    return this.#hayFiltrosActivos()
+      ? 'No hay películas que coincidan con los filtros en esta página.'
       : 'No hay películas para mostrar por ahora.';
   }
 
@@ -307,7 +448,9 @@ function crearTarjetaPelicula(pelicula, plantilla) {
   enlace.href = destino;
   enlace.title = pelicula.titulo;
   tarjeta.querySelector('.movie-title').textContent = pelicula.titulo;
-  tarjeta.querySelector('.movie-meta').textContent = pelicula.anioEstreno;
+  tarjeta.querySelector('.movie-meta').textContent = Number.isFinite(pelicula.puntuacionTmdb)
+    ? `${pelicula.anioEstreno} · ★ ${pelicula.puntuacionTmdb}`
+    : String(pelicula.anioEstreno);
 
   mostrarPoster(
     {
@@ -349,7 +492,7 @@ function crearTarjetaResena(resena, plantilla) {
 
   destino.searchParams.set('id', resena.pelicula.id);
 
-  for (const enlace of tarjeta.querySelectorAll('a')) {
+  for (const enlace of tarjeta.querySelectorAll('.resena-pelicula-link')) {
     enlace.href = destino;
   }
 
@@ -360,7 +503,14 @@ function crearTarjetaResena(resena, plantilla) {
     resena.comentario,
     LARGO_COMENTARIO,
   );
-  tarjeta.querySelector('.resena-reciente-autor').textContent = `@${resena.autor.nombreUsuario}`;
+
+  const autor = tarjeta.querySelector('.resena-reciente-autor');
+
+  autor.href = urlPerfilUsuario(resena.autor.id);
+  autor.title = `Ver perfil de ${resena.autor.nombre}`;
+  autor.textContent = `@${resena.autor.nombreUsuario}`;
+
+  enlazarResenaAPerfil(tarjeta.querySelector('.resena-reciente'), resena.autor);
 
   mostrarPoster(
     {
@@ -478,6 +628,12 @@ const listado = new ListadoPeliculas({
     estado: document.getElementById('listado-estado'),
     btnAnterior: document.getElementById('btn-prev'),
     btnSiguiente: document.getElementById('btn-next'),
+    filtros: document.getElementById('trending-filters'),
+    filtroGenero: document.getElementById('trending-genero'),
+    filtroPuntuacion: document.getElementById('trending-puntuacion'),
+    filtroAnio: document.getElementById('trending-anio'),
+    orden: document.getElementById('trending-orden'),
+    btnLimpiarFiltros: document.getElementById('trending-limpiar'),
     seccionDestacados: document.querySelector('.hero-carousel-section'),
     contenedorDestacados: document.getElementById('carousel-items-container'),
     carrusel: document.getElementById('heroCarousel'),

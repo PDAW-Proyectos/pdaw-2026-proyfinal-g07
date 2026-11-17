@@ -27,10 +27,15 @@ export function crearPeliculaController({ peliculaService }) {
       res.json(aColeccionPeliculas(await peliculaService.tendencias({ page })));
     },
 
-    async obtener(req, res) {
-      const pelicula = await peliculaService.obtener(req.params.peliculaId);
+    async recomendadas(req, res) {
+      res.json(aColeccionPeliculas(await peliculaService.recomendadas(req.session.userId)));
+    },
 
-      res.json(pelicula.toDetalleJSON());
+    async obtener(req, res) {
+      const { pelicula, promedioPuntuacion, totalPuntuaciones } =
+        await peliculaService.obtenerDetalle(req.params.peliculaId);
+
+      res.json({ ...pelicula.toDetalleJSON(), promedioPuntuacion, totalPuntuaciones });
     },
 
     async resenas(req, res) {

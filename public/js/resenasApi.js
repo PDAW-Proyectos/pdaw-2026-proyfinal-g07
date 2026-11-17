@@ -16,19 +16,23 @@ export function listarMisResenas({ page = 1, limit = 20 } = {}) {
 }
 
 /**
- * Publica una reseña nueva. Recibe { peliculaId, comentario }.
+ * Publica una reseña nueva. Recibe { peliculaId, comentario, puntuacion }.
+ * La puntuación es opcional: se envía null si no se eligió ninguna.
  */
-export function crearResena({ peliculaId, comentario }) {
-  return solicitar('/resenas', { metodo: 'POST', cuerpo: { peliculaId, comentario } });
+export function crearResena({ peliculaId, comentario, puntuacion = null }) {
+  return solicitar('/resenas', {
+    metodo: 'POST',
+    cuerpo: { peliculaId, comentario, puntuacion },
+  });
 }
 
 /**
- * Reemplaza el comentario de una reseña propia.
+ * Reemplaza el comentario y la puntuación opcional de una reseña propia.
  */
-export function actualizarResena(id, { comentario }) {
+export function actualizarResena(id, { comentario, puntuacion = null }) {
   return solicitar(`/resenas/${encodeURIComponent(id)}`, {
     metodo: 'PATCH',
-    cuerpo: { comentario },
+    cuerpo: { comentario, puntuacion },
   });
 }
 

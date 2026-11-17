@@ -187,6 +187,7 @@
                   <span id="movie-title"></span>
                   <span id="movie-year" class="text-secondary fw-normal"></span>
                 </h1>
+                <p id="movie-rating" class="text-secondary fs-7 mb-0 mt-2" aria-live="polite"></p>
               </div>
 
               <!-- ACCIONES PROTEGIDAS POR SESIÓN -->
@@ -498,6 +499,25 @@
                 data-error-general
               ></div>
 
+              <div class="mb-3">
+                <label for="resenaPuntuacion" class="form-label fs-7 text-secondary">
+                  Puntuación (opcional)
+                </label>
+                <select
+                  id="resenaPuntuacion"
+                  name="puntuacion"
+                  class="form-select bg-dark text-white border-secondary"
+                >
+                  <option value="">Sin puntuación</option>
+                  <option value="1">1 · Muy mala</option>
+                  <option value="2">2 · Mala</option>
+                  <option value="3">3 · Regular</option>
+                  <option value="4">4 · Buena</option>
+                  <option value="5">5 · Excelente</option>
+                </select>
+                <div class="invalid-feedback" data-error-para="puntuacion"></div>
+              </div>
+
               <div class="mb-1">
                 <label for="resenaComentario" class="form-label fs-7 text-secondary">
                   Tu reseña
@@ -552,6 +572,7 @@
           <div class="d-flex align-items-center gap-2 mb-2">
             <span class="author-name text-white fw-semibold fs-7"></span>
             <span class="author-username text-secondary micro-text"></span>
+            <span class="review-rating text-warning micro-text d-none"></span>
             <span class="review-date text-secondary micro-text ms-auto"></span>
           </div>
           <p class="review-content text-secondary text-break mb-0 fs-7"></p>

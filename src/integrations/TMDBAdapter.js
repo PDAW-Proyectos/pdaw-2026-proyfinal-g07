@@ -79,6 +79,15 @@ export class TMDBAdapter {
   }
 
   /**
+   * Devuelve las películas recomendadas por TMDB a partir de una película semilla.
+   */
+  async recomendaciones({ tmdbId, page = 1 } = {}) {
+    const datos = await this.#pedir(`/movie/${tmdbId}/recommendations`, { page });
+
+    return this.#aColeccion(datos);
+  }
+
+  /**
    * Convierte la respuesta de TMDB en Peliculas, descartando las que no se pueden
    * normalizar (por ejemplo, estrenos sin fecha).
    */

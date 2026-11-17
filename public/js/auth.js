@@ -24,6 +24,15 @@ let usuarioActual = null;
 let accionPendiente = null;
 
 /**
+ * Devuelve el usuario autenticado actual, o null si todavía no hay sesión.
+ * Las páginas que dependen de la sesión lo consultan después de que auth.js
+ * terminó de inicializarse.
+ */
+export function usuarioDeSesion() {
+  return usuarioActual;
+}
+
+/**
  * Muestra u oculta lo que depende de tener una sesión activa.
  * Recibe el usuario autenticado o null cuando no hay sesión.
  */

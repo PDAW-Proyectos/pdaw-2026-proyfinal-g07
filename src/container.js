@@ -58,6 +58,8 @@ export async function createContainer({
     peliculaRepository,
     tmdbAdapter: adaptadorTmdb,
     resenaService,
+    watchlistRepository,
+    visualizacionRepository,
     ahora,
   });
   const adminService = new AdminService({

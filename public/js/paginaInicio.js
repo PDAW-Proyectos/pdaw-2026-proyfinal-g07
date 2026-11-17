@@ -1,4 +1,5 @@
-import { buscarPeliculas, obtenerTendencias } from './peliculasApi.js';
+import { usuarioDeSesion } from './auth.js';
+import { buscarPeliculas, obtenerRecomendadas, obtenerTendencias } from './peliculasApi.js';
 import { listarResenasRecientes } from './resenasApi.js';
 import {
   formatearFecha,
@@ -14,6 +15,7 @@ const ICONO_BUSQUEDA = 'bi bi-search text-success me-2';
 const DESTACADOS_MAXIMOS = 5;
 const RESENAS_RECIENTES = 10;
 const LARGO_COMENTARIO = 220;
+const ESTADO_NO_AUTORIZADO = 401;
 
 /**
  * Grilla paginada de películas de index.html. Con una consulta muestra los
@@ -156,26 +158,7 @@ class ListadoPeliculas {
    * Clona la plantilla de tarjeta y la completa con los datos de la película.
    */
   #crearTarjeta(pelicula) {
-    const tarjeta = this.#elementos.plantilla.content.cloneNode(true);
-    const enlace = tarjeta.querySelector('a');
-    const destino = new URL('pelicula.html', window.location.href);
-
-    destino.searchParams.set('id', pelicula.id);
-    enlace.href = destino;
-    enlace.title = pelicula.titulo;
-    tarjeta.querySelector('.movie-title').textContent = pelicula.titulo;
-    tarjeta.querySelector('.movie-meta').textContent = pelicula.anioEstreno;
-
-    mostrarPoster(
-      {
-        imagen: tarjeta.querySelector('.poster-img'),
-        marcador: tarjeta.querySelector('.poster-placeholder'),
-      },
-      pelicula.rutaPoster,
-      pelicula.titulo,
-    );
-
-    return tarjeta;
+    return crearTarjetaPelicula(pelicula, this.#elementos.plantilla);
   }
 
   /**
@@ -312,6 +295,33 @@ class ListadoPeliculas {
 }
 
 /**
+ * Clona la plantilla de tarjeta y la completa con los datos de la película.
+ * Se usa tanto en el listado como en las recomendaciones.
+ */
+function crearTarjetaPelicula(pelicula, plantilla) {
+  const tarjeta = plantilla.content.cloneNode(true);
+  const enlace = tarjeta.querySelector('a');
+  const destino = new URL('pelicula.html', window.location.href);
+
+  destino.searchParams.set('id', pelicula.id);
+  enlace.href = destino;
+  enlace.title = pelicula.titulo;
+  tarjeta.querySelector('.movie-title').textContent = pelicula.titulo;
+  tarjeta.querySelector('.movie-meta').textContent = pelicula.anioEstreno;
+
+  mostrarPoster(
+    {
+      imagen: tarjeta.querySelector('.poster-img'),
+      marcador: tarjeta.querySelector('.poster-placeholder'),
+    },
+    pelicula.rutaPoster,
+    pelicula.titulo,
+  );
+
+  return tarjeta;
+}
+
+/**
  * Recorta un texto largo para que la tarjeta de reseña no ocupe media pantalla.
  */
 function recortarTexto(texto, maximo) {
@@ -406,6 +416,56 @@ async function cargarResenasRecientes() {
   }
 }
 
+/**
+ * Carga las recomendaciones personalizadas del index. Sin sesión la API responde
+ * 401 y la sección queda vacía; auth.js se encarga de ocultarla.
+ */
+async function cargarRecomendadas() {
+  const contenedor = document.getElementById('recommended-container');
+  const plantilla = document.getElementById('tpl-movie-card');
+
+  if (!contenedor || !plantilla) {
+    return;
+  }
+
+  contenedor.replaceChildren(crearMensajeResenas('Cargando recomendaciones...'));
+
+  try {
+    const { data } = await obtenerRecomendadas();
+
+    if (data.length === 0) {
+      contenedor.replaceChildren(
+        crearMensajeResenas(
+          'Todavía no tenemos recomendaciones para vos. Agregá una película a tu watchlist o registrá una visualización y volvé a mirar.',
+        ),
+      );
+      return;
+    }
+
+    contenedor.replaceChildren(
+      ...data.map((pelicula) => crearTarjetaPelicula(pelicula, plantilla)),
+    );
+  } catch (error) {
+    if (error.status === ESTADO_NO_AUTORIZADO) {
+      contenedor.replaceChildren();
+      return;
+    }
+
+    const aviso = crearMensajeResenas(
+      mensajeDeError(error),
+      'alert alert-danger py-2 fs-7 mb-2 w-100',
+    );
+    const reintentar = document.createElement('button');
+
+    reintentar.type = 'button';
+    reintentar.className = 'btn btn-sm btn-outline-light rounded-pill px-3';
+    reintentar.textContent = 'Reintentar';
+    reintentar.addEventListener('click', () => cargarRecomendadas());
+
+    contenedor.replaceChildren(aviso, reintentar);
+  }
+}
+
 // Arranque de index.html: búsqueda por ?q= y página por ?page=.
 const parametros = new URLSearchParams(window.location.search);
 
@@ -426,4 +486,19 @@ const listado = new ListadoPeliculas({
   pagina: leerPagina(parametros.get('page')),
 });
 
-await Promise.all([listado.iniciar(), cargarResenasRecientes()]);
+document.addEventListener('fg:sesion-cambiada', (evento) => {
+  const usuario = evento.detail?.usuario ?? null;
+
+  if (!usuario || usuario.rol === 'admin') {
+    document.getElementById('recommended-container')?.replaceChildren();
+    return;
+  }
+
+  cargarRecomendadas();
+});
+
+const usuario = usuarioDeSesion();
+const recomendaciones =
+  usuario && usuario.rol !== 'admin' ? cargarRecomendadas() : Promise.resolve();
+
+await Promise.all([listado.iniciar(), cargarResenasRecientes(), recomendaciones]);

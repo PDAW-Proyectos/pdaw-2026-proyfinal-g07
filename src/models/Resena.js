@@ -1,24 +1,38 @@
-import { validarFechaHora, validarId, validarTexto } from '../utils/validaciones.js';
+import {
+  validarFechaHora,
+  validarId,
+  validarPuntuacion,
+  validarTexto,
+} from '../utils/validaciones.js';
 
 /**
  * Opinión pública escrita por un usuario sobre una película.
- * Es independiente de la visualización y no contiene puntuación.
+ * Es independiente de la visualización y su puntuación es opcional.
  */
 export class Resena {
   #id;
   #usuarioId;
   #peliculaId;
   #comentario;
+  #puntuacion;
   #fechaPublicacion;
 
   /**
    * Construye una reseña validando sus datos e invariantes.
    */
-  constructor({ id, usuarioId, peliculaId, comentario, fechaPublicacion = new Date() }) {
+  constructor({
+    id,
+    usuarioId,
+    peliculaId,
+    comentario,
+    puntuacion = null,
+    fechaPublicacion = new Date(),
+  }) {
     this.#id = validarId(id, 'id');
     this.#usuarioId = validarId(usuarioId, 'usuarioId');
     this.#peliculaId = validarId(peliculaId, 'peliculaId');
     this.#comentario = validarTexto(comentario, 'comentario', { max: 5000 });
+    this.#puntuacion = validarPuntuacion(puntuacion);
     this.#fechaPublicacion = validarFechaHora(fechaPublicacion, 'fechaPublicacion');
   }
 
@@ -51,6 +65,13 @@ export class Resena {
   }
 
   /**
+   * Devuelve la puntuación de 1 a 5 o null si el autor no calificó la película.
+   */
+  get puntuacion() {
+    return this.#puntuacion;
+  }
+
+  /**
    * Devuelve una copia de la fecha de publicación.
    */
   get fechaPublicacion() {
@@ -66,6 +87,13 @@ export class Resena {
   }
 
   /**
+   * Cambia la puntuación opcional; null quita la calificación.
+   */
+  cambiarPuntuacion(valor) {
+    this.#puntuacion = validarPuntuacion(valor);
+  }
+
+  /**
    * Serializa la reseña para persistencia.
    */
   toJSON() {
@@ -74,6 +102,7 @@ export class Resena {
       usuarioId: this.#usuarioId,
       peliculaId: this.#peliculaId,
       comentario: this.#comentario,
+      puntuacion: this.#puntuacion,
       fechaPublicacion: this.#fechaPublicacion.toISOString(),
     };
   }

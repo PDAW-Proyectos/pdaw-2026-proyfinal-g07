@@ -38,4 +38,34 @@ describe('Resena', () => {
     expect(reconstruida.toJSON()).toEqual(resena.toJSON());
     expect(reconstruida.fechaPublicacion.toISOString()).toBe(fechaPublicacion.toISOString());
   });
+
+  test('la puntuación es opcional y por defecto queda en null', () => {
+    const resena = new Resena(datosBase);
+
+    expect(resena.puntuacion).toBeNull();
+    expect(resena.toJSON().puntuacion).toBeNull();
+  });
+
+  test('acepta una puntuación entera entre 1 y 5', () => {
+    const resena = new Resena({ ...datosBase, puntuacion: 4 });
+
+    expect(resena.puntuacion).toBe(4);
+    expect(Resena.fromJSON(resena.toJSON()).puntuacion).toBe(4);
+  });
+
+  test('rechaza puntuaciones fuera de rango o con decimales', () => {
+    for (const puntuacion of [0, 6, 3.5, '4']) {
+      expect(() => new Resena({ ...datosBase, puntuacion })).toThrow(ErrorDominio);
+    }
+  });
+
+  test('cambiarPuntuacion actualiza el valor y admite null para quitarla', () => {
+    const resena = new Resena({ ...datosBase, puntuacion: 5 });
+
+    resena.cambiarPuntuacion(2);
+    expect(resena.puntuacion).toBe(2);
+
+    resena.cambiarPuntuacion(null);
+    expect(resena.puntuacion).toBeNull();
+  });
 });

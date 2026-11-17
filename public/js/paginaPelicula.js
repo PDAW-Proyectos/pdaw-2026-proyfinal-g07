@@ -10,6 +10,17 @@ const TEXTO_MAS_RESENAS = 'Ver más reseñas';
 const TEXTO_PUBLICAR = 'Publicar reseña';
 const TEXTO_GUARDAR = 'Guardar cambios';
 const LARGO_MAXIMO_COMENTARIO = 5000;
+const PUNTUACION_MAXIMA = 5;
+
+/**
+ * Formatea el promedio con un decimal y coma decimal, como se usa en es-AR.
+ */
+function formatearPromedio(valor) {
+  return valor.toLocaleString('es-AR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
 
 /**
  * Ficha de pelicula.html: carga por HTTP la película indicada en ?id=, sus reseñas
@@ -105,6 +116,8 @@ class PaginaPelicula {
     anio.textContent = `(${pelicula.anioEstreno})`;
     sinopsis.textContent = pelicula.sinopsis || 'Esta película todavía no tiene sinopsis.';
 
+    this.#mostrarPromedio(pelicula.promedioPuntuacion, pelicula.totalPuntuaciones);
+
     generos.replaceChildren(
       ...pelicula.generos.map((genero) => {
         const insignia = plantillaGenero.content.cloneNode(true);
@@ -121,6 +134,32 @@ class PaginaPelicula {
       pelicula.titulo,
       'w500',
     );
+  }
+
+  /**
+   * Muestra el promedio de las puntuaciones o un aviso si todavía no hay ninguna.
+   */
+  #mostrarPromedio(promedio, total) {
+    const contenedor = this.#elementos.promedio;
+
+    contenedor.replaceChildren();
+
+    if (promedio === null || total === 0) {
+      contenedor.textContent = 'Todavía no hay puntuaciones en las reseñas.';
+      return;
+    }
+
+    const icono = document.createElement('i');
+    icono.className = 'bi bi-star-fill text-warning me-1';
+
+    const valor = document.createElement('span');
+    valor.className = 'text-white fw-semibold';
+    valor.textContent = `${formatearPromedio(promedio)} / ${PUNTUACION_MAXIMA}`;
+
+    const detalle = document.createElement('span');
+    detalle.textContent = ` · ${total} ${total === 1 ? 'reseña puntuada' : 'reseñas puntuadas'}`;
+
+    contenedor.append(icono, valor, detalle);
   }
 
   /**
@@ -311,6 +350,7 @@ class PaginaPelicula {
     this.#elementos.btnGuardarResena.textContent = editando ? TEXTO_GUARDAR : TEXTO_PUBLICAR;
     this.#elementos.btnEliminarResena.classList.toggle('d-none', !editando);
     this.#elementos.comentario.value = editando ? this.#resenaPropia.comentario : '';
+    this.#elementos.puntuacion.value = editando ? String(this.#resenaPropia.puntuacion ?? '') : '';
     this.#actualizarContador();
     this.#modalResena.show();
   }
@@ -323,6 +363,7 @@ class PaginaPelicula {
     }
 
     const comentario = this.#elementos.comentario.value.trim();
+    const puntuacion = this.#leerPuntuacion();
 
     if (comentario === '') {
       this.#elementos.comentario.setCustomValidity('Escribí tu reseña antes de guardar.');
@@ -342,17 +383,21 @@ class PaginaPelicula {
 
     try {
       if (this.#resenaPropia) {
-        this.#resenaPropia = await actualizarResena(this.#resenaPropia.id, { comentario });
+        this.#resenaPropia = await actualizarResena(this.#resenaPropia.id, {
+          comentario,
+          puntuacion,
+        });
       } else {
         this.#resenaPropia = await crearResena({
           peliculaId: this.#peliculaId,
           comentario,
+          puntuacion,
         });
       }
 
       this.#modalResena?.hide();
       this.#actualizarBotonResena();
-      await this.#reiniciarResenas();
+      await Promise.all([this.#reiniciarResenas(), this.#cargarPelicula()]);
     } catch (error) {
       // Si la API informa que ya existe una reseña, se pasa a modo edición conservando
       // el texto que el usuario escribió.
@@ -403,27 +448,44 @@ class PaginaPelicula {
     }
   }
 
+  #leerPuntuacion() {
+    const valor = this.#elementos.puntuacion.value;
+
+    return valor === '' ? null : Number(valor);
+  }
+
   #actualizarContador() {
     this.#elementos.contadorResena.textContent = `${this.#elementos.comentario.value.length} / ${LARGO_MAXIMO_COMENTARIO}`;
   }
 
   #limpiarErrores() {
-    const { errorGeneral, errorComentario, comentario } = this.#elementos;
+    const { errorGeneral, errorComentario, comentario, errorPuntuacion, puntuacion } =
+      this.#elementos;
 
     errorGeneral.textContent = '';
     errorGeneral.classList.add('d-none');
     comentario.classList.remove('is-invalid');
     comentario.setCustomValidity('');
     errorComentario.textContent = '';
+    puntuacion.classList.remove('is-invalid');
+    errorPuntuacion.textContent = '';
   }
 
   #mostrarError(error) {
-    const { errorGeneral, errorComentario, comentario } = this.#elementos;
-    const errorDeCampo = error.errores?.find(({ campo }) => campo === 'comentario');
+    const { errorGeneral, errorComentario, comentario, errorPuntuacion, puntuacion } =
+      this.#elementos;
+    const errorDeComentario = error.errores?.find(({ campo }) => campo === 'comentario');
+    const errorDePuntuacion = error.errores?.find(({ campo }) => campo === 'puntuacion');
 
-    if (errorDeCampo) {
+    if (errorDeComentario) {
       comentario.classList.add('is-invalid');
-      errorComentario.textContent = errorDeCampo.mensaje;
+      errorComentario.textContent = errorDeComentario.mensaje;
+      return;
+    }
+
+    if (errorDePuntuacion) {
+      puntuacion.classList.add('is-invalid');
+      errorPuntuacion.textContent = errorDePuntuacion.mensaje;
       return;
     }
 
@@ -451,6 +513,13 @@ class PaginaPelicula {
     tarjeta.querySelector('.review-date').textContent = formatearFecha(resena.fechaPublicacion);
     tarjeta.querySelector('.review-content').textContent = resena.comentario;
 
+    const puntuacion = tarjeta.querySelector('.review-rating');
+
+    if (resena.puntuacion !== null && resena.puntuacion !== undefined) {
+      puntuacion.textContent = `★ ${resena.puntuacion}`;
+      puntuacion.classList.remove('d-none');
+    }
+
     return tarjeta;
   }
 }
@@ -465,6 +534,7 @@ const pagina = new PaginaPelicula({
     textoAviso: document.getElementById('pelicula-no-disponible-texto'),
     titulo: document.getElementById('movie-title'),
     anio: document.getElementById('movie-year'),
+    promedio: document.getElementById('movie-rating'),
     sinopsis: document.getElementById('movie-description'),
     generos: document.getElementById('movie-genres'),
     plantillaGenero: document.getElementById('tpl-genre-badge'),
@@ -481,6 +551,7 @@ const pagina = new PaginaPelicula({
     btnResena: document.getElementById('btn-add-review'),
     modalResena: document.getElementById('modalResena'),
     formResena: document.getElementById('formResena'),
+    puntuacion: document.getElementById('resenaPuntuacion'),
     comentario: document.getElementById('resenaComentario'),
     contadorResena: document.getElementById('contadorResena'),
     btnGuardarResena: document.getElementById('btnGuardarResena'),
@@ -488,6 +559,7 @@ const pagina = new PaginaPelicula({
     tituloModal: document.getElementById('resena-modal-titulo'),
     errorGeneral: document.querySelector('#formResena [data-error-general]'),
     errorComentario: document.querySelector('#formResena [data-error-para="comentario"]'),
+    errorPuntuacion: document.querySelector('#formResena [data-error-para="puntuacion"]'),
   },
   peliculaId: parametros.get('id'),
 });

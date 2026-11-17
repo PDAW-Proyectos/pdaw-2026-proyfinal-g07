@@ -47,7 +47,13 @@ function montarRutas(app, container = {}) {
   }
 
   if (container.peliculaService) {
-    app.use('/api/peliculas', crearPeliculaRouter({ peliculaService: container.peliculaService }));
+    app.use(
+      '/api/peliculas',
+      crearPeliculaRouter({
+        peliculaService: container.peliculaService,
+        usuarioService: container.usuarioService,
+      }),
+    );
   }
 
   if (container.visualizacionService && container.usuarioService) {

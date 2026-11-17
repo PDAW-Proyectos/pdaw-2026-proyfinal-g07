@@ -2,10 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { Resena } from '../models/Resena.js';
 import { ErrorDominio } from '../utils/ErrorDominio.js';
 import { paginar } from '../utils/paginacion.js';
-import { validarCuerpo, validarId, validarTexto } from '../utils/validaciones.js';
+import {
+  validarCuerpo,
+  validarId,
+  validarPuntuacion,
+  validarTexto,
+} from '../utils/validaciones.js';
 
-const CAMPOS_CREACION = new Set(['peliculaId', 'comentario']);
-const CAMPOS_ACTUALIZACION = new Set(['comentario']);
+const CAMPOS_CREACION = new Set(['peliculaId', 'comentario', 'puntuacion']);
+const CAMPOS_ACTUALIZACION = new Set(['comentario', 'puntuacion']);
 
 function porFechaDescendente(a, b) {
   return b.fechaPublicacion.getTime() - a.fechaPublicacion.getTime();
@@ -39,12 +44,14 @@ export class ResenaService {
     const peliculaId = validarId(datos.peliculaId, 'peliculaId');
     const pelicula = await this.#buscarPelicula(peliculaId);
     const comentario = validarTexto(datos.comentario, 'comentario', { max: 5000 });
+    const puntuacion = validarPuntuacion(datos.puntuacion);
 
     const resena = new Resena({
       id: randomUUID(),
       usuarioId,
       peliculaId,
       comentario,
+      puntuacion,
       fechaPublicacion: this.#ahora(),
     });
 
@@ -84,6 +91,28 @@ export class ResenaService {
     return this.#paginarConDatos(resenas, { page, limit });
   }
 
+  /**
+   * Calcula el promedio de las puntuaciones de las reseñas de una película.
+   * Las reseñas sin puntuación no cuentan; si no hay ninguna, el promedio es null.
+   */
+  async promedioPorPelicula(peliculaId) {
+    const resenas = await this.#resenaRepository.listarPorPelicula(peliculaId);
+    const puntuaciones = resenas
+      .map((resena) => resena.puntuacion)
+      .filter((puntuacion) => puntuacion !== null);
+
+    if (puntuaciones.length === 0) {
+      return { promedioPuntuacion: null, totalPuntuaciones: 0 };
+    }
+
+    const suma = puntuaciones.reduce((total, puntuacion) => total + puntuacion, 0);
+
+    return {
+      promedioPuntuacion: Math.round((suma / puntuaciones.length) * 10) / 10,
+      totalPuntuaciones: puntuaciones.length,
+    };
+  }
+
   async obtener(id) {
     const resena = await this.#resenaRepository.buscarPorId(id);
 
@@ -100,6 +129,11 @@ export class ResenaService {
     const resena = await this.#buscarPropia(usuarioId, id);
 
     resena.editar(datos.comentario);
+
+    if (Object.hasOwn(datos, 'puntuacion')) {
+      resena.cambiarPuntuacion(datos.puntuacion);
+    }
+
     await this.#resenaRepository.actualizar(resena);
 
     return this.#componer(resena);

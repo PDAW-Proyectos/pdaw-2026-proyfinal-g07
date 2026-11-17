@@ -18,13 +18,24 @@ export class PeliculaService {
   #peliculaRepository;
   #tmdbAdapter;
   #resenaService;
+  #watchlistRepository;
+  #visualizacionRepository;
   #ahora;
   #cache = new Map();
 
-  constructor({ peliculaRepository, tmdbAdapter, resenaService, ahora = () => new Date() }) {
+  constructor({
+    peliculaRepository,
+    tmdbAdapter,
+    resenaService,
+    watchlistRepository,
+    visualizacionRepository,
+    ahora = () => new Date(),
+  }) {
     this.#peliculaRepository = peliculaRepository;
     this.#tmdbAdapter = tmdbAdapter;
     this.#resenaService = resenaService;
+    this.#watchlistRepository = watchlistRepository;
+    this.#visualizacionRepository = visualizacionRepository;
     this.#ahora = ahora;
   }
 
@@ -66,6 +77,31 @@ export class PeliculaService {
   }
 
   /**
+   * Devuelve recomendaciones de TMDB usando como semilla la última película de la
+   * watchlist o, si no hay, la última visualización del usuario.
+   * Sin semilla devuelve una colección vacía.
+   */
+  async recomendadas(usuarioId) {
+    const semilla = await this.#buscarSemilla(usuarioId);
+
+    if (!semilla) {
+      return { data: [], page: 1, limit: LIMITE_POR_PAGINA, total: 0 };
+    }
+
+    const resultado = await this.#tmdbAdapter.recomendaciones({
+      tmdbId: semilla.tmdbId,
+      page: 1,
+    });
+    const peliculas = resultado.peliculas.filter((pelicula) => pelicula.tmdbId !== semilla.tmdbId);
+    const descartadas = resultado.peliculas.length - peliculas.length;
+
+    return this.#guardarColeccion(
+      { peliculas, total: Math.max(0, resultado.total - descartadas) },
+      1,
+    );
+  }
+
+  /**
    * Devuelve la ficha de una película del catálogo local.
    */
   async obtener(peliculaId) {
@@ -84,10 +120,54 @@ export class PeliculaService {
   }
 
   /**
+   * Devuelve la ficha de una película junto con el promedio de las puntuaciones
+   * de sus reseñas.
+   */
+  async obtenerDetalle(peliculaId) {
+    const pelicula = await this.obtener(peliculaId);
+    const { promedioPuntuacion, totalPuntuaciones } = await this.#resenaService.promedioPorPelicula(
+      pelicula.id,
+    );
+
+    return { pelicula, promedioPuntuacion, totalPuntuaciones };
+  }
+
+  /**
    * Devuelve las reseñas públicas de una película del catálogo local.
    */
   listarResenas(peliculaId, paginacion) {
     return this.#resenaService.listarPorPelicula(validarId(peliculaId, 'peliculaId'), paginacion);
+  }
+
+  /**
+   * Elige la película semilla: la última agregada a la watchlist y, si no hay,
+   * la última visualización. Descarta entradas cuya película ya no exista.
+   */
+  async #buscarSemilla(usuarioId) {
+    const [watchlist, visualizaciones] = await Promise.all([
+      this.#watchlistRepository.listarPorUsuario(usuarioId),
+      this.#visualizacionRepository.listarPorUsuario(usuarioId),
+    ]);
+
+    const ultimaWatchlist = watchlist.sort(
+      (a, b) => b.fechaAgregado.getTime() - a.fechaAgregado.getTime(),
+    )[0];
+
+    if (ultimaWatchlist) {
+      const pelicula = await this.#peliculaRepository.buscarPorId(ultimaWatchlist.peliculaId);
+
+      if (pelicula) {
+        return pelicula;
+      }
+    }
+
+    const ultimaVisualizacion = visualizaciones.sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
+
+    if (!ultimaVisualizacion) {
+      return null;
+    }
+
+    return this.#peliculaRepository.buscarPorId(ultimaVisualizacion.peliculaId);
   }
 
   /**

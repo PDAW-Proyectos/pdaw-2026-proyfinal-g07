@@ -155,9 +155,13 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
   "anioEstreno": 1999,
   "generos": ["Acción", "Ciencia ficción"],
   "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-  "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+  "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+  "promedioPuntuacion": 4.3,
+  "totalPuntuaciones": 7
 }
 ```
+
+`promedioPuntuacion` es el promedio de las reseñas que tienen puntuación, redondeado a un decimal; es `null` cuando ninguna reseña está puntuada. `totalPuntuaciones` cuenta solo esas reseñas.
 
 ### Visualización
 
@@ -183,6 +187,7 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
 {
   "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
   "comentario": "Una película que invita a pensar.",
+  "puntuacion": 4,
   "fechaPublicacion": "2026-10-30T12:00:00.000Z",
   "autor": {
     "id": "3f1c2a6e-7d4b-4a1e-9c5f-2b8d6e0a1c33",
@@ -199,6 +204,8 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
   }
 }
 ```
+
+`puntuacion` es opcional: es un entero de 1 a 5 o `null` si el autor no calificó la película.
 
 ### Entrada de watchlist
 
@@ -421,7 +428,7 @@ Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `NO_ENCONTRADO`.
 
 ## Películas e integración TMDB
 
-Las búsquedas y tendencias pasan por el Adapter de TMDB y guardan una copia normalizada en el catálogo local. El resto de la API usa siempre el `peliculaId` interno.
+Las búsquedas, tendencias y recomendaciones pasan por el Adapter de TMDB y guardan una copia normalizada en el catálogo local. El resto de la API usa siempre el `peliculaId` interno.
 
 ### `GET /api/peliculas/buscar`
 
@@ -442,9 +449,19 @@ Response `200`: colección de `PeliculaResumen` con `limit` fijo en 20.
 
 Errores: `VALIDACION_FALLIDA`, `TMDB_NO_DISPONIBLE`.
 
+### `GET /api/peliculas/recomendadas`
+
+Requiere sesión. Devuelve recomendaciones de TMDB usando como semilla la última película agregada a la watchlist del usuario. Si no tiene watchlist, usa la última visualización registrada.
+
+Sin semilla (usuario sin watchlist ni visualizaciones) responde `200` con una colección vacía: `data: []` y `total: 0`. La película semilla se descarta de los resultados.
+
+Response `200`: colección de `PeliculaResumen` con `limit` fijo en 20 y `page` en 1.
+
+Errores: `SESION_REQUERIDA`, `SESION_EXPIRADA`, `TMDB_NO_DISPONIBLE`.
+
 ### `GET /api/peliculas/:peliculaId`
 
-Devuelve `PeliculaDetalle` desde el catálogo local.
+Devuelve `PeliculaDetalle` desde el catálogo local, con `promedioPuntuacion` y `totalPuntuaciones` calculados a partir de las reseñas.
 
 Errores: `PELICULA_NO_ENCONTRADA`.
 
@@ -631,18 +648,20 @@ Request:
 ```json
 {
   "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
-  "comentario": "Una película que invita a pensar."
+  "comentario": "Una película que invita a pensar.",
+  "puntuacion": 4
 }
 ```
 
 Validaciones:
 
 - `comentario`: 1 a 5000 caracteres después de recortar espacios. No se admiten textos vacíos.
+- `puntuacion`: opcional; entero de 1 a 5 o `null`. Si se omite, la reseña queda sin puntuación.
 - Una sola reseña por usuario y película.
 
 Response `201` con `Location: /api/resenas/:id`: `Reseña`.
 
-Errores: `SESION_REQUERIDA`, `PELICULA_NO_ENCONTRADA`, `VALIDACION_FALLIDA`, `RESENA_DUPLICADA`, `CONTENIDO_NO_SOPORTADO`.
+Errores: `SESION_REQUERIDA`, `PELICULA_NO_ENCONTRADA`, `VALIDACION_FALLIDA`, `PUNTUACION_INVALIDA`, `RESENA_DUPLICADA`, `CONTENIDO_NO_SOPORTADO`.
 
 ### `PATCH /api/resenas/:id`
 
@@ -652,13 +671,16 @@ Request:
 
 ```json
 {
-  "comentario": "Cambio de opinión después de un segundo visionado."
+  "comentario": "Cambio de opinión después de un segundo visionado.",
+  "puntuacion": 3
 }
 ```
 
+`puntuacion` es opcional: si se omite se conserva la anterior; `null` la quita.
+
 Response `200`: `Reseña`.
 
-Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`, `NO_AUTORIZADO`, `VALIDACION_FALLIDA`.
+Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`, `NO_AUTORIZADO`, `VALIDACION_FALLIDA`, `PUNTUACION_INVALIDA`.
 
 ### `DELETE /api/resenas/:id`
 
@@ -721,6 +743,7 @@ Response `200`:
 | Crear visualización | No | Sí | — | Sí |
 | Ver, editar o borrar historial | No | No | Sí | No |
 | Ver, agregar o quitar watchlist | No | No | Sí | Sí |
+| Ver recomendaciones personalizadas | No | Sí | — | Sí |
 | Crear reseña | No | Sí | — | Sí |
 | Editar o borrar reseña | No | No | Sí | Borrar |
 | Ver estadísticas propias | No | No | Sí | No |
@@ -740,7 +763,6 @@ Response `200`:
 
 No forman parte del contrato inicial:
 
-- Recomendadas personalizadas.
 - Seguimiento entre usuarios, me gusta y comentarios sobre reseñas.
 - Perfiles públicos completos.
 - Series, temporadas y episodios.
@@ -759,5 +781,5 @@ Estas funciones requieren nuevas rutas y deben agregarse al contrato antes de im
 - El Adapter de TMDB nunca debe exponer su estructura interna: transforma a `Pelicula` y normaliza errores.
 - La API key de TMDB se lee del entorno en el servidor y nunca se envía al cliente.
 - Si `ADMIN_EMAIL` y `ADMIN_PASSWORD` están definidos, al arrancar se crea la cuenta administradora. `ADMIN_NOMBRE` y `ADMIN_USUARIO` son opcionales; una cuenta común con ese email no se promueve automáticamente.
-- Las búsquedas y tendencias se cachean en memoria 60 segundos y 5 minutos por proceso; el catálogo local sigue siendo la fuente de las fichas.
+- Las búsquedas y tendencias se cachean en memoria 60 segundos y 5 minutos por proceso; el catálogo local sigue siendo la fuente de las fichas. Las recomendaciones no se cachean porque dependen de la actividad de cada usuario.
 - Los tests de integración deben usar un store en memoria y un cliente HTTP contra una instancia de prueba.

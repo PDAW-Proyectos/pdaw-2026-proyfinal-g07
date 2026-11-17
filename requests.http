@@ -17,6 +17,9 @@ GET {{base}}/peliculas/buscar?q=matrix&page=501
 ### Tendencias de la semana
 GET {{base}}/peliculas/tendencias?page=1
 
+### Recomendaciones personalizadas (requiere sesión; error 401 sin sesión)
+GET {{base}}/peliculas/recomendadas
+
 ### Detalle de una película del catálogo local
 GET {{base}}/peliculas/8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f
 
@@ -90,6 +93,9 @@ GET {{base}}/peliculas/buscar
 ### Tendencias
 GET {{base}}/peliculas/tendencias?page=1
 
+### Recomendaciones personalizadas
+GET {{base}}/peliculas/recomendadas
+
 ### Detalle de película
 GET {{base}}/peliculas/8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f
 
@@ -114,7 +120,8 @@ Content-Type: application/json
 
 {
   "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
-  "comentario": "Una película que invita a pensar."
+  "comentario": "Una película que invita a pensar.",
+  "puntuacion": 4
 }
 
 ### Crear reseña vacía (error 400)
@@ -124,6 +131,16 @@ Content-Type: application/json
 {
   "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
   "comentario": "   "
+}
+
+### Crear reseña con puntuación inválida (error 400)
+POST {{base}}/resenas
+Content-Type: application/json
+
+{
+  "peliculaId": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+  "comentario": "Puntuación fuera de rango.",
+  "puntuacion": 6
 }
 
 ### Crear reseña con contenido no soportado (error 415)
@@ -137,7 +154,8 @@ PATCH {{base}}/resenas/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
 Content-Type: application/json
 
 {
-  "comentario": "Cambio de opinión después de un segundo visionado."
+  "comentario": "Cambio de opinión después de un segundo visionado.",
+  "puntuacion": 3
 }
 
 ### Eliminar reseña

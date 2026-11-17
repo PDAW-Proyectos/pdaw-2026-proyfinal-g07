@@ -126,6 +126,7 @@ describe('resenas', () => {
       const response = await crearResena(baseUrl, cookie, {
         peliculaId: pelicula.id,
         comentario: '  Una película que invita a pensar.  ',
+        puntuacion: 4,
       });
       const cuerpo = await response.json();
 
@@ -134,6 +135,7 @@ describe('resenas', () => {
       expect(cuerpo).toEqual({
         id: expect.any(String),
         comentario: 'Una película que invita a pensar.',
+        puntuacion: 4,
         fechaPublicacion: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
         autor: {
           id: expect.any(String),
@@ -205,6 +207,18 @@ describe('resenas', () => {
         {
           nombre: 'comentario demasiado largo',
           cuerpo: { peliculaId: pelicula.id, comentario: 'a'.repeat(5001) },
+          status: 400,
+          title: 'Datos inválidos',
+        },
+        {
+          nombre: 'puntuación fuera de rango',
+          cuerpo: { peliculaId: pelicula.id, comentario: 'Hola', puntuacion: 6 },
+          status: 400,
+          title: 'Datos inválidos',
+        },
+        {
+          nombre: 'puntuación con decimales',
+          cuerpo: { peliculaId: pelicula.id, comentario: 'Hola', puntuacion: 3.5 },
           status: 400,
           title: 'Datos inválidos',
         },
@@ -372,6 +386,68 @@ describe('resenas', () => {
         cuerpo: { comentario: 'Hola' },
       });
       expect(inexistente.status).toBe(404);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('la puntuación es opcional y se puede cambiar o quitar al editar', async () => {
+    const { container, server, baseUrl } = await iniciarEntorno();
+
+    try {
+      const cookieLucia = await registrar(baseUrl, {
+        nombreUsuario: 'lucia',
+        email: 'lucia@example.com',
+      });
+      const cookieTomas = await registrar(baseUrl, {
+        nombreUsuario: 'tomas',
+        email: 'tomas@example.com',
+      });
+      const pelicula = await guardarPelicula(container);
+
+      const sinPuntuacion = await (
+        await crearResena(baseUrl, cookieLucia, {
+          peliculaId: pelicula.id,
+          comentario: 'Sin nota',
+        })
+      ).json();
+      expect(sinPuntuacion.puntuacion).toBeNull();
+
+      const conPuntuacion = await (
+        await crearResena(baseUrl, cookieTomas, {
+          peliculaId: pelicula.id,
+          comentario: 'Con nota',
+          puntuacion: 5,
+        })
+      ).json();
+      expect(conPuntuacion.puntuacion).toBe(5);
+
+      const soloComentario = await (
+        await pedir(baseUrl, `/api/resenas/${conPuntuacion.id}`, {
+          cookie: cookieTomas,
+          metodo: 'PATCH',
+          cuerpo: { comentario: 'Editada sin tocar la nota' },
+        })
+      ).json();
+      expect(soloComentario.puntuacion).toBe(5);
+
+      const nuevaPuntuacion = await (
+        await pedir(baseUrl, `/api/resenas/${conPuntuacion.id}`, {
+          cookie: cookieTomas,
+          metodo: 'PATCH',
+          cuerpo: { comentario: 'Editada', puntuacion: 2 },
+        })
+      ).json();
+      expect(nuevaPuntuacion.puntuacion).toBe(2);
+
+      const sinNota = await (
+        await pedir(baseUrl, `/api/resenas/${conPuntuacion.id}`, {
+          cookie: cookieTomas,
+          metodo: 'PATCH',
+          cuerpo: { comentario: 'Editada', puntuacion: null },
+        })
+      ).json();
+      expect(sinNota.puntuacion).toBeNull();
     } finally {
       await detenerEntorno(server);
     }

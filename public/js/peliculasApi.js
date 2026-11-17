@@ -16,6 +16,13 @@ export function obtenerTendencias({ page = 1 } = {}) {
 }
 
 /**
+ * Devuelve recomendaciones personalizadas. Requiere sesión.
+ */
+export function obtenerRecomendadas() {
+  return solicitar('/peliculas/recomendadas');
+}
+
+/**
  * Devuelve la PeliculaDetalle del catálogo local según su id interno.
  */
 export function obtenerPelicula(peliculaId) {

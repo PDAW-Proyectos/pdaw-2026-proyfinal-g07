@@ -121,6 +121,20 @@ describe('TMDBAdapter', () => {
     expect(new URL(llamadas[2]).searchParams.get('page')).toBe('3');
   });
 
+  test('pide las recomendaciones de una película semilla', async () => {
+    const { fetchFalso, llamadas } = crearFetchFalso({
+      '/movie/603/recommendations': BUSQUEDA,
+      '/genre/movie/list': GENEROS,
+    });
+    const adaptador = new TMDBAdapter({ apiKey: 'clave', fetchImpl: fetchFalso });
+
+    const resultado = await adaptador.recomendaciones({ tmdbId: 603, page: 2 });
+
+    expect(resultado.peliculas[0].tmdbId).toBe(603);
+    expect(rutaDe(llamadas[0])).toBe('/movie/603/recommendations');
+    expect(new URL(llamadas[0]).searchParams.get('page')).toBe('2');
+  });
+
   test('normaliza un error HTTP de TMDB sin exponer la API key', async () => {
     const { fetchFalso } = crearFetchFalso({
       '/search/movie': respuestaJson({}, { ok: false, status: 401 }),

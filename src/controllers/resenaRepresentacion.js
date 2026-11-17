@@ -6,6 +6,7 @@ export function aResenaJSON({ resena, autor, pelicula }) {
   return {
     id: resena.id,
     comentario: resena.comentario,
+    puntuacion: resena.puntuacion,
     fechaPublicacion: resena.fechaPublicacion.toISOString(),
     autor: autor.toPublicJSON(),
     pelicula: pelicula.toResumenJSON(),

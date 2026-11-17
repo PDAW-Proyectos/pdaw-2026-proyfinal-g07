@@ -18,12 +18,20 @@ function crearPelicula(overrides = {}) {
 /**
  * Arma el servicio con dobles de prueba y registra las llamadas que recibe.
  */
-function crearServicio({ pelicula, peliculas = [crearPelicula()], ahora } = {}) {
+function crearServicio({
+  pelicula,
+  peliculas = [crearPelicula()],
+  ahora,
+  watchlist = [],
+  visualizaciones = [],
+  recomendadas = [crearPelicula({ tmdbId: 604, titulo: 'Otra película' })],
+} = {}) {
   const llamadas = {
     busquedas: [],
     tendencias: [],
     guardadas: [],
     resenas: [],
+    recomendaciones: [],
   };
 
   const tmdbAdapter = {
@@ -34,6 +42,10 @@ function crearServicio({ pelicula, peliculas = [crearPelicula()], ahora } = {}) 
     async tendencias({ page }) {
       llamadas.tendencias.push({ page });
       return { peliculas, page, total: 91 };
+    },
+    async recomendaciones({ tmdbId, page }) {
+      llamadas.recomendaciones.push({ tmdbId, page });
+      return { peliculas: recomendadas, page, total: recomendadas.length };
     },
   };
 
@@ -47,16 +59,40 @@ function crearServicio({ pelicula, peliculas = [crearPelicula()], ahora } = {}) 
     },
   };
 
+  const watchlistRepository = {
+    async listarPorUsuario() {
+      return watchlist;
+    },
+  };
+
+  const visualizacionRepository = {
+    async listarPorUsuario() {
+      return visualizaciones;
+    },
+  };
+
   const resenaService = {
     async listarPorPelicula(peliculaId, paginacion) {
       llamadas.resenas.push({ peliculaId, paginacion });
       return { data: [], page: paginacion.page, limit: paginacion.limit, total: 0 };
     },
+    async promedioPorPelicula(peliculaId) {
+      llamadas.promedios = llamadas.promedios ?? [];
+      llamadas.promedios.push({ peliculaId });
+      return { promedioPuntuacion: 4.5, totalPuntuaciones: 2 };
+    },
   };
 
   return {
     llamadas,
-    service: new PeliculaService({ peliculaRepository, tmdbAdapter, resenaService, ahora }),
+    service: new PeliculaService({
+      peliculaRepository,
+      tmdbAdapter,
+      resenaService,
+      watchlistRepository,
+      visualizacionRepository,
+      ahora,
+    }),
   };
 }
 
@@ -119,6 +155,50 @@ describe('PeliculaService', () => {
     expect(resultado).toMatchObject({ page: 3, limit: 20, total: 91 });
   });
 
+  test('recomendadas usa la última entrada de la watchlist como semilla', async () => {
+    const semilla = crearPelicula();
+    const recomendada = crearPelicula({ tmdbId: 604, titulo: 'Otra película' });
+    const { service, llamadas } = crearServicio({
+      pelicula: semilla,
+      watchlist: [
+        { peliculaId: 'p-vieja', fechaAgregado: new Date('2026-01-01T00:00:00.000Z') },
+        { peliculaId: 'p-matrix', fechaAgregado: new Date('2026-02-01T00:00:00.000Z') },
+      ],
+      visualizaciones: [{ peliculaId: 'p-vista', fecha: '2026-03-01' }],
+      recomendadas: [semilla, recomendada],
+    });
+
+    const resultado = await service.recomendadas('u1');
+
+    expect(llamadas.recomendaciones).toEqual([{ tmdbId: 603, page: 1 }]);
+    expect(resultado.data).toEqual([recomendada]);
+    expect(resultado).toMatchObject({ page: 1, limit: 20, total: 1 });
+  });
+
+  test('recomendadas usa la última visualización si no hay watchlist', async () => {
+    const semilla = crearPelicula();
+    const { service, llamadas } = crearServicio({
+      pelicula: semilla,
+      visualizaciones: [
+        { peliculaId: 'p-vieja', fecha: '2026-01-01' },
+        { peliculaId: 'p-matrix', fecha: '2026-05-01' },
+      ],
+    });
+
+    await service.recomendadas('u1');
+
+    expect(llamadas.recomendaciones).toEqual([{ tmdbId: 603, page: 1 }]);
+  });
+
+  test('recomendadas devuelve una colección vacía si no hay semilla', async () => {
+    const { service, llamadas } = crearServicio();
+
+    const resultado = await service.recomendadas('u1');
+
+    expect(resultado).toEqual({ data: [], page: 1, limit: 20, total: 0 });
+    expect(llamadas.recomendaciones).toHaveLength(0);
+  });
+
   test('obtener devuelve la película del catálogo local', async () => {
     const pelicula = crearPelicula();
     const { service } = crearServicio({ pelicula });
@@ -132,6 +212,18 @@ describe('PeliculaService', () => {
     await expect(service.obtener('p-inexistente')).rejects.toMatchObject({
       codigo: 'PELICULA_NO_ENCONTRADA',
     });
+  });
+
+  test('obtenerDetalle agrega el promedio de las puntuaciones de las reseñas', async () => {
+    const pelicula = crearPelicula();
+    const { service, llamadas } = crearServicio({ pelicula });
+
+    await expect(service.obtenerDetalle('p-matrix')).resolves.toEqual({
+      pelicula,
+      promedioPuntuacion: 4.5,
+      totalPuntuaciones: 2,
+    });
+    expect(llamadas.promedios).toEqual([{ peliculaId: 'p-matrix' }]);
   });
 
   test('listarResenas delega en el servicio de reseñas con la paginación pedida', async () => {

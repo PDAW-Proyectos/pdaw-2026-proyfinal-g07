@@ -103,6 +103,7 @@ function crearAdaptadorFalso() {
     falla: false,
     busquedas: [],
     consultasTendencias: [],
+    consultasRecomendaciones: [],
 
     async buscar({ q, page }) {
       if (this.falla) {
@@ -125,6 +126,24 @@ function crearAdaptadorFalso() {
         peliculas: [crearPelicula({ tmdbId: 604, titulo: 'Matrix Reloaded' })],
         page,
         total: 1,
+      };
+    },
+
+    async recomendaciones({ tmdbId, page }) {
+      if (this.falla) {
+        throw new ErrorDominio('TMDB_NO_DISPONIBLE', 'TMDB no está disponible.');
+      }
+
+      this.consultasRecomendaciones.push({ tmdbId, page });
+
+      return {
+        // Incluye la semilla para comprobar que el servicio la descarta.
+        peliculas: [
+          crearPelicula({ tmdbId }),
+          crearPelicula({ tmdbId: 604, titulo: 'Matrix Reloaded' }),
+        ],
+        page,
+        total: 2,
       };
     },
   };
@@ -166,6 +185,8 @@ describe('peliculas', () => {
         generos: ['Acción', 'Ciencia ficción'],
         rutaPoster: '/matrix.jpg',
         rutaBackdrop: '/matrix-backdrop.jpg',
+        promedioPuntuacion: null,
+        totalPuntuaciones: 0,
       });
 
       const otraPagina = await (
@@ -295,6 +316,181 @@ describe('peliculas', () => {
 
       const invalida = await pedir(baseUrl, `/api/peliculas/${peliculaId}/resenas?limit=51`);
       expect(invalida.status).toBe(400);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('la ficha incluye el promedio de las reseñas puntuadas', async () => {
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: crearAdaptadorFalso() });
+
+    try {
+      const peliculaId = (await (await pedir(baseUrl, '/api/peliculas/buscar?q=matrix')).json())
+        .data[0].id;
+      const cookies = [];
+
+      for (const [nombreUsuario, email] of [
+        ['lucia', 'lucia@example.com'],
+        ['tomas', 'tomas@example.com'],
+        ['caro', 'caro@example.com'],
+      ]) {
+        cookies.push(await registrar(baseUrl, { nombreUsuario, email }));
+      }
+
+      const puntuaciones = [5, 4, null];
+
+      for (const [indice, cookie] of cookies.entries()) {
+        const response = await pedir(baseUrl, '/api/resenas', {
+          cookie,
+          metodo: 'POST',
+          cuerpo: {
+            peliculaId,
+            comentario: `Reseña ${indice + 1}`,
+            ...(puntuaciones[indice] !== null && { puntuacion: puntuaciones[indice] }),
+          },
+        });
+
+        expect(response.status).toBe(201);
+      }
+
+      const detalle = await (await pedir(baseUrl, `/api/peliculas/${peliculaId}`)).json();
+
+      expect(detalle.promedioPuntuacion).toBe(4.5);
+      expect(detalle.totalPuntuaciones).toBe(2);
+
+      const resenas = await (await pedir(baseUrl, `/api/peliculas/${peliculaId}/resenas`)).json();
+
+      expect(resenas.total).toBe(3);
+      expect(resenas.data.map((resena) => resena.puntuacion)).toEqual(
+        expect.arrayContaining([4, 5, null]),
+      );
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('las recomendaciones requieren sesión', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const response = await pedir(baseUrl, '/api/peliculas/recomendadas');
+
+      expect(response.status).toBe(401);
+      expect(adaptador.consultasRecomendaciones).toHaveLength(0);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('recomienda a partir de la última película de la watchlist', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'lucia',
+        email: 'lucia@example.com',
+      });
+      const peliculaId = (await (await pedir(baseUrl, '/api/peliculas/buscar?q=matrix')).json())
+        .data[0].id;
+
+      const agregada = await pedir(baseUrl, '/api/watchlist', {
+        cookie,
+        metodo: 'POST',
+        cuerpo: { peliculaId },
+      });
+
+      expect(agregada.status).toBe(201);
+
+      const response = await pedir(baseUrl, '/api/peliculas/recomendadas', { cookie });
+      const coleccion = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(adaptador.consultasRecomendaciones).toEqual([{ tmdbId: 603, page: 1 }]);
+      expect(coleccion).toMatchObject({ page: 1, limit: 20, total: 1 });
+      // La semilla se descarta aunque TMDB la devuelva entre las recomendaciones.
+      expect(coleccion.data).toHaveLength(1);
+      expect(coleccion.data[0]).toMatchObject({ tmdbId: 604, titulo: 'Matrix Reloaded' });
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('usa la última visualización si el usuario no tiene watchlist', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'tomas',
+        email: 'tomas@example.com',
+      });
+      const peliculaId = (await (await pedir(baseUrl, '/api/peliculas/buscar?q=matrix')).json())
+        .data[0].id;
+
+      const creada = await pedir(baseUrl, '/api/visualizaciones', {
+        cookie,
+        metodo: 'POST',
+        cuerpo: { peliculaId, fecha: '2026-01-15' },
+      });
+
+      expect(creada.status).toBe(201);
+
+      const response = await pedir(baseUrl, '/api/peliculas/recomendadas', { cookie });
+
+      expect(response.status).toBe(200);
+      expect(adaptador.consultasRecomendaciones).toEqual([{ tmdbId: 603, page: 1 }]);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('devuelve una colección vacía si el usuario no tiene actividad', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'caro',
+        email: 'caro@example.com',
+      });
+
+      const response = await pedir(baseUrl, '/api/peliculas/recomendadas', { cookie });
+      const coleccion = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(coleccion).toEqual({ data: [], page: 1, limit: 20, total: 0 });
+      expect(adaptador.consultasRecomendaciones).toHaveLength(0);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('responde 502 si TMDB falla al buscar recomendaciones', async () => {
+    const adaptador = crearAdaptadorFalso();
+    const { server, baseUrl } = await iniciarEntorno({ tmdbAdapter: adaptador });
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'lucia',
+        email: 'lucia@example.com',
+      });
+      const peliculaId = (await (await pedir(baseUrl, '/api/peliculas/buscar?q=matrix')).json())
+        .data[0].id;
+
+      await pedir(baseUrl, '/api/watchlist', {
+        cookie,
+        metodo: 'POST',
+        cuerpo: { peliculaId },
+      });
+
+      adaptador.falla = true;
+
+      const response = await pedir(baseUrl, '/api/peliculas/recomendadas', { cookie });
+
+      expect(response.status).toBe(502);
+      expect((await response.json()).title).toBe('Servicio externo no disponible');
     } finally {
       await detenerEntorno(server);
     }

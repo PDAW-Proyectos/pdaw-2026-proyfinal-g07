@@ -51,6 +51,9 @@ export class PeliculaRepository {
             generos: pelicula.generos.length > 0 ? pelicula.generos : existente.generos,
             rutaPoster: pelicula.rutaPoster ?? existente.rutaPoster,
             rutaBackdrop: pelicula.rutaBackdrop ?? existente.rutaBackdrop,
+            director: pelicula.director ?? existente.director,
+            puntuacionTmdb: pelicula.puntuacionTmdb ?? existente.puntuacionTmdb,
+            votosTmdb: pelicula.votosTmdb ?? existente.votosTmdb,
           });
 
           registros[indiceTmdb] = actualizada.toJSON();

@@ -46,6 +46,43 @@ export function mostrarPoster({ imagen, marcador }, rutaPoster, titulo, tamano) 
 }
 
 /**
+ * Arma la URL de la página pública de un usuario.
+ */
+export function urlPerfilUsuario(usuarioId) {
+  const destino = new URL('usuario.html', window.location.href);
+
+  destino.searchParams.set('id', usuarioId);
+
+  return destino;
+}
+
+/**
+ * Hace que una tarjeta de reseña navegue al perfil del autor al tocarla,
+ * salvo que el clic sea sobre otro enlace o botón.
+ */
+export function enlazarResenaAPerfil(elemento, autor) {
+  if (!elemento) {
+    return;
+  }
+
+  const destino = urlPerfilUsuario(autor.id);
+
+  elemento.classList.add('resena-enlazable');
+  elemento.title = `Ver perfil de ${autor.nombre}`;
+  elemento.addEventListener('click', (evento) => {
+    if (evento.defaultPrevented || evento.target.closest('a, button')) {
+      return;
+    }
+
+    if (window.getSelection()?.toString()) {
+      return;
+    }
+
+    window.location.href = destino;
+  });
+}
+
+/**
  * Convierte una fecha ISO 8601 en texto legible, por ejemplo "30 de octubre de 2026".
  */
 export function formatearFecha(iso) {

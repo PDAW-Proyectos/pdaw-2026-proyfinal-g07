@@ -16,6 +16,13 @@ export function obtenerTendencias({ page = 1 } = {}) {
 }
 
 /**
+ * Devuelve el catálogo amplio de películas populares de todas las épocas.
+ */
+export function obtenerCatalogo({ page = 1 } = {}) {
+  return solicitar('/peliculas/catalogo', { parametros: { page } });
+}
+
+/**
  * Devuelve recomendaciones personalizadas. Requiere sesión.
  */
 export function obtenerRecomendadas() {
@@ -27,6 +34,13 @@ export function obtenerRecomendadas() {
  */
 export function obtenerPelicula(peliculaId) {
   return solicitar(`/peliculas/${encodeURIComponent(peliculaId)}`);
+}
+
+/**
+ * Devuelve el trailer oficial de una película o `{ trailer: null }`.
+ */
+export function obtenerTrailer(peliculaId) {
+  return solicitar(`/peliculas/${encodeURIComponent(peliculaId)}/trailer`);
 }
 
 /**

@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fotograma - Perfil público</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header
+      class="navbar navbar-dark bg-dark-custom sticky-top border-bottom border-dark-subtle px-3 px-md-4 py-2"
+    >
+      <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <button
+            id="btn-menu-offcanvas"
+            class="btn btn-menu-toggle d-none align-items-center justify-content-center"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#asideDesplegable"
+            aria-controls="asideDesplegable"
+            aria-label="Abrir menú de usuario"
+          >
+            <i class="bi bi-list fs-4"></i>
+          </button>
+          <a class="navbar-brand fw-bold m-0 d-flex align-items-center gap-2" href="index.html">
+            <span class="logo-icon"></span> Fotograma<span class="text-success">.</span>
+          </a>
+        </div>
+
+        <form id="form-busqueda" novalidate class="d-flex flex-grow-1 max-w-search mx-2 mx-md-4">
+          <div class="input-group">
+            <input
+              type="search"
+              id="busqueda-pelicula"
+              name="q"
+              class="form-control bg-dark text-white border-secondary rounded-start-pill ps-3"
+              placeholder="Buscar película..."
+              aria-label="Buscar película"
+              maxlength="100"
+              autocomplete="off"
+              required
+            />
+            <button class="btn btn-success rounded-end-pill px-3" type="submit">
+              <i class="bi bi-search"></i>
+              <span class="d-none d-md-inline ms-1">Buscar</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="d-flex align-items-center">
+          <button
+            id="btn-auth-action"
+            type="button"
+            class="btn btn-sm btn-success rounded-pill px-3 fw-medium"
+            title="Iniciar sesión"
+          >
+            <i class="bi bi-person-fill me-1"></i>
+            <span id="auth-btn-text">Iniciar sesión</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <aside
+      class="offcanvas offcanvas-start bg-sidebar text-white border-end border-dark-subtle"
+      tabindex="-1"
+      id="asideDesplegable"
+      aria-labelledby="asideDesplegableLabel"
+    >
+      <div class="offcanvas-header border-bottom border-dark-subtle p-3">
+        <h5
+          class="offcanvas-title fw-bold text-white d-flex align-items-center gap-2"
+          id="asideDesplegableLabel"
+        >
+          <span class="logo-icon"></span> Fotograma<span class="text-success">.</span>
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+          aria-label="Cerrar menú"
+        ></button>
+      </div>
+
+      <div class="offcanvas-body d-flex flex-column justify-content-between p-4">
+        <nav>
+          <ul class="nav flex-column gap-2 p-0 fs-6">
+            <li class="nav-item">
+              <a
+                href="perfil.html"
+                class="nav-link text-white rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-person-circle"></i> Perfil
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="watchlist.html"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-bookmark-heart"></i> Watchlist
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                href="reviews.html"
+                class="nav-link text-secondary rounded d-flex align-items-center gap-3"
+              >
+                <i class="bi bi-chat-square-text"></i> Reviews
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-footer pt-3 border-top border-dark-subtle">
+          <a
+            href="#"
+            id="btn-logout"
+            class="nav-link text-danger rounded d-flex align-items-center gap-3 fs-6 p-2 text-decoration-none"
+          >
+            <i class="bi bi-box-arrow-left"></i> Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="container-fluid max-w-content py-4 px-3 px-md-5">
+      <div id="usuario-cargando" class="text-center py-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-secondary mt-3 mb-0">Cargando perfil...</p>
+      </div>
+
+      <section id="usuario-no-disponible" class="text-center py-5 d-none">
+        <i class="bi bi-person-x display-1 text-secondary d-block mb-3"></i>
+        <p id="usuario-no-disponible-texto" class="text-secondary fs-5 mb-3" role="alert"></p>
+        <a href="index.html" class="btn btn-success rounded-pill px-4">Volver al inicio</a>
+      </section>
+
+      <div id="perfil-publico" class="d-none">
+        <section
+          class="profile-header mb-5 p-4 rounded-4 bg-dark-custom border border-dark-subtle shadow-sm"
+        >
+          <div
+            class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-4"
+          >
+            <div class="d-flex align-items-center gap-3">
+              <div
+                class="profile-avatar rounded-circle bg-secondary bg-opacity-25 border border-success border-2 d-flex align-items-center justify-content-center text-success"
+              >
+                <i class="bi bi-person-fill display-5"></i>
+              </div>
+              <div>
+                <h1 id="perfil-nombre" class="h3 fw-bold text-white mb-1">Cargando usuario...</h1>
+                <p id="perfil-alias" class="text-secondary small mb-0"></p>
+              </div>
+            </div>
+
+            <div
+              class="d-flex align-items-center justify-content-center gap-4 text-center bg-dark p-3 rounded-3 border border-dark-subtle"
+            >
+              <div class="px-2">
+                <div id="stat-perfil-resenas" class="h3 fw-bold text-white mb-0">0</div>
+                <small class="text-secondary micro-text text-uppercase fw-semibold">Reviews</small>
+              </div>
+
+              <div class="vr bg-secondary opacity-50 my-1"></div>
+
+              <div class="px-2">
+                <div id="stat-perfil-peliculas" class="h3 fw-bold text-white mb-0">0</div>
+                <small class="text-secondary micro-text text-uppercase fw-semibold"
+                  >Películas</small
+                >
+              </div>
+
+              <div class="vr bg-secondary opacity-50 my-1"></div>
+
+              <div class="px-2">
+                <div id="stat-perfil-promedio" class="h3 fw-bold text-success mb-0">—</div>
+                <small
+                  id="stat-perfil-puntuadas"
+                  class="text-secondary micro-text text-uppercase fw-semibold"
+                  >Sin puntuaciones</small
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-5">
+          <div
+            class="d-flex align-items-center gap-3 p-4 rounded-4 bg-dark-custom border border-dark-subtle"
+          >
+            <div
+              class="profile-avatar rounded-circle bg-success bg-opacity-10 border border-success border-2 d-flex align-items-center justify-content-center text-success"
+            >
+              <i class="bi bi-people-fill display-6"></i>
+            </div>
+            <div class="flex-grow-1">
+              <h2 class="h5 text-white fw-bold mb-1">Afinidad cinéfila</h2>
+              <div class="d-flex align-items-baseline gap-2">
+                <span id="afinidad-valor" class="display-6 fw-bold text-success mb-0">—</span>
+                <span id="afinidad-etiqueta" class="text-secondary fw-semibold"></span>
+              </div>
+              <p id="afinidad-detalle" class="text-secondary fs-7 mb-2"></p>
+              <button
+                id="afinidad-accion-invitado"
+                type="button"
+                class="btn btn-sm btn-outline-success rounded-pill px-3 d-none"
+                data-requiere-sesion="ver tu afinidad"
+              >
+                Iniciar sesión para ver mi afinidad
+              </button>
+              <a
+                id="afinidad-enlace-propio"
+                href="perfil.html"
+                class="text-success text-decoration-none fs-7 d-none"
+              >
+                Ir a mi perfil privado &rarr;
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-5">
+          <div
+            class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-2 mb-4"
+          >
+            <h2 class="h4 text-white fw-bold m-0 d-flex align-items-center gap-2">
+              <i class="bi bi-heart-fill text-success"></i> Favoritas
+            </h2>
+          </div>
+
+          <div id="favoritas-elegidas-container" class="row g-3" aria-live="polite"></div>
+        </section>
+
+        <section class="mb-5">
+          <div
+            class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-2 mb-4"
+          >
+            <h2 class="h4 text-white fw-bold m-0 d-flex align-items-center gap-2">
+              <i class="bi bi-star text-success"></i> Mejor puntuadas
+            </h2>
+          </div>
+
+          <div id="favoritas-container" class="row g-3" aria-live="polite"></div>
+        </section>
+
+        <section class="mb-5">
+          <div
+            class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-2 mb-4"
+          >
+            <h2 class="h4 text-white fw-bold m-0 d-flex align-items-center gap-2">
+              <i class="bi bi-chat-square-text text-success"></i> Reseñas
+            </h2>
+          </div>
+
+          <div id="resenas-publicas-container" class="row g-4" aria-live="polite"></div>
+
+          <div class="text-center mt-4">
+            <button
+              id="btn-mas-resenas-publicas"
+              type="button"
+              class="btn btn-outline-success rounded-pill px-4 d-none"
+            >
+              Cargar más reseñas
+            </button>
+          </div>
+        </section>
+
+        <footer
+          class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center text-secondary fs-7 gap-2 border-top border-dark-subtle my-4"
+        >
+          <p class="m-0">Fotograma &copy; 2026 · Hecho para mirar y recordar.</p>
+          <a href="#" class="text-secondary text-decoration-none">Acerca de y créditos &#x2197;</a>
+        </footer>
+      </div>
+    </main>
+
+    <template id="tpl-usuario-favorita">
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <a class="movie-card text-decoration-none d-block" href="#">
+          <div class="poster-container">
+            <img src="" alt="" class="favorita-poster poster-img d-none" loading="lazy" />
+            <div
+              class="poster-placeholder d-flex align-items-center justify-content-center h-100 text-secondary"
+            >
+              <i class="bi bi-film display-4"></i>
+            </div>
+          </div>
+          <h3 class="favorita-title movie-title"></h3>
+          <p class="favorita-meta movie-meta"></p>
+        </a>
+      </div>
+    </template>
+
+    <template id="tpl-usuario-resena">
+      <div class="col-md-6">
+        <article class="review-card p-3 rounded-3 h-100">
+          <div class="d-flex gap-3 mb-3">
+            <a
+              class="resena-pelicula-link resena-poster-contenedor rounded overflow-hidden flex-shrink-0"
+              href="#"
+            >
+              <img src="" alt="" class="review-poster d-none" loading="lazy" />
+              <span
+                class="resena-poster-marcador d-flex align-items-center justify-content-center h-100 text-secondary"
+              >
+                <i class="bi bi-film"></i>
+              </span>
+            </a>
+            <div class="resena-contenido">
+              <a class="resena-pelicula-link text-decoration-none" href="#">
+                <h4 class="movie-title-rev h6 text-white fw-bold mb-1"></h4>
+              </a>
+              <span class="movie-year-rev text-secondary fs-7"></span>
+              <span class="review-rating text-warning micro-text ms-1"></span>
+              <p class="review-date text-muted micro-text mb-0"></p>
+            </div>
+          </div>
+          <p class="review-content text-secondary mb-0"></p>
+        </article>
+      </div>
+    </template>
+
+    <div
+      class="modal fade"
+      id="modalLogin"
+      tabindex="-1"
+      aria-labelledby="modalLoginLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark-custom text-white border border-dark-subtle rounded-4">
+          <div class="modal-header border-bottom border-dark-subtle">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalLoginLabel">
+              <span class="logo-icon"></span> Iniciar sesión
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+
+          <form id="form-login" novalidate>
+            <div class="modal-body p-4">
+              <div class="alert alert-info py-2 fs-7 d-none" role="alert" data-aviso-sesion></div>
+
+              <div
+                class="alert alert-danger py-2 fs-7 d-none"
+                role="alert"
+                data-error-general
+              ></div>
+
+              <div class="mb-3">
+                <label for="login-identificador" class="form-label fs-7 text-secondary">
+                  Email o nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  id="login-identificador"
+                  name="identificador"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="username"
+                  maxlength="254"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="identificador"></div>
+              </div>
+
+              <div class="mb-1">
+                <label for="login-contrasena" class="form-label fs-7 text-secondary">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="login-contrasena"
+                  name="contrasena"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="current-password"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="contrasena"></div>
+              </div>
+            </div>
+
+            <div class="modal-footer border-top border-dark-subtle flex-column align-items-stretch">
+              <button type="submit" class="btn btn-success rounded-pill fw-medium">Ingresar</button>
+              <p class="text-secondary fs-7 text-center m-0 mt-2">
+                ¿No tenés cuenta?
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 align-baseline text-success text-decoration-none"
+                  data-bs-target="#modalRegistro"
+                  data-bs-toggle="modal"
+                >
+                  Registrate
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="modalRegistro"
+      tabindex="-1"
+      aria-labelledby="modalRegistroLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark-custom text-white border border-dark-subtle rounded-4">
+          <div class="modal-header border-bottom border-dark-subtle">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalRegistroLabel">
+              <span class="logo-icon"></span> Crear cuenta
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+
+          <form id="form-registro" novalidate>
+            <div class="modal-body p-4">
+              <div
+                class="alert alert-danger py-2 fs-7 d-none"
+                role="alert"
+                data-error-general
+              ></div>
+
+              <div class="mb-3">
+                <label for="registro-nombre" class="form-label fs-7 text-secondary">Nombre</label>
+                <input
+                  type="text"
+                  id="registro-nombre"
+                  name="nombre"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="name"
+                  maxlength="80"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="nombre"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="registro-nombre-usuario" class="form-label fs-7 text-secondary">
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  id="registro-nombre-usuario"
+                  name="nombreUsuario"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="username"
+                  minlength="3"
+                  maxlength="30"
+                  aria-describedby="ayuda-nombre-usuario"
+                  required
+                />
+                <div id="ayuda-nombre-usuario" class="form-text text-secondary fs-7">
+                  Entre 3 y 30 caracteres: letras, números, punto, guion o guion bajo.
+                </div>
+                <div class="invalid-feedback" data-error-para="nombreUsuario"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="registro-email" class="form-label fs-7 text-secondary">Email</label>
+                <input
+                  type="email"
+                  id="registro-email"
+                  name="email"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="email"
+                  maxlength="254"
+                  required
+                />
+                <div class="invalid-feedback" data-error-para="email"></div>
+              </div>
+
+              <div class="mb-1">
+                <label for="registro-contrasena" class="form-label fs-7 text-secondary">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="registro-contrasena"
+                  name="contrasena"
+                  class="form-control bg-dark text-white border-secondary"
+                  autocomplete="new-password"
+                  minlength="8"
+                  maxlength="72"
+                  aria-describedby="ayuda-contrasena"
+                  required
+                />
+                <div id="ayuda-contrasena" class="form-text text-secondary fs-7">
+                  Mínimo 8 caracteres.
+                </div>
+                <div class="invalid-feedback" data-error-para="contrasena"></div>
+              </div>
+            </div>
+
+            <div class="modal-footer border-top border-dark-subtle flex-column align-items-stretch">
+              <button type="submit" class="btn btn-success rounded-pill fw-medium">
+                Crear cuenta
+              </button>
+              <p class="text-secondary fs-7 text-center m-0 mt-2">
+                ¿Ya tenés cuenta?
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 align-baseline text-success text-decoration-none"
+                  data-bs-target="#modalLogin"
+                  data-bs-toggle="modal"
+                >
+                  Iniciá sesión
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/paginaUsuario.js"></script>
+  </body>
+</html>

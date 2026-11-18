@@ -6,17 +6,17 @@ Proyecto del equipo **7** para **7513 · Proyecto de Desarrollo de Aplicaciones 
 
 ## Ficha del proyecto
 
-| Aspecto                | Descripción                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Problema               | Los aficionados al cine necesitan registrar las películas que ven, organizar su historial y compartir opiniones.                                                                                                                                                                                                                                                                                                                  |
-| Usuarios               | Personas interesadas en el cine que desean registrar visualizaciones, calificar películas y consultar reseñas.                                                                                                                                                                                                                                                                                                                    |
-| Funcionalidades núcleo | **1.** Buscar películas y consultar su información. **2.** Registrar visualizaciones con fecha y puntuación opcional y consultar el historial personal. **3.** Publicar y consultar reseñas, con puntuación opcional y promedio en la ficha.                                                                                                                                                                                      |
-| Reglas de negocio      | **1.** Solo usuarios autenticados pueden registrar visualizaciones, publicar reseñas y usar la watchlist. **2.** Las puntuaciones son enteras de 1 a 5 y opcionales. **3.** Solo el autor puede modificar o eliminar su reseña. **4.** No se permiten fechas futuras. **5.** No se admiten reseñas vacías. **6.** El historial personal es privado. **7.** Cada usuario tiene una sola watchlist y no puede repetir una película. |
-| API externa            | **TMDB:** búsqueda y consulta de título, sinopsis, año de estreno, géneros y póster. [Documentación](https://developer.themoviedb.org/docs/getting-started).                                                                                                                                                                                                                                                                      |
+| Aspecto                | Descripción                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Problema               | Los aficionados al cine necesitan registrar las películas que ven, organizar su historial y compartir opiniones.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Usuarios               | Personas interesadas en el cine que desean registrar visualizaciones, calificar películas y consultar reseñas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Funcionalidades núcleo | **1.** Buscar películas y consultar su información, incluidos director y puntuación de TMDB. **2.** Registrar visualizaciones con fecha y puntuación opcional y consultar el historial personal. **3.** Publicar y consultar reseñas, con puntuación opcional y promedio en la ficha. **4.** Puntuar una película vista sin escribir reseña; la nota se comparte con la reseña y cuenta en el promedio de la ficha. **5.** Explorar un catálogo amplio y filtrar y ordenar sus películas y las ya vistas por género, puntuación y año. **6.** Consultar perfiles públicos de otros usuarios, elegir hasta cinco películas favoritas y ver la afinidad cinéfila agregada. |
+| Reglas de negocio      | **1.** Solo usuarios autenticados pueden registrar visualizaciones, publicar reseñas y usar la watchlist. **2.** Las puntuaciones son enteras de 1 a 5, opcionales y únicas por usuario y película. **3.** Solo el autor puede modificar o eliminar su reseña. **4.** No se permiten fechas futuras. **5.** No se admiten reseñas vacías. **6.** El historial personal es privado. **7.** Cada usuario tiene una sola watchlist y no puede repetir una película. **8.** Cada usuario puede elegir hasta cinco películas favoritas sin repetirlas y solo él puede modificarlas.                                                                                           |
+| API externa            | **TMDB:** búsqueda y consulta de título, sinopsis, año de estreno, géneros, póster, director, puntuación y tráiler oficial. [Documentación](https://developer.themoviedb.org/docs/getting-started).                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### Alcance inicial
 
-Películas, cuentas de usuario, historial personal, puntuaciones, reseñas públicas y una watchlist privada por usuario. Las estadísticas básicas son deseables. La administración de cuentas y la moderación de reseñas se incorporaron como panel administrativo. Series, perfiles públicos completos, seguimiento y me gusta quedan fuera de esta versión. El alcance se revisa en cada planificación.
+Películas, cuentas de usuario, historial personal, puntuaciones, reseñas públicas y una watchlist privada por usuario. Las estadísticas básicas, los perfiles públicos con hasta cinco favoritas y afinidad agregada, la administración de cuentas y la moderación de reseñas ya están incorporados. Series, seguimiento y me gusta quedan fuera de esta versión. El alcance se revisa en cada planificación.
 
 ## Equipo y roles
 
@@ -35,15 +35,18 @@ Copiar `.env.example` a `.env` y definir antes de iniciar el servidor:
 - `TMDB_API_KEY`: clave de la API de TMDB. Se pide en [themoviedb.org](https://www.themoviedb.org/settings/api) y solo se usa en el servidor: nunca llega al navegador.
 - `ADMIN_EMAIL` y `ADMIN_PASSWORD` (opcionales): si se definen juntos, al iniciar se crea una cuenta administradora si el email no existe. `ADMIN_NOMBRE` y `ADMIN_USUARIO` permiten personalizar el nombre visible y el alias. Una cuenta común con ese email no se promueve automáticamente.
 
-Sin `TMDB_API_KEY`, la búsqueda y las tendencias responden `502` con el código `TMDB_NO_DISPONIBLE`; el resto de la aplicación sigue funcionando. Las pruebas no necesitan la clave ni acceso a la red: inyectan un adaptador falso.
+Sin `TMDB_API_KEY`, la búsqueda, las tendencias y el catálogo responden `502` con el código `TMDB_NO_DISPONIBLE`; el resto de la aplicación sigue funcionando. Las pruebas no necesitan la clave ni acceso a la red: inyectan un adaptador falso.
 
 ```bash
 npm install
 npm run format:check
 npm run lint
 npm test
+npm run test:e2e
 npm start
 ```
+
+`test:e2e` verifica con Chrome o Edge en modo headless el flujo reseña→perfil. Se puede indicar el ejecutable con `CHROME_PATH`; no requiere TMDB, base de datos ni servidor previo.
 
 Servidor: **http://localhost:3000**. Panel de administración: **http://localhost:3000/admin.html** (solo cuentas con rol `admin`; permite eliminar cuentas y moderar reseñas).
 
@@ -57,37 +60,43 @@ Tecnologías: JavaScript, Node.js, Express, Jest, ESLint, Prettier y GitHub Acti
 
 Todas las rutas usan el prefijo `/api`. El detalle de campos, validaciones y errores está en el [contrato de API](docs/contrato_api.md). Los casos de éxito y error para probar manualmente están en [requests.http](requests.http).
 
-| Método   | Ruta                                 | Acceso      | Éxito | Descripción                                      |
-| -------- | ------------------------------------ | ----------- | ----- | ------------------------------------------------ |
-| `GET`    | `/api/salud`                         | Público     | `200` | Estado del servicio.                             |
-| `GET`    | `/api/auth/sesion`                   | Público     | `200` | Devuelve si hay sesión y los datos de la cuenta. |
-| `POST`   | `/api/auth/registro`                 | Público     | `201` | Crea la cuenta e inicia sesión.                  |
-| `POST`   | `/api/auth/login`                    | Público     | `200` | Inicia sesión con email o nombre de usuario.     |
-| `POST`   | `/api/auth/logout`                   | Público     | `204` | Cierra la sesión y borra la cookie.              |
-| `GET`    | `/api/peliculas/buscar?q=`           | Público     | `200` | Busca películas en TMDB y guarda la copia local. |
-| `GET`    | `/api/peliculas/tendencias`          | Público     | `200` | Lista las tendencias de TMDB.                    |
-| `GET`    | `/api/peliculas/recomendadas`        | Autenticado | `200` | Recomendaciones según la actividad del usuario.  |
-| `GET`    | `/api/peliculas/:peliculaId`         | Público     | `200` | Detalle de una película del catálogo local.      |
-| `GET`    | `/api/peliculas/:peliculaId/resenas` | Público     | `200` | Reseñas públicas de una película.                |
-| `GET`    | `/api/resenas/recientes`             | Público     | `200` | Últimas reseñas publicadas.                      |
-| `GET`    | `/api/resenas/:id`                   | Público     | `200` | Detalle de una reseña.                           |
-| `GET`    | `/api/resenas/mias`                  | Autenticado | `200` | Reseñas del usuario autenticado.                 |
-| `POST`   | `/api/resenas`                       | Autenticado | `201` | Publica una reseña.                              |
-| `PATCH`  | `/api/resenas/:id`                   | Autor       | `200` | Edita una reseña propia.                         |
-| `DELETE` | `/api/resenas/:id`                   | Autor       | `204` | Elimina una reseña propia.                       |
-| `GET`    | `/api/visualizaciones`               | Dueño       | `200` | Historial privado del usuario autenticado.       |
-| `POST`   | `/api/visualizaciones`               | Autenticado | `201` | Registra una visualización.                      |
-| `GET`    | `/api/visualizaciones/:id`           | Dueño       | `200` | Detalle de una visualización propia.             |
-| `PATCH`  | `/api/visualizaciones/:id`           | Dueño       | `200` | Edita una visualización propia.                  |
-| `DELETE` | `/api/visualizaciones/:id`           | Dueño       | `204` | Elimina una visualización propia.                |
-| `GET`    | `/api/watchlist`                     | Autenticado | `200` | Watchlist privada del usuario autenticado.       |
-| `POST`   | `/api/watchlist`                     | Autenticado | `201` | Agrega una película a la watchlist.              |
-| `GET`    | `/api/watchlist/:peliculaId`         | Autenticado | `200` | Indica si la película está en la watchlist.      |
-| `DELETE` | `/api/watchlist/:peliculaId`         | Autenticado | `204` | Quita una película de la watchlist.              |
-| `GET`    | `/api/estadisticas/me`               | Autenticado | `200` | Estadísticas del usuario autenticado.            |
-| `GET`    | `/api/admin/usuarios`                | Admin       | `200` | Lista las cuentas registradas.                   |
-| `DELETE` | `/api/admin/usuarios/:id`            | Admin       | `204` | Elimina una cuenta y su contenido asociado.      |
-| `DELETE` | `/api/admin/resenas/:id`             | Admin       | `204` | Elimina cualquier reseña.                        |
+| Método   | Ruta                                   | Acceso      | Éxito | Descripción                                      |
+| -------- | -------------------------------------- | ----------- | ----- | ------------------------------------------------ |
+| `GET`    | `/api/salud`                           | Público     | `200` | Estado del servicio.                             |
+| `GET`    | `/api/auth/sesion`                     | Público     | `200` | Devuelve si hay sesión y los datos de la cuenta. |
+| `POST`   | `/api/auth/registro`                   | Público     | `201` | Crea la cuenta e inicia sesión.                  |
+| `POST`   | `/api/auth/login`                      | Público     | `200` | Inicia sesión con email o nombre de usuario.     |
+| `POST`   | `/api/auth/logout`                     | Público     | `204` | Cierra la sesión y borra la cookie.              |
+| `GET`    | `/api/peliculas/buscar?q=`             | Público     | `200` | Busca películas en TMDB y guarda la copia local. |
+| `GET`    | `/api/peliculas/tendencias`            | Público     | `200` | Lista las tendencias de TMDB.                    |
+| `GET`    | `/api/peliculas/catalogo`              | Público     | `200` | Catálogo popular de todas las épocas.            |
+| `GET`    | `/api/peliculas/recomendadas`          | Autenticado | `200` | Recomendaciones según la actividad del usuario.  |
+| `GET`    | `/api/peliculas/:peliculaId`           | Público     | `200` | Detalle de una película del catálogo local.      |
+| `GET`    | `/api/peliculas/:peliculaId/trailer`   | Público     | `200` | Trailer oficial de YouTube, si existe.           |
+| `GET`    | `/api/peliculas/:peliculaId/resenas`   | Público     | `200` | Reseñas públicas de una película.                |
+| `GET`    | `/api/usuarios/:usuarioId`             | Público     | `200` | Perfil público, favoritas, métricas y afinidad.  |
+| `PUT`    | `/api/usuarios/:usuarioId/favoritas`   | Dueño       | `200` | Reemplaza la selección de hasta cinco favoritas. |
+| `GET`    | `/api/usuarios/:usuarioId/resenas`     | Público     | `200` | Reseñas públicas de un usuario.                  |
+| `GET`    | `/api/resenas/recientes`               | Público     | `200` | Últimas reseñas publicadas.                      |
+| `GET`    | `/api/resenas/:id`                     | Público     | `200` | Detalle de una reseña.                           |
+| `GET`    | `/api/resenas/mias`                    | Autenticado | `200` | Reseñas del usuario autenticado.                 |
+| `POST`   | `/api/resenas`                         | Autenticado | `201` | Publica una reseña.                              |
+| `PATCH`  | `/api/resenas/:id`                     | Autor       | `200` | Edita una reseña propia.                         |
+| `DELETE` | `/api/resenas/:id`                     | Autor       | `204` | Elimina una reseña propia.                       |
+| `GET`    | `/api/visualizaciones`                 | Dueño       | `200` | Historial privado del usuario autenticado.       |
+| `POST`   | `/api/visualizaciones`                 | Autenticado | `201` | Registra una visualización.                      |
+| `GET`    | `/api/visualizaciones/:id`             | Dueño       | `200` | Detalle de una visualización propia.             |
+| `PATCH`  | `/api/visualizaciones/:id`             | Dueño       | `200` | Edita una visualización propia.                  |
+| `DELETE` | `/api/visualizaciones/:id`             | Dueño       | `204` | Elimina una visualización propia.                |
+| `GET`    | `/api/visualizaciones/mia/:peliculaId` | Dueño       | `200` | Visualización más reciente por película.         |
+| `GET`    | `/api/watchlist`                       | Autenticado | `200` | Watchlist privada del usuario autenticado.       |
+| `POST`   | `/api/watchlist`                       | Autenticado | `201` | Agrega una película a la watchlist.              |
+| `GET`    | `/api/watchlist/:peliculaId`           | Autenticado | `200` | Indica si la película está en la watchlist.      |
+| `DELETE` | `/api/watchlist/:peliculaId`           | Autenticado | `204` | Quita una película de la watchlist.              |
+| `GET`    | `/api/estadisticas/me`                 | Autenticado | `200` | Estadísticas del usuario autenticado.            |
+| `GET`    | `/api/admin/usuarios`                  | Admin       | `200` | Lista las cuentas registradas.                   |
+| `DELETE` | `/api/admin/usuarios/:id`              | Admin       | `204` | Elimina una cuenta y su contenido asociado.      |
+| `DELETE` | `/api/admin/resenas/:id`               | Admin       | `204` | Elimina cualquier reseña.                        |
 
 ## Errores
 

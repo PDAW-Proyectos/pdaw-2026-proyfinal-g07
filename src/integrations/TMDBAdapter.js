@@ -11,6 +11,7 @@ const ANIO_MAXIMO = 2100;
 const LONGITUD_MAXIMA_TITULO = 500;
 const LONGITUD_MAXIMA_SINOPSIS = 5000;
 const LONGITUD_MAXIMA_IMAGEN = 500;
+const LONGITUD_MAXIMA_DIRECTOR = 200;
 
 /**
  * Extrae el año de una fecha `YYYY-MM-DD`. Devuelve null si falta o está fuera de rango.
@@ -79,12 +80,56 @@ export class TMDBAdapter {
   }
 
   /**
+   * Devuelve un catálogo amplio de películas populares de todas las épocas.
+   */
+  async catalogo({ page = 1 } = {}) {
+    const datos = await this.#pedir('/discover/movie', {
+      page,
+      include_adult: 'false',
+      sort_by: 'vote_count.desc',
+      'vote_count.gte': 100,
+    });
+
+    return this.#aColeccion(datos);
+  }
+
+  /**
+   * Devuelve el mejor trailer oficial de YouTube disponible para una película.
+   */
+  async trailer({ tmdbId } = {}) {
+    const datos = await this.#pedir(`/movie/${tmdbId}/videos`, {
+      include_video_language: 'es,en',
+    });
+
+    return this.#elegirTrailer(Array.isArray(datos.results) ? datos.results : []);
+  }
+
+  /**
    * Devuelve las películas recomendadas por TMDB a partir de una película semilla.
    */
   async recomendaciones({ tmdbId, page = 1 } = {}) {
     const datos = await this.#pedir(`/movie/${tmdbId}/recommendations`, { page });
 
     return this.#aColeccion(datos);
+  }
+
+  async obtenerDetalle({ tmdbId } = {}) {
+    const datos = await this.#pedir(`/movie/${tmdbId}`, { append_to_response: 'credits' });
+    const generos = await this.#mapaGeneros();
+    const genreIds = Array.isArray(datos.genres)
+      ? datos.genres.map((genero) => genero?.id)
+      : datos.genre_ids;
+    const pelicula = this.#aPelicula(
+      { ...datos, genre_ids: genreIds },
+      generos,
+      this.#leerDirector(datos.credits),
+    );
+
+    if (!pelicula) {
+      throw new ErrorDominio('TMDB_NO_DISPONIBLE', 'TMDB devolvió una película incompleta.');
+    }
+
+    return pelicula;
   }
 
   /**
@@ -105,7 +150,7 @@ export class TMDBAdapter {
     };
   }
 
-  #aPelicula(datos, generos) {
+  #aPelicula(datos, generos, director = null) {
     try {
       const titulo = this.#leerTitulo(datos);
 
@@ -128,6 +173,9 @@ export class TMDBAdapter {
         generos: this.#nombresDeGeneros(datos.genre_ids, generos),
         rutaPoster: this.#leerImagen(datos.poster_path),
         rutaBackdrop: this.#leerImagen(datos.backdrop_path),
+        director,
+        puntuacionTmdb: this.#leerPuntuacionTmdb(datos.vote_average, datos.vote_count),
+        votosTmdb: this.#leerVotosTmdb(datos.vote_count),
       });
     } catch {
       // Un ítem con datos inesperados se descarta; no debe romper la página entera.
@@ -150,6 +198,86 @@ export class TMDBAdapter {
     return typeof valor === 'string' && valor.length > 0 && valor.length <= LONGITUD_MAXIMA_IMAGEN
       ? valor
       : null;
+  }
+
+  #leerPuntuacionTmdb(promedio, votos) {
+    if (
+      typeof promedio !== 'number' ||
+      !Number.isFinite(promedio) ||
+      !Number.isInteger(votos) ||
+      votos <= 0
+    ) {
+      return null;
+    }
+
+    return Math.round(promedio * 10) / 10;
+  }
+
+  #leerVotosTmdb(votos) {
+    return Number.isInteger(votos) && votos >= 0 ? votos : null;
+  }
+
+  #leerDirector(credits) {
+    const equipo = Array.isArray(credits?.crew) ? credits.crew : [];
+    const directores = equipo
+      .filter((persona) => persona?.job === 'Director' && typeof persona?.name === 'string')
+      .map((persona) => persona.name.trim())
+      .filter(Boolean);
+
+    if (directores.length === 0) {
+      return null;
+    }
+
+    return [...new Set(directores)].join(', ').slice(0, LONGITUD_MAXIMA_DIRECTOR);
+  }
+
+  #elegirTrailer(videos) {
+    const candidatos = videos.filter(
+      (video) =>
+        video?.site === 'YouTube' &&
+        typeof video.key === 'string' &&
+        /^[A-Za-z0-9_-]{6,20}$/.test(video.key.trim()) &&
+        (video.type === 'Trailer' || video.type === 'Teaser'),
+    );
+    const trailers = candidatos.filter((video) => video.type === 'Trailer');
+    const elegibles = trailers.length > 0 ? trailers : candidatos;
+
+    if (elegibles.length === 0) {
+      return null;
+    }
+
+    const [elegido] = elegibles.sort(
+      (a, b) =>
+        this.#puntajeTrailer(a) - this.#puntajeTrailer(b) ||
+        this.#fechaVideo(b) - this.#fechaVideo(a),
+    );
+    const titulo =
+      typeof elegido.name === 'string' && elegido.name.trim()
+        ? elegido.name.trim().slice(0, 200)
+        : 'Trailer';
+
+    return {
+      youtubeKey: elegido.key.trim(),
+      titulo,
+      idioma: typeof elegido.iso_639_1 === 'string' ? elegido.iso_639_1 : null,
+    };
+  }
+
+  #puntajeTrailer(video) {
+    const oficial = video.official === true ? 0 : 2;
+    const idioma = typeof video.iso_639_1 === 'string' ? video.iso_639_1.toLowerCase() : '';
+
+    if (idioma.startsWith('es')) {
+      return oficial;
+    }
+
+    return idioma.startsWith('en') ? oficial + 1 : oficial + 2;
+  }
+
+  #fechaVideo(video) {
+    const fecha = Date.parse(video?.published_at);
+
+    return Number.isNaN(fecha) ? 0 : fecha;
   }
 
   #nombresDeGeneros(ids, generos) {

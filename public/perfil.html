@@ -171,35 +171,93 @@
             class="d-flex align-items-center justify-content-center gap-4 text-center bg-dark p-3 rounded-3 border border-dark-subtle"
           >
             <!-- Películas vistas -->
-            <div class="px-2">
+            <a
+              href="vistas.html"
+              class="px-2 profile-stat text-decoration-none"
+              aria-label="Ver todas las películas vistas"
+            >
               <div id="stat-movies-count" class="h3 fw-bold text-success mb-0">0</div>
               <small class="text-secondary micro-text text-uppercase fw-semibold"
                 >Películas Vistas</small
               >
-            </div>
+            </a>
 
             <div class="vr bg-secondary opacity-50 my-1"></div>
 
             <!-- Películas en watchlist -->
-            <div class="px-2">
+            <a
+              href="watchlist.html"
+              class="px-2 profile-stat text-decoration-none"
+              aria-label="Ir a mi watchlist"
+            >
               <div id="stat-watchlist-count" class="h3 fw-bold text-white mb-0">0</div>
               <small class="text-secondary micro-text text-uppercase fw-semibold"
                 >En watchlist</small
               >
-            </div>
+            </a>
 
             <div class="vr bg-secondary opacity-50 my-1"></div>
 
             <!-- Reviews / Reseñas -->
-            <div class="px-2">
+            <a
+              href="reviews.html"
+              class="px-2 profile-stat text-decoration-none"
+              aria-label="Ir a mis reseñas"
+            >
               <div id="stat-reviews-count" class="h3 fw-bold text-white mb-0">0</div>
               <small class="text-secondary micro-text text-uppercase fw-semibold">Reviews</small>
-            </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="favoritas" class="mb-5">
+        <div
+          class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-2 mb-4 gap-3"
+        >
+          <h2 class="h4 text-white fw-bold m-0 d-flex align-items-center gap-2">
+            <i class="bi bi-heart-fill text-success"></i> Mis 5 favoritas
+          </h2>
+          <button
+            id="btn-elegir-favoritas"
+            type="button"
+            class="btn btn-sm btn-outline-success rounded-pill px-3"
+          >
+            <i class="bi bi-search me-1"></i> Elegir favoritas
+          </button>
+        </div>
+
+        <div id="favoritas-aviso" class="alert alert-danger py-2 fs-7 d-none" role="alert"></div>
+
+        <div id="favoritas-perfil-container" class="row g-3" aria-live="polite">
+          <div class="text-secondary py-3 text-center w-100">
+            <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+            Cargando favoritas...
           </div>
         </div>
       </section>
 
       <!-- SECCIÓN 1: RECIENTES -->
+      <section id="vistas" class="mb-5">
+        <div
+          class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-2 mb-4"
+        >
+          <h2 class="h4 text-white fw-bold m-0 d-flex align-items-center gap-2">
+            <i class="bi bi-eye text-success"></i> Películas vistas
+          </h2>
+          <a href="vistas.html" class="text-secondary text-decoration-none fs-7"
+            >Ver todas &rarr;</a
+          >
+        </div>
+
+        <div id="viewed-movies-container" class="row g-3" aria-live="polite">
+          <div class="text-secondary py-3 text-center w-100">
+            <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+            Cargando películas vistas...
+          </div>
+        </div>
+      </section>
+
       <section id="recientes" class="mb-5">
         <div
           class="d-flex justify-content-between align-items-center border-bottom border-success border-2 pb-2 mb-4"
@@ -272,6 +330,33 @@
     </main>
 
     <!-- PLANTILLAS HTML PARA INYECCIÓN DINÁMICA -->
+    <template id="tpl-perfil-favorita">
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="movie-card position-relative">
+          <a class="text-decoration-none d-block" href="#">
+            <div class="poster-container">
+              <img src="" alt="" class="favorita-poster poster-img d-none" loading="lazy" />
+              <div
+                class="poster-placeholder d-flex align-items-center justify-content-center h-100 text-secondary"
+              >
+                <i class="bi bi-film display-4"></i>
+              </div>
+            </div>
+            <h3 class="favorita-title movie-title"></h3>
+            <p class="favorita-meta movie-meta"></p>
+          </a>
+          <button
+            type="button"
+            class="btn-quitar-favorita btn btn-sm btn-dark position-absolute top-0 end-0 m-2 rounded-circle border border-secondary text-danger"
+            title="Quitar de favoritas"
+            aria-label="Quitar de favoritas"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+    </template>
+
     <template id="tpl-recent-movie">
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
         <a class="movie-card text-decoration-none d-block" href="#">
@@ -285,6 +370,24 @@
           </div>
           <h3 class="recent-title movie-title"></h3>
           <p class="recent-meta movie-meta"></p>
+        </a>
+      </div>
+    </template>
+
+    <template id="tpl-viewed-movie">
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <a class="movie-card text-decoration-none d-block" href="#">
+          <div class="poster-container">
+            <img src="" alt="" class="viewed-poster poster-img d-none" loading="lazy" />
+            <div
+              class="poster-placeholder d-flex align-items-center justify-content-center h-100 text-secondary"
+            >
+              <i class="bi bi-film display-4"></i>
+            </div>
+          </div>
+          <h3 class="viewed-title movie-title"></h3>
+          <p class="viewed-meta movie-meta"></p>
+          <p class="viewed-rating micro-text mb-0"></p>
         </a>
       </div>
     </template>
@@ -323,6 +426,7 @@
                 <h4 class="movie-title-rev h6 text-white fw-bold mb-1"></h4>
               </a>
               <span class="movie-year-rev text-secondary fs-7"></span>
+              <span class="review-rating text-warning micro-text ms-1"></span>
               <p class="review-date text-muted micro-text mb-0"></p>
             </div>
           </div>

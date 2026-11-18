@@ -16,8 +16,9 @@ Visitantes y usuarios autenticados pueden consultar películas y opiniones. La s
 
 - Cada visualización y reseña se asocia a un usuario y una película.
 - La watchlist guarda películas pendientes de ver en una entrada por usuario y película; es privada y distinta de una visualización.
-- La puntuación de la visualización es opcional y entera de 1 a 5. La reseña puede incluir además una puntuación opcional propia, que se usa para el promedio público de la ficha.
-- La reseña es independiente de la visualización. El historial es privado; las reseñas son públicas.
+- La puntuación es única por usuario y película: se comparte entre visualización y reseña, es opcional, entera de 1 a 5, y cuenta en el promedio público de la ficha aunque no haya comentario.
+- La existencia de la reseña es independiente de la visualización; la nota compartida se sincroniza entre ambas. El historial es privado; las reseñas son públicas.
+- El perfil público muestra métricas derivadas de las reseñas, la selección de hasta cinco favoritas y una afinidad agregada con el visitante autenticado. La afinidad combina notas y favoritas. No expone visualizaciones, watchlist, email ni hash.
 - `Pelicula` separa su `id` interno del `tmdbId` externo. Los registros usan `peliculaId`.
 - Los métodos del modelo controlan los cambios de estado. `fromJSON` reconstruye instancias; `toPublicJSON` limita los datos públicos de `Usuario` y `toPrivateJSON` agrega el email para la propia cuenta.
 

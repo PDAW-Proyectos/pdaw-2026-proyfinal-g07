@@ -24,17 +24,20 @@ export class ResenaService {
   #resenaRepository;
   #peliculaRepository;
   #usuarioRepository;
+  #puntuacionService;
   #ahora;
 
   constructor({
     resenaRepository,
     peliculaRepository,
     usuarioRepository,
+    puntuacionService,
     ahora = () => new Date(),
   }) {
     this.#resenaRepository = resenaRepository;
     this.#peliculaRepository = peliculaRepository;
     this.#usuarioRepository = usuarioRepository;
+    this.#puntuacionService = puntuacionService;
     this.#ahora = ahora;
   }
 
@@ -44,7 +47,14 @@ export class ResenaService {
     const peliculaId = validarId(datos.peliculaId, 'peliculaId');
     const pelicula = await this.#buscarPelicula(peliculaId);
     const comentario = validarTexto(datos.comentario, 'comentario', { max: 5000 });
-    const puntuacion = validarPuntuacion(datos.puntuacion);
+    let puntuacion = validarPuntuacion(datos.puntuacion);
+
+    if (puntuacion === null) {
+      puntuacion = await this.#puntuacionService.obtenerPuntuacionDeVisualizacion(
+        usuarioId,
+        peliculaId,
+      );
+    }
 
     const resena = new Resena({
       id: randomUUID(),
@@ -56,6 +66,10 @@ export class ResenaService {
     });
 
     await this.#resenaRepository.crear(resena);
+
+    if (puntuacion !== null) {
+      await this.#puntuacionService.sincronizarVisualizacion(usuarioId, peliculaId, puntuacion);
+    }
 
     const autor = await this.#buscarAutor(usuarioId);
 
@@ -79,6 +93,19 @@ export class ResenaService {
   }
 
   /**
+   * Devuelve las reseñas públicas de un usuario; si el usuario no existe, 404.
+   */
+  async listarPorUsuario(usuarioId, { page = 1, limit = 20 } = {}) {
+    await this.#buscarAutor(usuarioId);
+
+    const resenas = await this.#resenaRepository.listarPorUsuario(usuarioId);
+
+    resenas.sort(porFechaDescendente);
+
+    return this.#paginarConDatos(resenas, { page, limit });
+  }
+
+  /**
    * Devuelve las reseñas públicas de una película; si la película no existe, 404.
    */
   async listarPorPelicula(peliculaId, { page = 1, limit = 20 } = {}) {
@@ -89,28 +116,6 @@ export class ResenaService {
     resenas.sort(porFechaDescendente);
 
     return this.#paginarConDatos(resenas, { page, limit });
-  }
-
-  /**
-   * Calcula el promedio de las puntuaciones de las reseñas de una película.
-   * Las reseñas sin puntuación no cuentan; si no hay ninguna, el promedio es null.
-   */
-  async promedioPorPelicula(peliculaId) {
-    const resenas = await this.#resenaRepository.listarPorPelicula(peliculaId);
-    const puntuaciones = resenas
-      .map((resena) => resena.puntuacion)
-      .filter((puntuacion) => puntuacion !== null);
-
-    if (puntuaciones.length === 0) {
-      return { promedioPuntuacion: null, totalPuntuaciones: 0 };
-    }
-
-    const suma = puntuaciones.reduce((total, puntuacion) => total + puntuacion, 0);
-
-    return {
-      promedioPuntuacion: Math.round((suma / puntuaciones.length) * 10) / 10,
-      totalPuntuaciones: puntuaciones.length,
-    };
   }
 
   async obtener(id) {
@@ -127,14 +132,23 @@ export class ResenaService {
     validarCuerpo(datos, CAMPOS_ACTUALIZACION);
 
     const resena = await this.#buscarPropia(usuarioId, id);
+    const cambiaPuntuacion = Object.hasOwn(datos, 'puntuacion');
 
     resena.editar(datos.comentario);
 
-    if (Object.hasOwn(datos, 'puntuacion')) {
+    if (cambiaPuntuacion) {
       resena.cambiarPuntuacion(datos.puntuacion);
     }
 
     await this.#resenaRepository.actualizar(resena);
+
+    if (cambiaPuntuacion) {
+      await this.#puntuacionService.sincronizarVisualizacion(
+        usuarioId,
+        resena.peliculaId,
+        resena.puntuacion,
+      );
+    }
 
     return this.#componer(resena);
   }

@@ -3,10 +3,11 @@ import { leerPaginacion } from '../utils/paginacion.js';
 /**
  * Traduce la entrada y su película a la representación Watchlist del contrato.
  */
-function aRespuesta({ entrada, pelicula }) {
+function aRespuesta({ entrada, pelicula, vista = false }) {
   return {
     id: entrada.id,
     fechaAgregado: entrada.fechaAgregado.toISOString(),
+    vista,
     pelicula: pelicula.toResumenJSON(),
   };
 }

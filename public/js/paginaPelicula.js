@@ -1,7 +1,18 @@
-import { obtenerPelicula, obtenerResenasDePelicula } from './peliculasApi.js';
+import { obtenerPelicula, obtenerResenasDePelicula, obtenerTrailer } from './peliculasApi.js';
 import { actualizarResena, crearResena, eliminarResena, listarMisResenas } from './resenasApi.js';
-import { fechaDeHoy, formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
-import { crearVisualizacion } from './visualizacionesApi.js';
+import {
+  enlazarResenaAPerfil,
+  fechaDeHoy,
+  formatearFecha,
+  mensajeDeError,
+  mostrarPoster,
+  urlPerfilUsuario,
+} from './utilidades.js';
+import {
+  actualizarVisualizacion,
+  crearVisualizacion,
+  obtenerMiVisualizacion,
+} from './visualizacionesApi.js';
 import { agregarAWatchlist, consultarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
 
 const ESTADO_NO_ENCONTRADA = 404;
@@ -35,9 +46,14 @@ class PaginaPelicula {
   #enWatchlist = false;
   #resenaPropia = null;
   #modalResena = null;
+  #modalTrailer = null;
+  #trailerKey = null;
   #guardando = false;
   #estadoResenaListo = false;
   #registrandoVista = false;
+  #visualizacionPropia = null;
+  #puntuacionSeleccionada = null;
+  #guardandoPuntuacion = false;
 
   /**
    * `elementos` reúne los nodos del DOM que usa la página; `peliculaId` es el id interno
@@ -54,10 +70,20 @@ class PaginaPelicula {
   async iniciar() {
     this.#modalResena =
       window.bootstrap?.Modal?.getOrCreateInstance(this.#elementos.modalResena) ?? null;
+    this.#modalTrailer =
+      window.bootstrap?.Modal?.getOrCreateInstance(this.#elementos.modalTrailer) ?? null;
 
+    this.#elementos.btnTrailer.addEventListener('click', () => this.#abrirTrailer());
+    this.#elementos.modalTrailer.addEventListener('hidden.bs.modal', () => {
+      this.#elementos.iframeTrailer.src = 'about:blank';
+    });
     this.#elementos.btnMasResenas.addEventListener('click', () => this.#cargarResenas());
     this.#elementos.btnWatchlist.addEventListener('click', () => this.#alternarWatchlist());
     this.#elementos.btnVisualizacion.addEventListener('click', () => this.#marcarComoVista());
+    this.#elementos.estrellas.addEventListener('click', (evento) =>
+      this.#seleccionarPuntuacion(evento),
+    );
+    this.#elementos.btnGuardarPuntuacion.addEventListener('click', () => this.#guardarPuntuacion());
     this.#elementos.btnResena.addEventListener('click', () => this.#abrirModalResena());
     this.#elementos.formResena.addEventListener('submit', (evento) => this.#guardarResena(evento));
     this.#elementos.btnEliminarResena.addEventListener('click', () => this.#eliminarResena());
@@ -74,7 +100,7 @@ class PaginaPelicula {
     // Si la sesión cambia (login o logout), se vuelve a consultar la reseña propia.
     document.addEventListener('fg:sesion-cambiada', () => {
       this.#cargarResenaPropia();
-      this.#reiniciarBotonVisualizacion();
+      this.#cargarEstadoVisualizacion();
     });
 
     if (!this.#peliculaId) {
@@ -87,6 +113,8 @@ class PaginaPelicula {
       this.#cargarResenas(),
       this.#cargarResenaPropia(),
       this.#cargarEstadoWatchlist(),
+      this.#cargarEstadoVisualizacion(),
+      this.#cargarTrailer(),
     ]);
 
     if (!pelicula) {
@@ -123,6 +151,8 @@ class PaginaPelicula {
     sinopsis.textContent = pelicula.sinopsis || 'Esta película todavía no tiene sinopsis.';
 
     this.#mostrarPromedio(pelicula.promedioPuntuacion, pelicula.totalPuntuaciones);
+    this.#mostrarPuntuacionTmdb(pelicula.puntuacionTmdb, pelicula.votosTmdb);
+    this.#mostrarDirector(pelicula.director);
 
     generos.replaceChildren(
       ...pelicula.generos.map((genero) => {
@@ -151,7 +181,7 @@ class PaginaPelicula {
     contenedor.replaceChildren();
 
     if (promedio === null || total === 0) {
-      contenedor.textContent = 'Todavía no hay puntuaciones en las reseñas.';
+      contenedor.textContent = 'Todavía no hay puntuaciones.';
       return;
     }
 
@@ -163,9 +193,70 @@ class PaginaPelicula {
     valor.textContent = `${formatearPromedio(promedio)} / ${PUNTUACION_MAXIMA}`;
 
     const detalle = document.createElement('span');
-    detalle.textContent = ` · ${total} ${total === 1 ? 'reseña puntuada' : 'reseñas puntuadas'}`;
+    detalle.textContent = ` · ${total} ${total === 1 ? 'puntuación' : 'puntuaciones'}`;
 
     contenedor.append(icono, valor, detalle);
+  }
+
+  #mostrarPuntuacionTmdb(promedio, votos) {
+    const contenedor = this.#elementos.puntuacionTmdb;
+
+    if (promedio === null || promedio === undefined) {
+      contenedor.textContent = 'TMDB: sin puntuación.';
+      return;
+    }
+
+    const votosTexto =
+      Number.isInteger(votos) && votos > 0
+        ? ` · ${votos.toLocaleString('es-AR')} ${votos === 1 ? 'voto' : 'votos'}`
+        : '';
+
+    contenedor.textContent = `TMDB: ${formatearPromedio(promedio)} / 10${votosTexto}`;
+  }
+
+  #mostrarDirector(director) {
+    this.#elementos.director.textContent = director
+      ? `Director: ${director}`
+      : 'Director no disponible.';
+  }
+
+  /**
+   * Consulta el trailer oficial y muestra el botón solo si existe.
+   */
+  async #cargarTrailer() {
+    try {
+      const { trailer } = await obtenerTrailer(this.#peliculaId);
+
+      if (!trailer?.youtubeKey) {
+        return;
+      }
+
+      this.#trailerKey = trailer.youtubeKey;
+      this.#elementos.btnTrailer.title = trailer.titulo || 'Ver trailer';
+      this.#elementos.btnTrailer.classList.remove('d-none');
+    } catch {
+      this.#trailerKey = null;
+    }
+  }
+
+  /**
+   * Carga el iframe recién al abrir el modal para no reproducir nada de antemano.
+   */
+  #abrirTrailer() {
+    if (!this.#trailerKey) {
+      return;
+    }
+
+    const url = new URL(
+      `https://www.youtube-nocookie.com/embed/${encodeURIComponent(this.#trailerKey)}`,
+    );
+
+    url.searchParams.set('autoplay', '1');
+    url.searchParams.set('rel', '0');
+    url.searchParams.set('hl', 'es');
+
+    this.#elementos.iframeTrailer.src = url.toString();
+    this.#modalTrailer?.show();
   }
 
   /**
@@ -270,18 +361,33 @@ class PaginaPelicula {
       return;
     }
 
+    if (this.#visualizacionPropia) {
+      this.#mostrarAvisoVisualizacion(
+        'Ya registraste esta película como vista. Podés cambiar tu puntuación.',
+        'text-success',
+      );
+      return;
+    }
+
     this.#registrandoVista = true;
     btnVisualizacion.disabled = true;
     this.#ocultarAvisoVisualizacion();
     textoVisualizacion.textContent = 'Registrando...';
 
     try {
-      await crearVisualizacion({
+      this.#visualizacionPropia = await crearVisualizacion({
         peliculaId: this.#peliculaId,
         fecha: fechaDeHoy(),
+        puntuacion: this.#puntuacionSeleccionada,
       });
 
+      if (this.#resenaPropia) {
+        this.#resenaPropia.puntuacion = this.#visualizacionPropia.puntuacion;
+      }
+
       this.#actualizarBotonVisualizacion(true);
+      this.#aplicarPuntuacion(this.#visualizacionPropia.puntuacion);
+      await this.#cargarPelicula();
       this.#mostrarAvisoVisualizacion(
         'Visualización registrada. Ya podés verla en tu perfil.',
         'text-success',
@@ -322,8 +428,11 @@ class PaginaPelicula {
    */
   #reiniciarBotonVisualizacion() {
     this.#registrandoVista = false;
+    this.#visualizacionPropia = null;
     this.#ocultarAvisoVisualizacion();
+    this.#ocultarAvisoPuntuacion();
     this.#actualizarBotonVisualizacion(false);
+    this.#refrescarPuntuacion();
   }
 
   #mostrarAvisoVisualizacion(texto, clase) {
@@ -336,6 +445,153 @@ class PaginaPelicula {
 
   #ocultarAvisoVisualizacion() {
     const aviso = this.#elementos.avisoVisualizacion;
+
+    aviso.textContent = '';
+    aviso.classList.add('d-none');
+    aviso.classList.remove('text-danger', 'text-success');
+  }
+
+  async #cargarEstadoVisualizacion() {
+    if (!this.#peliculaId) {
+      return;
+    }
+
+    try {
+      const visualizacion = await obtenerMiVisualizacion(this.#peliculaId);
+
+      if (this.#guardandoPuntuacion || this.#registrandoVista) {
+        return;
+      }
+
+      this.#visualizacionPropia = visualizacion;
+      this.#actualizarBotonVisualizacion(true);
+      this.#refrescarPuntuacion();
+    } catch (error) {
+      if (error.status === ESTADO_NO_AUTORIZADO) {
+        this.#reiniciarBotonVisualizacion();
+        return;
+      }
+
+      if (error.status === ESTADO_NO_ENCONTRADA) {
+        if (!this.#visualizacionPropia && !this.#registrandoVista && !this.#guardandoPuntuacion) {
+          this.#reiniciarBotonVisualizacion();
+        }
+
+        return;
+      }
+
+      this.#mostrarAvisoVisualizacion(mensajeDeError(error), 'text-danger');
+    }
+  }
+
+  #seleccionarPuntuacion(evento) {
+    const boton = evento.target.closest('[data-puntuacion]');
+
+    if (!boton) {
+      return;
+    }
+
+    const valor = Number(boton.dataset.puntuacion);
+
+    if (!Number.isInteger(valor) || valor < 1 || valor > PUNTUACION_MAXIMA) {
+      return;
+    }
+
+    this.#aplicarPuntuacion(valor);
+    this.#ocultarAvisoPuntuacion();
+  }
+
+  async #guardarPuntuacion() {
+    if (this.#guardandoPuntuacion) {
+      return;
+    }
+
+    if (this.#puntuacionSeleccionada === null) {
+      this.#mostrarAvisoPuntuacion('Elegí una puntuación antes de guardar.', 'text-danger');
+      return;
+    }
+
+    const { btnGuardarPuntuacion } = this.#elementos;
+
+    this.#guardandoPuntuacion = true;
+    btnGuardarPuntuacion.disabled = true;
+    btnGuardarPuntuacion.textContent = 'Guardando...';
+
+    try {
+      const puntuacion = this.#puntuacionSeleccionada;
+
+      this.#visualizacionPropia = this.#visualizacionPropia
+        ? await actualizarVisualizacion(this.#visualizacionPropia.id, { puntuacion })
+        : await crearVisualizacion({
+            peliculaId: this.#peliculaId,
+            fecha: fechaDeHoy(),
+            puntuacion,
+          });
+
+      if (this.#resenaPropia) {
+        this.#resenaPropia.puntuacion = this.#visualizacionPropia.puntuacion;
+      }
+
+      this.#actualizarBotonVisualizacion(true);
+      this.#aplicarPuntuacion(this.#visualizacionPropia.puntuacion);
+      await this.#cargarPelicula();
+      this.#mostrarAvisoPuntuacion('Puntuación guardada. Ya se ve en tu perfil.', 'text-success');
+    } catch (error) {
+      this.#mostrarAvisoPuntuacion(mensajeDeError(error), 'text-danger');
+    } finally {
+      this.#guardandoPuntuacion = false;
+      btnGuardarPuntuacion.disabled = false;
+      btnGuardarPuntuacion.textContent = 'Guardar puntuación';
+    }
+  }
+
+  #puntuacionVigente() {
+    if (this.#resenaPropia && this.#resenaPropia.puntuacion !== null) {
+      return this.#resenaPropia.puntuacion;
+    }
+
+    if (this.#visualizacionPropia && this.#visualizacionPropia.puntuacion !== null) {
+      return this.#visualizacionPropia.puntuacion;
+    }
+
+    return null;
+  }
+
+  #refrescarPuntuacion() {
+    if (this.#guardandoPuntuacion || this.#registrandoVista) {
+      return;
+    }
+
+    this.#aplicarPuntuacion(this.#puntuacionVigente());
+  }
+
+  #aplicarPuntuacion(valor) {
+    this.#puntuacionSeleccionada = valor;
+
+    for (const boton of this.#elementos.estrellas.querySelectorAll('[data-puntuacion]')) {
+      const numero = Number(boton.dataset.puntuacion);
+      const activa = valor !== null && numero <= valor;
+      const icono = boton.querySelector('i');
+
+      boton.classList.toggle('is-active', activa);
+      boton.setAttribute('aria-pressed', String(numero === valor));
+
+      if (icono) {
+        icono.className = activa ? 'bi bi-star-fill' : 'bi bi-star';
+      }
+    }
+  }
+
+  #mostrarAvisoPuntuacion(texto, clase) {
+    const aviso = this.#elementos.avisoPuntuacion;
+
+    aviso.textContent = texto;
+    aviso.classList.remove('d-none', 'text-danger', 'text-success');
+    aviso.classList.add(clase);
+  }
+
+  #ocultarAvisoPuntuacion() {
+    const aviso = this.#elementos.avisoPuntuacion;
 
     aviso.textContent = '';
     aviso.classList.add('d-none');
@@ -415,6 +671,7 @@ class PaginaPelicula {
 
     this.#estadoResenaListo = true;
     this.#actualizarBotonResena();
+    this.#refrescarPuntuacion();
   }
 
   #actualizarBotonResena() {
@@ -433,13 +690,14 @@ class PaginaPelicula {
     }
 
     const editando = this.#resenaPropia !== null;
+    const puntuacionInicial = this.#resenaPropia?.puntuacion ?? this.#puntuacionSeleccionada;
 
     this.#limpiarErrores();
     this.#elementos.tituloModal.textContent = editando ? 'Editar reseña' : 'Escribir reseña';
     this.#elementos.btnGuardarResena.textContent = editando ? TEXTO_GUARDAR : TEXTO_PUBLICAR;
     this.#elementos.btnEliminarResena.classList.toggle('d-none', !editando);
     this.#elementos.comentario.value = editando ? this.#resenaPropia.comentario : '';
-    this.#elementos.puntuacion.value = editando ? String(this.#resenaPropia.puntuacion ?? '') : '';
+    this.#elementos.puntuacion.value = puntuacionInicial ? String(puntuacionInicial) : '';
     this.#actualizarContador();
     this.#modalResena.show();
   }
@@ -484,6 +742,11 @@ class PaginaPelicula {
         });
       }
 
+      if (this.#visualizacionPropia) {
+        this.#visualizacionPropia.puntuacion = this.#resenaPropia.puntuacion;
+      }
+
+      this.#aplicarPuntuacion(this.#puntuacionVigente());
       this.#modalResena?.hide();
       this.#actualizarBotonResena();
       await Promise.all([this.#reiniciarResenas(), this.#cargarPelicula()]);
@@ -526,9 +789,10 @@ class PaginaPelicula {
     try {
       await eliminarResena(this.#resenaPropia.id);
       this.#resenaPropia = null;
+      this.#refrescarPuntuacion();
       this.#modalResena?.hide();
       this.#actualizarBotonResena();
-      await this.#reiniciarResenas();
+      await Promise.all([this.#reiniciarResenas(), this.#cargarPelicula()]);
     } catch (error) {
       this.#mostrarError(error);
     } finally {
@@ -597,10 +861,16 @@ class PaginaPelicula {
   #crearTarjetaResena(resena) {
     const tarjeta = this.#elementos.plantillaResena.content.cloneNode(true);
 
+    const enlaceAutor = tarjeta.querySelector('.review-author-link');
+
+    enlaceAutor.href = urlPerfilUsuario(resena.autor.id);
+    enlaceAutor.title = `Ver perfil de ${resena.autor.nombre}`;
     tarjeta.querySelector('.author-name').textContent = resena.autor.nombre;
     tarjeta.querySelector('.author-username').textContent = `@${resena.autor.nombreUsuario}`;
     tarjeta.querySelector('.review-date').textContent = formatearFecha(resena.fechaPublicacion);
     tarjeta.querySelector('.review-content').textContent = resena.comentario;
+
+    enlazarResenaAPerfil(tarjeta.querySelector('.review-card'), resena.autor);
 
     const puntuacion = tarjeta.querySelector('.review-rating');
 
@@ -624,6 +894,8 @@ const pagina = new PaginaPelicula({
     titulo: document.getElementById('movie-title'),
     anio: document.getElementById('movie-year'),
     promedio: document.getElementById('movie-rating'),
+    puntuacionTmdb: document.getElementById('movie-tmdb-rating'),
+    director: document.getElementById('movie-director'),
     sinopsis: document.getElementById('movie-description'),
     generos: document.getElementById('movie-genres'),
     plantillaGenero: document.getElementById('tpl-genre-badge'),
@@ -633,6 +905,9 @@ const pagina = new PaginaPelicula({
     contenedorResenas: document.getElementById('movie-reviews-container'),
     plantillaResena: document.getElementById('tpl-movie-review-card'),
     btnMasResenas: document.getElementById('btn-mas-resenas'),
+    btnTrailer: document.getElementById('btn-trailer'),
+    modalTrailer: document.getElementById('modalTrailer'),
+    iframeTrailer: document.getElementById('trailer-iframe'),
     btnWatchlist: document.getElementById('btn-add-watchlist'),
     iconoWatchlist: document.getElementById('watchlist-btn-icon'),
     textoWatchlist: document.getElementById('watchlist-btn-text'),
@@ -641,6 +916,9 @@ const pagina = new PaginaPelicula({
     iconoVisualizacion: document.getElementById('visualizacion-btn-icon'),
     textoVisualizacion: document.getElementById('visualizacion-btn-text'),
     avisoVisualizacion: document.getElementById('visualizacion-aviso'),
+    estrellas: document.getElementById('rating-estrellas'),
+    btnGuardarPuntuacion: document.getElementById('btn-guardar-puntuacion'),
+    avisoPuntuacion: document.getElementById('puntuacion-aviso'),
     btnResena: document.getElementById('btn-add-review'),
     modalResena: document.getElementById('modalResena'),
     formResena: document.getElementById('formResena'),

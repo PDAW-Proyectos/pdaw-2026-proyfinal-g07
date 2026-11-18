@@ -39,6 +39,15 @@ export function crearVisualizacionController({ visualizacionService }) {
       });
     },
 
+    async obtenerPorPelicula(req, res) {
+      const resultado = await visualizacionService.obtenerPorPelicula(
+        req.session.userId,
+        req.params.peliculaId,
+      );
+
+      res.json(aRespuesta(resultado));
+    },
+
     async obtener(req, res) {
       const resultado = await visualizacionService.obtener(req.session.userId, req.params.id);
 

@@ -293,6 +293,14 @@ body {
   border-color: var(--bs-success);
 }
 
+.resena-enlazable {
+  cursor: pointer;
+}
+
+.resena-enlazable:hover {
+  border-color: var(--bs-success);
+}
+
 .fs-7 {
   font-size: 0.8rem;
 }
@@ -334,4 +342,61 @@ body {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(18, 21, 23, 0.3) 0%, rgba(18, 21, 23, 0.9) 100%);
+}
+
+.rating-estrellas {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.rating-star {
+  color: var(--bs-secondary-color);
+  line-height: 1;
+  text-decoration: none;
+}
+
+.rating-star i {
+  font-size: 1.15rem;
+}
+
+.rating-star:hover,
+.rating-star:focus-visible,
+.rating-star.is-active {
+  color: var(--bs-warning);
+}
+
+.profile-stat {
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.profile-stat:hover,
+.profile-stat:focus-visible {
+  background-color: rgba(255, 255, 255, 0.06);
+  outline: 2px solid var(--bs-success);
+  outline-offset: 2px;
+}
+
+#favoritas,
+#vistas,
+#watchlists,
+#reviews {
+  scroll-margin-top: 1.5rem;
+}
+
+.buscador-poster {
+  width: 48px;
+  aspect-ratio: 2 / 3;
+  background-color: var(--bg-card);
+}
+
+.buscador-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.buscador-info {
+  min-width: 0;
 }

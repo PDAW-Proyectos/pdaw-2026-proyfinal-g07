@@ -1,4 +1,5 @@
-import { listarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
+import { BuscadorPeliculas } from './buscadorPeliculas.js';
+import { agregarAWatchlist, listarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
 import { fechaDeHoy, formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 import { crearVisualizacion } from './visualizacionesApi.js';
 
@@ -10,6 +11,7 @@ const MENSAJE_VACIO =
  */
 class PaginaWatchlist {
   #elementos;
+  #buscador = null;
   #pagina = 0;
   #mostradas = 0;
 
@@ -25,8 +27,35 @@ class PaginaWatchlist {
    */
   async iniciar() {
     this.#elementos.btnMas.addEventListener('click', () => this.#cargarSiguiente());
+    this.#elementos.btnAgregar.addEventListener('click', () => this.#abrirBuscador());
 
     await this.#cargarSiguiente();
+  }
+
+  #abrirBuscador() {
+    if (!this.#buscador) {
+      this.#buscador = new BuscadorPeliculas({
+        titulo: 'Agregar a la watchlist',
+        descripcion: 'Buscá una película y agregala a tus pendientes.',
+        maxSeleccion: 1,
+        textoSeleccionar: 'Agregar',
+        etiquetaContador: 'agregadas',
+        cerrarAlSeleccionar: true,
+        onSeleccionar: (pelicula) => this.#agregar(pelicula),
+      });
+    }
+
+    this.#buscador.establecerSeleccionadas([]);
+    this.#buscador.abrir();
+  }
+
+  async #agregar(pelicula) {
+    await agregarAWatchlist(pelicula.id);
+
+    this.#pagina = 0;
+    this.#mostradas = 0;
+    await this.#cargarSiguiente();
+    this.#mostrarAviso(`Agregaste "${pelicula.titulo}" a tu watchlist.`, 'success');
   }
 
   /**
@@ -72,7 +101,7 @@ class PaginaWatchlist {
   /**
    * Clona la plantilla y completa la tarjeta con la película y su fecha de agregado.
    */
-  #crearTarjeta({ pelicula, fechaAgregado }) {
+  #crearTarjeta({ pelicula, fechaAgregado, vista }) {
     const tarjeta = this.#elementos.plantilla.content.cloneNode(true);
     const enlace = tarjeta.querySelector('.watchlist-link');
     const destino = new URL('pelicula.html', window.location.href);
@@ -100,9 +129,25 @@ class PaginaWatchlist {
 
     const btnVista = tarjeta.querySelector('.btn-mark-watched');
 
+    this.#actualizarBotonVista(btnVista, vista);
     btnVista.addEventListener('click', () => this.#marcarVista(pelicula, btnVista));
 
     return tarjeta;
+  }
+
+  /**
+   * Sincroniza el botón con el estado de visualización de la película.
+   */
+  #actualizarBotonVista(boton, vista) {
+    boton.disabled = vista;
+    boton.classList.toggle('btn-success', vista);
+    boton.classList.toggle('btn-outline-success', !vista);
+    boton.innerHTML = vista
+      ? '<i class="bi bi-check2-circle-fill me-1"></i> Vista'
+      : '<i class="bi bi-check2-circle me-1"></i> Ya la vi';
+    boton.title = vista
+      ? 'Ya registraste esta película como vista'
+      : 'Registrar que viste esta película';
   }
 
   /**
@@ -141,13 +186,9 @@ class PaginaWatchlist {
 
     try {
       await crearVisualizacion({ peliculaId: pelicula.id, fecha: fechaDeHoy() });
-      boton.classList.remove('btn-outline-success');
-      boton.classList.add('btn-success');
-      boton.innerHTML = '<i class="bi bi-check2-circle-fill me-1"></i> Vista';
-      boton.title = 'Visualización registrada';
+      this.#actualizarBotonVista(boton, true);
     } catch (error) {
-      boton.disabled = false;
-      boton.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Ya la vi';
+      this.#actualizarBotonVista(boton, false);
       this.#mostrarAviso(mensajeDeError(error));
     }
   }
@@ -162,8 +203,10 @@ class PaginaWatchlist {
     return mensaje;
   }
 
-  #mostrarAviso(texto) {
+  #mostrarAviso(texto, tipo = 'danger') {
     this.#elementos.aviso.textContent = texto;
+    this.#elementos.aviso.classList.toggle('alert-danger', tipo === 'danger');
+    this.#elementos.aviso.classList.toggle('alert-success', tipo === 'success');
     this.#elementos.aviso.classList.remove('d-none');
   }
 
@@ -178,6 +221,7 @@ const pagina = new PaginaWatchlist({
     contenedor: document.getElementById('watchlist-movies-container'),
     plantilla: document.getElementById('tpl-watchlist-movie-card'),
     btnMas: document.getElementById('btn-mas-watchlist'),
+    btnAgregar: document.getElementById('btn-add-to-watchlist'),
     aviso: document.getElementById('watchlist-aviso'),
   },
 });

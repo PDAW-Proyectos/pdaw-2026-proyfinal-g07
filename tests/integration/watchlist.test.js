@@ -139,17 +139,54 @@ describe('watchlist', () => {
       expect(cuerpo).toEqual({
         id: expect.any(String),
         fechaAgregado: expect.any(String),
+        vista: false,
         pelicula: {
           id: 'p-matrix',
           tmdbId: 603,
           titulo: 'Matrix',
           anioEstreno: 1999,
+          generos: ['Acción', 'Ciencia ficción'],
+          puntuacionTmdb: null,
           rutaPoster: '/matrix.jpg',
           rutaBackdrop: '/matrix-backdrop.jpg',
         },
       });
       expect(Number.isNaN(Date.parse(cuerpo.fechaAgregado))).toBe(false);
       expect(cuerpo).not.toHaveProperty('usuarioId');
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('sincroniza el estado de vista con las visualizaciones del usuario', async () => {
+    const { container, server, baseUrl } = await iniciarEntorno();
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'lucia',
+        email: 'lucia@example.com',
+      });
+      const pelicula = await guardarPelicula(container);
+
+      await agregarAWatchlist(baseUrl, cookie, { peliculaId: pelicula.id });
+
+      const antes = await (await pedir(baseUrl, '/api/watchlist', { cookie })).json();
+      expect(antes.data[0].vista).toBe(false);
+
+      const visualizacion = await pedir(baseUrl, '/api/visualizaciones', {
+        cookie,
+        metodo: 'POST',
+        cuerpo: { peliculaId: pelicula.id, fecha: '2020-05-01' },
+      });
+      expect(visualizacion.status).toBe(201);
+
+      const despues = await (await pedir(baseUrl, '/api/watchlist', { cookie })).json();
+      expect(despues.data[0].vista).toBe(true);
+
+      const estado = await (
+        await pedir(baseUrl, `/api/watchlist/${pelicula.id}`, { cookie })
+      ).json();
+      expect(estado.entrada.vista).toBe(true);
     } finally {
       await detenerEntorno(server);
     }

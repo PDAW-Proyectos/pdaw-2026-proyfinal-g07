@@ -1,5 +1,6 @@
 import {
   validarEmail,
+  validarFavoritas,
   validarId,
   validarNombreUsuario,
   validarRol,
@@ -17,11 +18,20 @@ export class Usuario {
   #email;
   #hashContrasena;
   #rol;
+  #favoritas;
 
   /**
    * Construye un usuario validando sus datos e invariantes.
    */
-  constructor({ id, nombre, nombreUsuario, email, hashContrasena, rol = 'usuario' }) {
+  constructor({
+    id,
+    nombre,
+    nombreUsuario,
+    email,
+    hashContrasena,
+    rol = 'usuario',
+    favoritas = [],
+  }) {
     this.#id = validarId(id, 'id');
     this.#nombre = validarTexto(nombre, 'nombre', { max: 80 });
     this.#nombreUsuario = validarNombreUsuario(nombreUsuario);
@@ -31,6 +41,7 @@ export class Usuario {
       recortar: false,
     });
     this.#rol = validarRol(rol);
+    this.#favoritas = validarFavoritas(favoritas);
   }
 
   /**
@@ -76,7 +87,21 @@ export class Usuario {
   }
 
   /**
-   * Devuelve solo los datos que pueden mostrarse públicamente.
+   * Devuelve los identificadores de sus películas favoritas.
+   */
+  get favoritas() {
+    return [...this.#favoritas];
+  }
+
+  /**
+   * Devuelve una copia del usuario con otra selección de favoritas.
+   */
+  conFavoritas(favoritas) {
+    return new Usuario({ ...this.toJSON(), favoritas });
+  }
+
+  /**
+   * Devuelve solo los datos que pueden mostrarse pǧblicamente.
    */
   toPublicJSON() {
     return {
@@ -109,6 +134,7 @@ export class Usuario {
       email: this.#email,
       hashContrasena: this.#hashContrasena,
       rol: this.#rol,
+      favoritas: [...this.#favoritas],
     };
   }
 

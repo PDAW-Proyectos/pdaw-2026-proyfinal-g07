@@ -44,6 +44,29 @@ export class VisualizacionRepository {
       .map((registro) => Visualizacion.fromJSON(registro));
   }
 
+  async listarPorPelicula(peliculaId) {
+    return this.#store
+      .leer(COLECCION)
+      .filter((registro) => registro.peliculaId === peliculaId)
+      .map((registro) => Visualizacion.fromJSON(registro));
+  }
+
+  async buscarUltimaPorUsuarioYPelicula(usuarioId, peliculaId) {
+    let ultima = null;
+
+    for (const registro of this.#store.leer(COLECCION)) {
+      if (registro.usuarioId !== usuarioId || registro.peliculaId !== peliculaId) {
+        continue;
+      }
+
+      if (!ultima || registro.fecha >= ultima.fecha) {
+        ultima = registro;
+      }
+    }
+
+    return ultima ? Visualizacion.fromJSON(ultima) : null;
+  }
+
   /**
    * Reemplaza una visualización existente y devuelve la instancia actualizada.
    */

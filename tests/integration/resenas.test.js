@@ -101,6 +101,10 @@ function crearResena(baseUrl, cookie, cuerpo) {
   return pedir(baseUrl, '/api/resenas', { cookie, metodo: 'POST', cuerpo });
 }
 
+function crearVisualizacion(baseUrl, cookie, cuerpo) {
+  return pedir(baseUrl, '/api/visualizaciones', { cookie, metodo: 'POST', cuerpo });
+}
+
 function crearReloj() {
   let instante = new Date('2026-01-01T00:00:00.000Z');
 
@@ -147,6 +151,8 @@ describe('resenas', () => {
           tmdbId: 603,
           titulo: 'Matrix',
           anioEstreno: 1999,
+          generos: ['Acción', 'Ciencia ficción'],
+          puntuacionTmdb: null,
           rutaPoster: '/matrix.jpg',
           rutaBackdrop: '/matrix-backdrop.jpg',
         },
@@ -448,6 +454,90 @@ describe('resenas', () => {
         })
       ).json();
       expect(sinNota.puntuacion).toBeNull();
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('adopta la puntuación de la visualización al crear la reseña sin nota', async () => {
+    const { container, server, baseUrl } = await iniciarEntorno();
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'lucia',
+        email: 'lucia@example.com',
+      });
+      const pelicula = await guardarPelicula(container);
+
+      await crearVisualizacion(baseUrl, cookie, {
+        peliculaId: pelicula.id,
+        fecha: '2020-01-01',
+        puntuacion: 5,
+      });
+
+      const creada = await (
+        await crearResena(baseUrl, cookie, {
+          peliculaId: pelicula.id,
+          comentario: 'Sin nota en el modal.',
+        })
+      ).json();
+
+      expect(creada.puntuacion).toBe(5);
+    } finally {
+      await detenerEntorno(server);
+    }
+  });
+
+  test('sincroniza la puntuación de la reseña con la visualización', async () => {
+    const { container, server, baseUrl } = await iniciarEntorno();
+
+    try {
+      const cookie = await registrar(baseUrl, {
+        nombreUsuario: 'lucia',
+        email: 'lucia@example.com',
+      });
+      const pelicula = await guardarPelicula(container);
+
+      await crearVisualizacion(baseUrl, cookie, {
+        peliculaId: pelicula.id,
+        fecha: '2020-01-01',
+        puntuacion: 2,
+      });
+
+      const creada = await (
+        await crearResena(baseUrl, cookie, {
+          peliculaId: pelicula.id,
+          comentario: 'Con nota.',
+          puntuacion: 4,
+        })
+      ).json();
+
+      const visualizacion = await (
+        await pedir(baseUrl, `/api/visualizaciones/mia/${pelicula.id}`, { cookie })
+      ).json();
+      expect(visualizacion.puntuacion).toBe(4);
+
+      await pedir(baseUrl, `/api/resenas/${creada.id}`, {
+        cookie,
+        metodo: 'PATCH',
+        cuerpo: { comentario: 'Editada.', puntuacion: 1 },
+      });
+
+      expect(
+        (await (await pedir(baseUrl, `/api/visualizaciones/mia/${pelicula.id}`, { cookie })).json())
+          .puntuacion,
+      ).toBe(1);
+
+      await pedir(baseUrl, `/api/resenas/${creada.id}`, {
+        cookie,
+        metodo: 'PATCH',
+        cuerpo: { comentario: 'Sin nota.', puntuacion: null },
+      });
+
+      expect(
+        (await (await pedir(baseUrl, `/api/visualizaciones/mia/${pelicula.id}`, { cookie })).json())
+          .puntuacion,
+      ).toBeNull();
     } finally {
       await detenerEntorno(server);
     }

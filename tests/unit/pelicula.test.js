@@ -43,13 +43,40 @@ describe('Pelicula', () => {
     expect(pelicula.rutaBackdrop).toBeNull();
   });
 
-  test('el resumen incluye el póster y el backdrop', () => {
+  test('el resumen incluye póster, backdrop, géneros y puntuación TMDB', () => {
     const pelicula = new Pelicula(datosBase);
 
     expect(pelicula.toResumenJSON()).toMatchObject({
       rutaPoster: '/matrix.jpg',
       rutaBackdrop: '/matrix-backdrop.jpg',
+      generos: ['Acción', 'Ciencia ficción'],
+      puntuacionTmdb: null,
     });
+  });
+
+  test('conserva director y datos de TMDB', () => {
+    const pelicula = new Pelicula({
+      ...datosBase,
+      director: 'Lana Wachowski, Lilly Wachowski',
+      puntuacionTmdb: 8.234,
+      votosTmdb: 25_000,
+    });
+
+    expect(pelicula.toJSON()).toMatchObject({
+      director: 'Lana Wachowski, Lilly Wachowski',
+      puntuacionTmdb: 8.2,
+      votosTmdb: 25_000,
+    });
+    expect(pelicula.toDetalleJSON()).toMatchObject({
+      director: 'Lana Wachowski, Lilly Wachowski',
+      puntuacionTmdb: 8.2,
+      votosTmdb: 25_000,
+    });
+  });
+
+  test('rechaza datos de TMDB fuera de rango', () => {
+    expect(() => new Pelicula({ ...datosBase, puntuacionTmdb: 11 })).toThrow(ErrorDominio);
+    expect(() => new Pelicula({ ...datosBase, votosTmdb: -1 })).toThrow(ErrorDominio);
   });
 
   test('rechaza un tmdbId no positivo', () => {

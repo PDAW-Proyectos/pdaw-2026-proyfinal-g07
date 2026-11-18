@@ -2,9 +2,11 @@ import {
   validarArrayTexto,
   validarEntero,
   validarId,
+  validarPuntuacionTmdb,
   validarRutaBackdrop,
   validarRutaPoster,
   validarTexto,
+  validarVotosTmdb,
 } from '../utils/validaciones.js';
 
 /**
@@ -20,6 +22,9 @@ export class Pelicula {
   #generos;
   #rutaPoster;
   #rutaBackdrop;
+  #director;
+  #puntuacionTmdb;
+  #votosTmdb;
 
   /**
    * Construye una película validando sus datos e invariantes.
@@ -33,6 +38,9 @@ export class Pelicula {
     generos = [],
     rutaPoster = null,
     rutaBackdrop = null,
+    director = null,
+    puntuacionTmdb = null,
+    votosTmdb = null,
   }) {
     this.#id = validarId(id, 'id');
     this.#tmdbId = validarEntero(tmdbId, 'tmdbId', { min: 1 });
@@ -45,6 +53,12 @@ export class Pelicula {
     this.#generos = validarArrayTexto(generos, 'generos');
     this.#rutaPoster = validarRutaPoster(rutaPoster);
     this.#rutaBackdrop = validarRutaBackdrop(rutaBackdrop);
+    this.#director =
+      director === null || director === undefined || director === ''
+        ? null
+        : validarTexto(director, 'director', { max: 200 });
+    this.#puntuacionTmdb = validarPuntuacionTmdb(puntuacionTmdb);
+    this.#votosTmdb = validarVotosTmdb(votosTmdb);
   }
 
   /**
@@ -103,6 +117,18 @@ export class Pelicula {
     return this.#rutaBackdrop;
   }
 
+  get director() {
+    return this.#director;
+  }
+
+  get puntuacionTmdb() {
+    return this.#puntuacionTmdb;
+  }
+
+  get votosTmdb() {
+    return this.#votosTmdb;
+  }
+
   /**
    * Serializa la película completa para persistencia.
    */
@@ -116,6 +142,9 @@ export class Pelicula {
       generos: [...this.#generos],
       rutaPoster: this.#rutaPoster,
       rutaBackdrop: this.#rutaBackdrop,
+      director: this.#director,
+      puntuacionTmdb: this.#puntuacionTmdb,
+      votosTmdb: this.#votosTmdb,
     };
   }
 
@@ -128,8 +157,10 @@ export class Pelicula {
       tmdbId: this.#tmdbId,
       titulo: this.#titulo,
       anioEstreno: this.#anioEstreno,
+      generos: [...this.#generos],
       rutaPoster: this.#rutaPoster,
       rutaBackdrop: this.#rutaBackdrop,
+      puntuacionTmdb: this.#puntuacionTmdb,
     };
   }
 
@@ -146,6 +177,9 @@ export class Pelicula {
       generos: [...this.#generos],
       rutaPoster: this.#rutaPoster,
       rutaBackdrop: this.#rutaBackdrop,
+      director: this.#director,
+      puntuacionTmdb: this.#puntuacionTmdb,
+      votosTmdb: this.#votosTmdb,
     };
   }
 

@@ -77,8 +77,8 @@ Las listas `Errores:` de cada endpoint mencionan los casos más frecuentes; seg�
 | `SOLICITUD_INVALIDA` | 400 | JSON mal formado, parámetros o campos desconocidos, o cuerpo vacío donde se esperaba al menos un campo. |
 | `VALIDACION_FALLIDA` | 400 | Uno o más campos no cumplen el formato; `errores` los enumera. |
 | `TIPO_INVALIDO` | 400 | Un campo tiene un tipo incorrecto. |
-| `FORMATO_INVALIDO` | 400 | Email, fecha o nombre de usuario con formato inválido. |
-| `LONGITUD_INVALIDA` | 400 | Texto demasiado corto o largo. |
+| `FORMATO_INVALIDO` | 400 | Email, fecha, nombre de usuario o selección de favoritas con formato inválido. |
+| `LONGITUD_INVALIDA` | 400 | Texto o arreglo demasiado corto o largo. |
 | `VALOR_FUERA_DE_RANGO` | 400 | Número fuera del rango permitido. |
 | `FECHA_FUTURA` | 400 | La fecha de visualización es posterior a hoy. |
 | `PUNTUACION_INVALIDA` | 400 | La puntuación no es un entero entre 1 y 5 ni `null`. |
@@ -139,10 +139,14 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
   "tmdbId": 603,
   "titulo": "Matrix",
   "anioEstreno": 1999,
+  "generos": ["Acción", "Ciencia ficción"],
   "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-  "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+  "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+  "puntuacionTmdb": 8.2
 }
 ```
+
+`generos` y `puntuacionTmdb` permiten filtrar y ordenar los listados del catálogo sin pedir la ficha completa. `puntuacionTmdb` puede ser `null`.
 
 ### Película detallada
 
@@ -156,12 +160,17 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
   "generos": ["Acción", "Ciencia ficción"],
   "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
   "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+  "director": "Lana Wachowski, Lilly Wachowski",
+  "puntuacionTmdb": 8.2,
+  "votosTmdb": 25000,
   "promedioPuntuacion": 4.3,
   "totalPuntuaciones": 7
 }
 ```
 
-`promedioPuntuacion` es el promedio de las reseñas que tienen puntuación, redondeado a un decimal; es `null` cuando ninguna reseña está puntuada. `totalPuntuaciones` cuenta solo esas reseñas.
+`director`, `puntuacionTmdb` y `votosTmdb` provienen de TMDB y pueden ser `null` si el proveedor no devuelve esos datos. `puntuacionTmdb` usa escala de 0 a 10 y no se mezcla con las puntuaciones locales de 1 a 5.
+
+`promedioPuntuacion` es el promedio de las puntuaciones locales de 1 a 5, redondeado a un decimal; es `null` cuando ningún usuario puntuó la película. Cada usuario aporta una sola nota por película, ya provenga de una reseña o de una visualización. `totalPuntuaciones` cuenta esas notas únicas.
 
 ### Visualización
 
@@ -175,8 +184,10 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
     "tmdbId": 603,
     "titulo": "Matrix",
     "anioEstreno": 1999,
+    "generos": ["Acción", "Ciencia ficción"],
     "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+    "puntuacionTmdb": 8.2
   }
 }
 ```
@@ -199,8 +210,10 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
     "tmdbId": 603,
     "titulo": "Matrix",
     "anioEstreno": 1999,
+    "generos": ["Acción", "Ciencia ficción"],
     "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+    "puntuacionTmdb": 8.2
   }
 }
 ```
@@ -213,18 +226,21 @@ Incluye el email y el rol (`usuario` o `admin`) porque representa a la propia cu
 {
   "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
   "fechaAgregado": "2026-10-30T12:00:00.000Z",
+  "vista": false,
   "pelicula": {
     "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
     "tmdbId": 603,
     "titulo": "Matrix",
     "anioEstreno": 1999,
+    "generos": ["Acción", "Ciencia ficción"],
     "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+    "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+    "puntuacionTmdb": 8.2
   }
 }
 ```
 
-No incluye `usuarioId`: la watchlist siempre pertenece al usuario de la sesión.
+No incluye `usuarioId`: la watchlist siempre pertenece al usuario de la sesión. `vista` indica si el usuario ya registró una visualización de esa película y permite sincronizar el botón “Ya la vi” con la ficha.
 
 ## Autenticación y sesión
 
@@ -428,7 +444,7 @@ Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `NO_ENCONTRADO`.
 
 ## Películas e integración TMDB
 
-Las búsquedas, tendencias y recomendaciones pasan por el Adapter de TMDB y guardan una copia normalizada en el catálogo local. El resto de la API usa siempre el `peliculaId` interno.
+Las búsquedas, tendencias, catálogo y recomendaciones pasan por el Adapter de TMDB y guardan una copia normalizada en el catálogo local. El resto de la API usa siempre el `peliculaId` interno.
 
 ### `GET /api/peliculas/buscar`
 
@@ -449,6 +465,16 @@ Response `200`: colección de `PeliculaResumen` con `limit` fijo en 20.
 
 Errores: `VALIDACION_FALLIDA`, `TMDB_NO_DISPONIBLE`.
 
+### `GET /api/peliculas/catalogo`
+
+Parámetros: `page` opcional, con el mismo rango que en la búsqueda.
+
+Devuelve un catálogo amplio de películas populares de todas las épocas, ordenadas por cantidad de votos. Se usa para la grilla principal del index y para que los filtros por género, puntuación y año ofrezcan variedad; el carrusel sigue usando `/tendencias`.
+
+Response `200`: colección de `PeliculaResumen` con `limit` fijo en 20.
+
+Errores: `VALIDACION_FALLIDA`, `TMDB_NO_DISPONIBLE`.
+
 ### `GET /api/peliculas/recomendadas`
 
 Requiere sesión. Devuelve recomendaciones de TMDB usando como semilla la última película agregada a la watchlist del usuario. Si no tiene watchlist, usa la última visualización registrada.
@@ -461,9 +487,33 @@ Errores: `SESION_REQUERIDA`, `SESION_EXPIRADA`, `TMDB_NO_DISPONIBLE`.
 
 ### `GET /api/peliculas/:peliculaId`
 
-Devuelve `PeliculaDetalle` desde el catálogo local, con `promedioPuntuacion` y `totalPuntuaciones` calculados a partir de las reseñas.
+Devuelve `PeliculaDetalle` desde el catálogo local, con `promedioPuntuacion` y `totalPuntuaciones` calculados a partir de las reseñas y visualizaciones puntuadas, sin contar dos veces al mismo usuario.
 
 Errores: `PELICULA_NO_ENCONTRADA`.
+
+### `GET /api/peliculas/:peliculaId/trailer`
+
+Devuelve el trailer oficial de YouTube de una película guardada en el catálogo local. Prioriza los videos oficiales y, entre ellos, los de idioma español.
+
+Response `200` cuando hay trailer:
+
+```json
+{
+  "trailer": {
+    "youtubeKey": "dQw4w9WgXcQ",
+    "titulo": "Trailer oficial",
+    "idioma": "es"
+  }
+}
+```
+
+Response `200` cuando no hay trailer disponible:
+
+```json
+{ "trailer": null }
+```
+
+Errores: `PELICULA_NO_ENCONTRADA`, `TMDB_NO_DISPONIBLE`.
 
 ### `GET /api/peliculas/:peliculaId/resenas`
 
@@ -475,7 +525,7 @@ Errores: `PELICULA_NO_ENCONTRADA`.
 
 ## Visualizaciones
 
-Todas las rutas requieren sesión. El historial es privado: un usuario nunca puede ver ni modificar el de otro. Se permiten varias visualizaciones de la misma película para registrar revisionados.
+Todas las rutas requieren sesión. El historial es privado: un usuario nunca puede ver ni modificar el de otro. Se permiten varias visualizaciones de la misma película para registrar revisionados. La puntuación de la visualización más reciente y la de la reseña del mismo usuario para esa película comparten un único valor: al guardar una se actualiza la otra.
 
 ### `GET /api/visualizaciones`
 
@@ -502,11 +552,19 @@ Request:
 }
 ```
 
-`puntuacion` es opcional; se puede omitir o enviar `null`. `fecha` no puede ser futura.
+`puntuacion` es opcional; se puede omitir o enviar `null`. Si se omite y existe una reseña puntuada del mismo usuario para esa película, se adopta esa nota. Si se informa, se copia a la reseña existente. `fecha` no puede ser futura.
 
 Response `201` con `Location: /api/visualizaciones/:id`: `Visualización`.
 
 Errores: `SESION_REQUERIDA`, `PELICULA_NO_ENCONTRADA`, `FECHA_FUTURA`, `PUNTUACION_INVALIDA`, `CONTENIDO_NO_SOPORTADO`.
+
+### `GET /api/visualizaciones/mia/:peliculaId`
+
+Requiere sesión. Devuelve la visualización más reciente del usuario autenticado para esa película, ordenada por `fecha`; si hay varias con la misma fecha, la última registrada. Este endpoint permite mostrar y actualizar la puntuación personal desde la ficha.
+
+Response `200`: `Visualización`.
+
+Si el usuario no registró esa película como vista: `404 NO_ENCONTRADO`. Si la película no existe en el catálogo local: `404 PELICULA_NO_ENCONTRADA`.
 
 ### `GET /api/visualizaciones/:id`
 
@@ -526,6 +584,8 @@ Request con al menos uno de estos campos:
 ```
 
 Response `200`: `Visualización` actualizada.
+
+Si se envía `puntuacion`, el valor se copia a la reseña del mismo usuario para esa película; `null` también quita la nota de la reseña.
 
 Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`, `FECHA_FUTURA`, `PUNTUACION_INVALIDA`, `SOLICITUD_INVALIDA`.
 
@@ -561,13 +621,16 @@ Response `200` cuando está guardada:
   "entrada": {
     "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
     "fechaAgregado": "2026-10-30T12:00:00.000Z",
+    "vista": false,
     "pelicula": {
       "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
       "tmdbId": 603,
       "titulo": "Matrix",
       "anioEstreno": 1999,
+      "generos": ["Acción", "Ciencia ficción"],
       "rutaPoster": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-      "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg"
+      "rutaBackdrop": "/icmmSD4vTTDKOq2vvdulafOGw93.jpg",
+      "puntuacionTmdb": 8.2
     }
   }
 }
@@ -613,7 +676,7 @@ Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`.
 
 ## Reseñas
 
-Las reseñas son públicas y son independientes de las visualizaciones. Un usuario puede tener como máximo una reseña por película; para cambiarla debe usar `PATCH`. El autor es el único que puede editarla o eliminarla.
+Las reseñas son públicas. Un usuario puede tener como máximo una reseña por película; para cambiarla debe usar `PATCH`. El autor es el único que puede editarla o eliminarla. La puntuación de la reseña y la de la visualización más reciente del mismo usuario para esa película comparten un único valor: al guardar una se actualiza la otra.
 
 ### `GET /api/resenas/recientes`
 
@@ -656,7 +719,8 @@ Request:
 Validaciones:
 
 - `comentario`: 1 a 5000 caracteres después de recortar espacios. No se admiten textos vacíos.
-- `puntuacion`: opcional; entero de 1 a 5 o `null`. Si se omite, la reseña queda sin puntuación.
+- `puntuacion`: opcional; entero de 1 a 5 o `null`. Si se omite y existe una visualización puntuada del mismo usuario para esa película, se adopta esa nota; si no, la reseña queda sin puntuación.
+- Si se informa una puntuación, se copia a la visualización más reciente del mismo usuario para esa película.
 - Una sola reseña por usuario y película.
 
 Response `201` con `Location: /api/resenas/:id`: `Reseña`.
@@ -676,7 +740,7 @@ Request:
 }
 ```
 
-`puntuacion` es opcional: si se omite se conserva la anterior; `null` la quita.
+`puntuacion` es opcional: si se omite se conserva la anterior; `null` la quita. El valor guardado se copia a la visualización más reciente del mismo usuario para esa película.
 
 Response `200`: `Reseña`.
 
@@ -689,6 +753,126 @@ Requiere sesión y autoría.
 Response `204`.
 
 Errores: `SESION_REQUERIDA`, `NO_ENCONTRADO`, `NO_AUTORIZADO`.
+
+## Perfiles públicos
+
+Un perfil público muestra la selección de hasta cinco películas favoritas del usuario y solo información derivada de sus reseñas públicas. No expone email, hash, rol, visualizaciones ni watchlist. La afinidad combina las notas vigentes de ambas personas con la intersección de sus favoritas y nunca devuelve las notas privadas del otro usuario.
+
+### `GET /api/usuarios/:usuarioId`
+
+Público. Devuelve el perfil público de un usuario.
+
+Response `200`:
+
+```json
+{
+  "usuario": {
+    "id": "9b2c4d5e-6f70-4a8b-9c0d-1e2f3a4b5c6d",
+    "nombre": "Lucía Gómez",
+    "nombreUsuario": "lucia"
+  },
+  "esPropio": false,
+  "estadisticas": {
+    "totalResenas": 3,
+    "peliculasResenadas": 3,
+    "totalPuntuadas": 2,
+    "promedioPuntuacion": 4.5,
+    "distribucionPuntuacion": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 1
+    }
+  },
+  "favoritas": [
+    {
+      "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+      "tmdbId": 603,
+      "titulo": "Matrix",
+      "anioEstreno": 1999,
+      "generos": ["Acción", "Ciencia ficción"],
+      "rutaPoster": "/matrix.jpg",
+      "rutaBackdrop": "/matrix-backdrop.jpg",
+      "puntuacionTmdb": 8.2
+    }
+  ],
+  "mejorPuntuadas": [
+    {
+      "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+      "tmdbId": 603,
+      "titulo": "Matrix",
+      "anioEstreno": 1999,
+      "generos": ["Acción", "Ciencia ficción"],
+      "rutaPoster": "/matrix.jpg",
+      "rutaBackdrop": "/matrix-backdrop.jpg",
+      "puntuacionTmdb": 8.2,
+      "puntuacion": 5
+    }
+  ],
+  "afinidad": {
+    "porcentaje": 83,
+    "peliculasEnComun": 3,
+    "coincidencias": 1,
+    "minimoRequerido": 3,
+    "favoritasEnComun": 2,
+    "porcentajePuntuaciones": 75,
+    "porcentajeFavoritas": 100
+  }
+}
+```
+
+`favoritas` contiene solo las películas elegidas por el usuario, hasta cinco, sin `puntuacion`. `mejorPuntuadas` contiene hasta seis películas derivadas de sus reseñas, ordenadas por nota y luego por fecha, e incluye `puntuacion`.
+
+`afinidad` es `null` para visitantes sin sesión o cuando se consulta el perfil propio. `porcentajePuntuaciones` requiere al menos `minimoRequerido` películas puntuadas en común; si no se alcanza, es `null` y `coincidencias` también. `porcentajeFavoritas` usa la intersección sobre el menor de los dos listados y es `null` si alguno no eligió favoritas. El porcentaje final pondera 70% notas y 30% favoritas cuando ambos componentes existen; si solo hay uno, se usa ese componente. Todos los porcentajes van de 0 a 100.
+
+Errores: `NO_ENCONTRADO`.
+
+### `PUT /api/usuarios/:usuarioId/favoritas`
+
+Requiere sesión y solo el dueño del perfil puede modificar la selección. Reemplaza la lista completa; un arreglo vacío elimina todas las favoritas.
+
+Request:
+
+```json
+{
+  "favoritas": [
+    "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+    "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+  ]
+}
+```
+
+Response `200`:
+
+```json
+{
+  "favoritas": [
+    {
+      "id": "8c2d4f1a-5e6b-4c7d-8a9e-0f1b2c3d4e5f",
+      "tmdbId": 603,
+      "titulo": "Matrix",
+      "anioEstreno": 1999,
+      "generos": ["Acción", "Ciencia ficción"],
+      "rutaPoster": "/matrix.jpg",
+      "rutaBackdrop": "/matrix-backdrop.jpg",
+      "puntuacionTmdb": 8.2
+    }
+  ]
+}
+```
+
+Errores: `SESION_REQUERIDA`, `NO_AUTORIZADO`, `PELICULA_NO_ENCONTRADA`, `TIPO_INVALIDO`, `LONGITUD_INVALIDA`, `FORMATO_INVALIDO`, `SOLICITUD_INVALIDA`.
+
+### `GET /api/usuarios/:usuarioId/resenas`
+
+Público. Devuelve las reseñas públicas de un usuario, ordenadas por fecha descendente.
+
+Parámetros: `page`, `limit`.
+
+Response `200`: colección de `Reseña`.
+
+Errores: `NO_ENCONTRADO`, `VALIDACION_FALLIDA`.
 
 ## Estadísticas
 
@@ -714,7 +898,7 @@ Response `200`:
 }
 ```
 
-`promedioPuntuacion` es `null` si no hay visualizaciones puntuadas.
+`promedioPuntuacion` es `null` si el usuario no tiene ninguna nota. El promedio y la distribución usan una sola nota por película: priorizan la reseña puntuada y, si no existe, la visualización más reciente; también cuentan reseñas puntuadas sin visualización.
 
 Errores: `SESION_REQUERIDA`.
 
@@ -747,6 +931,9 @@ Response `200`:
 | Crear reseña | No | Sí | — | Sí |
 | Editar o borrar reseña | No | No | Sí | Borrar |
 | Ver estadísticas propias | No | No | Sí | No |
+| Ver perfil público y reseñas de otro usuario | Sí | Sí | Sí | Sí |
+| Ver afinidad agregada con otro usuario | No | Sí | Sí | Sí |
+| Editar mis películas favoritas | No | No | Sí | No |
 | Listar y eliminar cuentas | No | No | No | Sí |
 | Moderar cualquier reseña | No | No | No | Sí |
 
@@ -764,7 +951,6 @@ Response `200`:
 No forman parte del contrato inicial:
 
 - Seguimiento entre usuarios, me gusta y comentarios sobre reseñas.
-- Perfiles públicos completos.
 - Series, temporadas y episodios.
 - Reportes de contenido.
 - Recuperación de contraseña.

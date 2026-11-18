@@ -188,11 +188,22 @@
                   <span id="movie-year" class="text-secondary fw-normal"></span>
                 </h1>
                 <p id="movie-rating" class="text-secondary fs-7 mb-0 mt-2" aria-live="polite"></p>
+                <p id="movie-tmdb-rating" class="text-secondary fs-7 mb-0 mt-1"></p>
+                <p id="movie-director" class="text-secondary fs-7 mb-0 mt-1"></p>
               </div>
 
               <!-- ACCIONES PROTEGIDAS POR SESIÓN -->
               <div class="text-sm-end d-flex flex-column align-items-sm-end gap-2">
                 <div class="d-flex flex-wrap gap-2">
+                  <button
+                    id="btn-trailer"
+                    type="button"
+                    class="btn btn-sm btn-outline-success rounded-pill px-3 d-none"
+                    title="Ver trailer"
+                  >
+                    <i class="bi bi-play-circle me-1"></i>
+                    <span id="trailer-btn-text">Ver trailer</span>
+                  </button>
                   <button
                     id="btn-add-watchlist"
                     type="button"
@@ -220,6 +231,82 @@
                   >
                     <i class="bi bi-pencil-square me-1"></i> Agregar Reseña
                   </button>
+                </div>
+                <div class="w-100 border-top border-dark-subtle pt-2 mt-1">
+                  <div class="d-flex flex-wrap align-items-center justify-content-sm-end gap-2">
+                    <span class="text-secondary fs-7">Tu puntuación:</span>
+                    <div
+                      id="rating-estrellas"
+                      class="rating-estrellas"
+                      role="group"
+                      aria-label="Tu puntuación"
+                    >
+                      <button
+                        type="button"
+                        class="btn btn-link p-0 rating-star"
+                        data-puntuacion="1"
+                        data-requiere-sesion="puntuar la película"
+                        aria-label="1 de 5"
+                        aria-pressed="false"
+                      >
+                        <i class="bi bi-star"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-link p-0 rating-star"
+                        data-puntuacion="2"
+                        data-requiere-sesion="puntuar la película"
+                        aria-label="2 de 5"
+                        aria-pressed="false"
+                      >
+                        <i class="bi bi-star"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-link p-0 rating-star"
+                        data-puntuacion="3"
+                        data-requiere-sesion="puntuar la película"
+                        aria-label="3 de 5"
+                        aria-pressed="false"
+                      >
+                        <i class="bi bi-star"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-link p-0 rating-star"
+                        data-puntuacion="4"
+                        data-requiere-sesion="puntuar la película"
+                        aria-label="4 de 5"
+                        aria-pressed="false"
+                      >
+                        <i class="bi bi-star"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-link p-0 rating-star"
+                        data-puntuacion="5"
+                        data-requiere-sesion="puntuar la película"
+                        aria-label="5 de 5"
+                        aria-pressed="false"
+                      >
+                        <i class="bi bi-star"></i>
+                      </button>
+                    </div>
+                    <button
+                      id="btn-guardar-puntuacion"
+                      type="button"
+                      class="btn btn-sm btn-outline-success rounded-pill px-3"
+                      data-requiere-sesion="puntuar la película"
+                    >
+                      Guardar puntuación
+                    </button>
+                  </div>
+                  <p
+                    id="puntuacion-aviso"
+                    class="fs-7 mb-0 mt-1 d-none"
+                    role="status"
+                    aria-live="polite"
+                  ></p>
                 </div>
                 <p id="watchlist-aviso" class="text-danger fs-7 mb-0 d-none" role="alert"></p>
                 <p
@@ -275,6 +362,51 @@
         <a href="#" class="text-secondary text-decoration-none">Acerca de y créditos &#x2197;</a>
       </footer>
     </main>
+
+    <!-- MODAL: TRAILER OFICIAL -->
+    <div
+      class="modal fade"
+      id="modalTrailer"
+      tabindex="-1"
+      aria-labelledby="modalTrailerLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div
+          class="modal-content bg-dark-custom text-white border border-dark-subtle rounded-4 overflow-hidden"
+        >
+          <div class="modal-header border-bottom border-dark-subtle">
+            <h5 class="modal-title fw-bold" id="modalTrailerLabel">Trailer</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+          <div class="modal-body p-0 bg-black">
+            <div class="ratio ratio-16x9">
+              <iframe
+                id="trailer-iframe"
+                title="Trailer oficial"
+                src="about:blank"
+                allow="
+                  accelerometer;
+                  autoplay;
+                  clipboard-write;
+                  encrypted-media;
+                  gyroscope;
+                  picture-in-picture;
+                  web-share;
+                "
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- MODAL: INICIAR SESIÓN -->
     <div
@@ -586,8 +718,10 @@
       <div class="col-12">
         <div class="review-card p-3 rounded-3">
           <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="author-name text-white fw-semibold fs-7"></span>
-            <span class="author-username text-secondary micro-text"></span>
+            <a class="review-author-link text-decoration-none" href="#">
+              <span class="author-name text-white fw-semibold fs-7"></span>
+              <span class="author-username text-secondary micro-text ms-1"></span>
+            </a>
             <span class="review-rating text-warning micro-text d-none"></span>
             <span class="review-date text-secondary micro-text ms-auto"></span>
           </div>

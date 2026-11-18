@@ -27,6 +27,7 @@ export function mostrarPoster({ imagen, marcador }, rutaPoster, titulo, tamano) 
   const url = urlPoster(rutaPoster, tamano);
 
   imagen.classList.add('d-none');
+  imagen.loading = 'eager';
   marcador.classList.remove('d-none');
 
   if (!url) {

@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: fotograma
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/salud
+    autoDeployTrigger: commit
+    numInstances: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: TMDB_API_KEY
+        sync: false
+
+# El plan free no admite discos persistentes: data/fotograma.json se pierde
+# en cada reinicio o deploy.

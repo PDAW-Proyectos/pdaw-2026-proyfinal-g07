@@ -22,6 +22,7 @@ Películas, cuentas de usuario, historial personal, puntuaciones, reseñas públ
 
 | Integrante         | GitHub         | Roles                         |
 | ------------------ | -------------- | ----------------------------- |
+| Leonel Stanton     | LeonelStanton  | Tech Lead y desarrollador     |
 | Juan Pablo Rapetti | JuanRapetti    | Product Owner y desarrollador |
 | Manuel Campagnoli  | manucampagnoli | Scrum Master y desarrollador  |
 
@@ -46,15 +47,50 @@ npm run test:e2e
 npm start
 ```
 
-`test:e2e` verifica con Chrome o Edge en modo headless el flujo reseña→perfil. Se puede indicar el ejecutable con `CHROME_PATH`; no requiere TMDB, base de datos ni servidor previo.
+`test:e2e` verifica con Chrome o Edge en modo headless el flujo reseña→perfil. Se puede indicar el ejecutable con `CHROME_PATH`; no requiere TMDB, base de datos ni servidor previo. Es una prueba opcional: no forma parte de `npm test` ni de la CI.
 
 Servidor: **http://localhost:3000**. Panel de administración: **http://localhost:3000/admin.html** (solo cuentas con rol `admin`; permite eliminar cuentas y moderar reseñas).
+
+### Demo local reproducible
+
+La demo usa un archivo separado, `data/demo.json`, y no toca `data/fotograma.json`. Requiere `TMDB_API_KEY` porque trae el catálogo actual desde TMDB.
+
+```bash
+npm run seed:demo
+npm run demo
+```
+
+`seed:demo` **reemplaza** `data/demo.json` en cada ejecución y crea 20 películas, tres usuarios con reseñas/visualizaciones/favoritas cruzadas y una cuenta administradora. `demo` inicia el servidor con ese archivo. Las credenciales se muestran al final del seed y están en la [guía de uso](docs/guia-uso.md#demo-local-reproducible). Es solo para la presentación local: no usar estas cuentas en Render.
 
 La integración continua ejecuta `npm ci`, `npm run format:check`, `npm run lint` y `npm test -- --coverage` en cada push a `main` y en cada pull request.
 
 Las sesiones y los contadores de intentos viven en memoria: se pierden al reiniciar el servidor. Los usuarios, películas, visualizaciones, reseñas y watchlist se conservan en el archivo JSON configurado.
 
 Tecnologías: JavaScript, Node.js, Express, Jest, ESLint, Prettier y GitHub Actions.
+
+## Organización del código
+
+- `src/controllers`: recibe HTTP y arma respuestas; no contiene reglas de negocio.
+- `src/services`: reglas de negocio y autorización.
+- `src/utils`: helpers transversales de paginación, validación y representación JSON.
+- `public/js/api`: cliente HTTP y funciones por recurso.
+- `public/js`: páginas, componentes de interfaz y utilidades del navegador.
+- `public/js/constantes.js`: límites del contrato usados para validar temprano en el navegador; el servidor sigue siendo la autoridad.
+
+## Despliegue en Render
+
+El repositorio incluye [`render.yaml`](render.yaml) con un Blueprint para desplegar el servicio:
+
+1. Subir el repositorio a GitHub y crear un **Blueprint** en Render apuntando a este repositorio.
+2. Render crea el servicio `fotograma`, ejecuta `npm ci` y arranca con `npm start`.
+3. Definir `TMDB_API_KEY` en el dashboard de Render; el Blueprint la marca como secreta.
+4. `SESSION_SECRET` se genera automáticamente.
+5. Opcional: definir `ADMIN_EMAIL` y `ADMIN_PASSWORD` para crear la cuenta administradora en el primer arranque.
+6. Verificar el health check en `GET /api/salud`.
+
+El Blueprint usa el plan `free` y no incluye disco persistente. El archivo `data/fotograma.json` se pierde en cada reinicio o deploy, y las sesiones también se cierran porque viven en memoria. Para conservar los datos hay que pasar a un plan pago y agregar un `disk` montado en `/var/data` con `DATA_FILE=/var/data/fotograma.json`.
+
+El servicio debe ejecutarse en **una sola instancia**. Después del primer despliegue, agregar la URL pública de Render a esta sección.
 
 ## Endpoints de la API
 
@@ -104,11 +140,16 @@ Los errores usan `application/problem+json` según RFC 9457. La respuesta incluy
 
 ## Documentación
 
-- [Diagramas y boceto](docs/README.md).
+- [Índice de documentación, diagramas y boceto](docs/README.md).
+- [Guía de uso](docs/guia-uso.md).
 - [Contrato de API](docs/contrato_api.md).
 - [Casos de prueba manuales](requests.http).
 - [Personas usuarias y escenarios](docs/usuarios.md).
 - [Patrón elegido](docs/patron_elegido.md).
+- [ADR-001: sesiones en memoria](docs/adr-001-sesiones-en-memoria.md).
+- [ADR-002: cache de TMDB](docs/adr-002-cache-tmdb.md).
+- [Declaración de uso de IA](docs/declaracion-ia.md).
+- [Lecciones aprendidas](docs/lecciones-aprendidas.md).
 - [Acuerdos de trabajo y Definition of Done](CONTRIBUTING.md).
 - [Matriz de riesgos](docs/riesgos.md).
 
@@ -117,4 +158,6 @@ Los errores usan `application/problem+json` según RFC 9457. La respuesta incluy
 | Fecha    | Herramienta | Aplicación                                                                              |
 | -------- | ----------- | --------------------------------------------------------------------------------------- |
 | Semana 1 | ChatGPT     | Redacción y organización de la documentación.                                           |
-| Semana 5 | OpenCode    | Implementación del catálogo con TMDB y testing. Revision de documentacion. Comentarios. |
+| Semana 5 | OpenCode    | Implementación del catálogo con TMDB y testing. Revisión de documentación. Comentarios. |
+
+El detalle de los criterios y las verificaciones está en la [declaración de uso de IA](docs/declaracion-ia.md).

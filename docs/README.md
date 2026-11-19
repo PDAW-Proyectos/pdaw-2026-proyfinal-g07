@@ -1,8 +1,34 @@
-# Diseño de Fotograma
+# Diseño y documentación de Fotograma
 
-Diagramas y boceto del alcance general del proyecto. Se actualizan cuando cambian las decisiones de diseño.
+Diagramas y boceto del alcance general del proyecto, más el índice de la documentación. Se actualizan cuando cambian las decisiones de diseño.
 
-El contrato de API acordado está en [contrato_api.md](contrato_api.md).
+## Índice
+
+### Producto y alcance
+
+- [README principal](../README.md)
+- [Personas usuarias y escenarios](usuarios.md)
+- [Matriz de riesgos](riesgos.md)
+
+### Arquitectura y contrato
+
+- [Contrato de API](contrato_api.md)
+- [Patrón Adapter](patron_elegido.md)
+- [ADR-001: sesiones en memoria con cookie HttpOnly](adr-001-sesiones-en-memoria.md)
+- [ADR-002: cache en memoria para TMDB](adr-002-cache-tmdb.md)
+
+La persistencia en archivo JSON no se documenta como ADR: fue una restricción del alcance del curso, no una decisión entre alternativas evaluadas. Se explica como limitación en [Lecciones aprendidas](lecciones-aprendidas.md).
+
+### Operación y pruebas
+
+- [Guía de uso](guia-uso.md)
+- [Casos de prueba manuales](../requests.http)
+- [Acuerdos de trabajo y Definition of Done](../CONTRIBUTING.md)
+
+### Defensa
+
+- [Declaración de uso de herramientas de IA](declaracion-ia.md)
+- [Lecciones aprendidas](lecciones-aprendidas.md)
 
 ## Contexto
 
@@ -34,4 +60,4 @@ Para registrar o reseñar sin sesión, primero se solicita el acceso y luego se 
 
 ![Boceto de inicio](boceto_pagina_principal.png)
 
-Inicio con catálogo, búsqueda por título y opiniones. El boceto representa una propuesta de interfaz. 
+Inicio con catálogo, búsqueda por título y opiniones. El boceto representa una propuesta de interfaz.

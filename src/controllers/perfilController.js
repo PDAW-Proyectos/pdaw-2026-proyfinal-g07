@@ -1,6 +1,6 @@
 import { ErrorDominio } from '../utils/ErrorDominio.js';
 import { leerPaginacion } from '../utils/paginacion.js';
-import { aColeccionResenas } from './resenaRepresentacion.js';
+import { aColeccionResenas } from '../utils/resenaRepresentacion.js';
 
 function aMejorPuntuadaJSON({ pelicula, puntuacion }) {
   return {

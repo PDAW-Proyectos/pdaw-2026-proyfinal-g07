@@ -1,4 +1,4 @@
-import { cerrarSesion, obtenerSesion } from './authApi.js';
+import { cerrarSesion, obtenerSesion } from './api/authApi.js';
 
 const PAGINA_ACCESO = 'index.html';
 const PAGINA_ADMIN = 'admin.html';

@@ -1,5 +1,11 @@
-import { obtenerPelicula, obtenerResenasDePelicula, obtenerTrailer } from './peliculasApi.js';
-import { actualizarResena, crearResena, eliminarResena, listarMisResenas } from './resenasApi.js';
+import { obtenerPelicula, obtenerResenasDePelicula, obtenerTrailer } from './api/peliculasApi.js';
+import {
+  actualizarResena,
+  crearResena,
+  eliminarResena,
+  listarMisResenas,
+} from './api/resenasApi.js';
+import { LARGO_MAXIMO_COMENTARIO, PUNTUACION_MAXIMA } from './constantes.js';
 import {
   enlazarResenaAPerfil,
   fechaDeHoy,
@@ -12,8 +18,8 @@ import {
   actualizarVisualizacion,
   crearVisualizacion,
   obtenerMiVisualizacion,
-} from './visualizacionesApi.js';
-import { agregarAWatchlist, consultarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
+} from './api/visualizacionesApi.js';
+import { agregarAWatchlist, consultarWatchlist, quitarDeWatchlist } from './api/watchlistApi.js';
 
 const ESTADO_NO_ENCONTRADA = 404;
 const ESTADO_NO_AUTORIZADO = 401;
@@ -21,8 +27,6 @@ const ESTADO_CONFLICTO = 409;
 const TEXTO_MAS_RESENAS = 'Ver más reseñas';
 const TEXTO_PUBLICAR = 'Publicar reseña';
 const TEXTO_GUARDAR = 'Guardar cambios';
-const LARGO_MAXIMO_COMENTARIO = 5000;
-const PUNTUACION_MAXIMA = 5;
 
 /**
  * Formatea el promedio con un decimal y coma decimal, como se usa en es-AR.

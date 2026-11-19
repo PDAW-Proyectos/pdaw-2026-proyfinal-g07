@@ -1,7 +1,7 @@
 import { BuscadorPeliculas } from './buscadorPeliculas.js';
-import { agregarAWatchlist, listarWatchlist, quitarDeWatchlist } from './watchlistApi.js';
+import { agregarAWatchlist, listarWatchlist, quitarDeWatchlist } from './api/watchlistApi.js';
 import { fechaDeHoy, formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
-import { crearVisualizacion } from './visualizacionesApi.js';
+import { crearVisualizacion } from './api/visualizacionesApi.js';
 
 const MENSAJE_VACIO =
   'Tu watchlist está vacía. Buscá una película y guardala para verla más tarde.';

@@ -1,4 +1,4 @@
-import { buscarPeliculas } from './peliculasApi.js';
+import { buscarPeliculas } from './api/peliculasApi.js';
 import { mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const LIMITE_RESULTADOS = 20;

@@ -6,11 +6,11 @@ import {
   filtrarPorAnio,
   filtrarPorGenero,
 } from './filtrosPeliculas.js';
+import { PUNTUACION_MAXIMA } from './constantes.js';
 import { mensajeDeError, mostrarPoster } from './utilidades.js';
-import { listarVisualizaciones } from './visualizacionesApi.js';
+import { listarVisualizaciones } from './api/visualizacionesApi.js';
 
 const TAMANO_PAGINA = 50;
-const PUNTUACION_MAXIMA = 5;
 
 class PaginaVistas {
   #elementos;

@@ -31,6 +31,10 @@ describe('Resena', () => {
     expect(resena.fechaPublicacion.toISOString()).toBe(fechaPublicacion.toISOString());
   });
 
+  test('rechaza comentarios de más de 5000 caracteres', () => {
+    expect(() => new Resena({ ...datosBase, comentario: 'a'.repeat(5001) })).toThrow(ErrorDominio);
+  });
+
   test('toJSON y fromJSON conservan los datos y la fecha', () => {
     const resena = new Resena(datosBase);
     const reconstruida = Resena.fromJSON(resena.toJSON());

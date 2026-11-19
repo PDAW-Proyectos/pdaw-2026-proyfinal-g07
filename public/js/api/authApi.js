@@ -1,7 +1,4 @@
-import { ErrorApi, solicitar } from './apiCliente.js';
-
-// auth.js importa ErrorApi desde acá; se conserva la exportación.
-export { ErrorApi };
+import { solicitar } from './apiCliente.js';
 
 /**
  * Consulta si hay una sesión activa: { autenticado, usuario }.

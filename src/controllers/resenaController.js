@@ -1,5 +1,5 @@
 import { leerPaginacion } from '../utils/paginacion.js';
-import { aColeccionResenas, aResenaJSON } from './resenaRepresentacion.js';
+import { aColeccionResenas, aResenaJSON } from '../utils/resenaRepresentacion.js';
 
 export function crearResenaController({ resenaService }) {
   return {

@@ -1,5 +1,5 @@
 import { leerPagina, leerPaginacion } from '../utils/paginacion.js';
-import { aColeccionResenas } from './resenaRepresentacion.js';
+import { aColeccionResenas } from '../utils/resenaRepresentacion.js';
 
 /**
  * Representación de una colección paginada de películas resumidas.

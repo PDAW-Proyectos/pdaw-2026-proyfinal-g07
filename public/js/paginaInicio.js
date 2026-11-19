@@ -12,8 +12,8 @@ import {
   obtenerCatalogo,
   obtenerRecomendadas,
   obtenerTendencias,
-} from './peliculasApi.js';
-import { listarResenasRecientes } from './resenasApi.js';
+} from './api/peliculasApi.js';
+import { listarResenasRecientes } from './api/resenasApi.js';
 import {
   enlazarResenaAPerfil,
   formatearFecha,

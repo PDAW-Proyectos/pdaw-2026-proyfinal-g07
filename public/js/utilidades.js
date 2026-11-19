@@ -1,4 +1,4 @@
-import { ErrorApi } from './apiCliente.js';
+import { ErrorApi } from './api/apiCliente.js';
 
 const BASE_IMAGENES_TMDB = 'https://image.tmdb.org/t/p';
 

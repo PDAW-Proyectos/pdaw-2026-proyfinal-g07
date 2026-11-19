@@ -1,9 +1,10 @@
-import { obtenerSesion } from './authApi.js';
+import { obtenerSesion } from './api/authApi.js';
 import { BuscadorPeliculas } from './buscadorPeliculas.js';
-import { listarMisResenas } from './resenasApi.js';
-import { actualizarFavoritas, obtenerPerfilPublico } from './usuariosApi.js';
-import { listarVisualizaciones } from './visualizacionesApi.js';
-import { listarWatchlist } from './watchlistApi.js';
+import { listarMisResenas } from './api/resenasApi.js';
+import { actualizarFavoritas, obtenerPerfilPublico } from './api/usuariosApi.js';
+import { listarVisualizaciones } from './api/visualizacionesApi.js';
+import { listarWatchlist } from './api/watchlistApi.js';
+import { MAXIMO_FAVORITAS, PUNTUACION_MAXIMA } from './constantes.js';
 import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const CANTIDAD_RECIENTES = 6;
@@ -12,8 +13,6 @@ const LIMITE_RESENAS = 50;
 const LIMITE_WATCHLIST = 6;
 const CANTIDAD_VISTAS = 6;
 const LIMITE_VISTAS = 20;
-const PUNTUACION_MAXIMA = 5;
-const MAXIMO_FAVORITAS = 5;
 
 function formatearFechaDeVista(fecha) {
   return formatearFecha(`${fecha}T00:00:00`);

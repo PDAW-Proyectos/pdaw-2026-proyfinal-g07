@@ -1,5 +1,5 @@
 import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
-import { listarResenasDeUsuario, obtenerPerfilPublico } from './usuariosApi.js';
+import { listarResenasDeUsuario, obtenerPerfilPublico } from './api/usuariosApi.js';
 
 const LIMITE_RESENAS = 6;
 const ESTADO_NO_ENCONTRADO = 404;

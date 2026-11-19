@@ -1,10 +1,5 @@
-import {
-  cerrarSesion,
-  ErrorApi,
-  iniciarSesion,
-  obtenerSesion,
-  registrarUsuario,
-} from './authApi.js';
+import { cerrarSesion, iniciarSesion, obtenerSesion, registrarUsuario } from './api/authApi.js';
+import { ErrorApi } from './api/apiCliente.js';
 
 // Bootstrap se carga como script clásico antes de este módulo.
 const { Modal, Offcanvas } = window.bootstrap;

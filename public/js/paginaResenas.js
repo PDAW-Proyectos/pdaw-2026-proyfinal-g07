@@ -1,4 +1,4 @@
-import { eliminarResena, listarMisResenas } from './resenasApi.js';
+import { eliminarResena, listarMisResenas } from './api/resenasApi.js';
 import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const TAMANO_PAGINA = 12;

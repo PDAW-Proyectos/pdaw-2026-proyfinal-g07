@@ -1,4 +1,4 @@
-import { ErrorApi, solicitar } from './apiCliente.js';
+import { ErrorApi, solicitar } from './api/apiCliente.js';
 import { formatearFecha, mensajeDeError } from './utilidades.js';
 
 const LIMITE = 20;

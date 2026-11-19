@@ -34,6 +34,13 @@ const USUARIOS = [
     nombreUsuario: 'sofia',
     email: 'sofia@fotograma.demo',
   },
+  {
+    clave: 'usuario',
+    nombre: 'Usuario Demo',
+    nombreUsuario: 'usuario',
+    email: 'usuario@fotograma.demo',
+    contrasena: 'contrasena',
+  },
 ];
 
 const ADMIN = {
@@ -130,6 +137,27 @@ const RESENAS = [
     diasAtras: 5,
     comentario: 'Una experiencia completa: guion, imagen y sonido funcionan muy bien juntos.',
   },
+  {
+    usuario: 'usuario',
+    pelicula: 0,
+    puntuacion: 5,
+    diasAtras: 42,
+    comentario: 'Coincido con Lucía: la fotografía y la música sostienen toda la película.',
+  },
+  {
+    usuario: 'usuario',
+    pelicula: 1,
+    puntuacion: 4,
+    diasAtras: 28,
+    comentario: 'Muy entretenida, con un final que justifica la espera.',
+  },
+  {
+    usuario: 'usuario',
+    pelicula: 2,
+    puntuacion: 4,
+    diasAtras: 16,
+    comentario: 'Personajes bien construidos y una historia que deja para pensar.',
+  },
 ];
 
 const VISUALIZACIONES_EXTRA = [
@@ -139,18 +167,22 @@ const VISUALIZACIONES_EXTRA = [
   { usuario: 'mateo', pelicula: 10, diasAtras: 15, puntuacion: 3 },
   { usuario: 'sofia', pelicula: 7, diasAtras: 60, puntuacion: 4 },
   { usuario: 'sofia', pelicula: 8, diasAtras: 14, puntuacion: 5 },
+  { usuario: 'usuario', pelicula: 7, diasAtras: 10, puntuacion: 4 },
+  { usuario: 'usuario', pelicula: 11, diasAtras: 6, puntuacion: 3 },
 ];
 
 const FAVORITAS = {
   lucia: [0, 1, 2, 4],
   mateo: [1, 2, 4, 5],
   sofia: [0, 3, 5, 6],
+  usuario: [0, 1, 2, 4],
 };
 
 const WATCHLIST = {
   lucia: [8, 9, 10],
   mateo: [0, 3, 6],
   sofia: [1, 2, 9],
+  usuario: [3, 8, 9],
 };
 
 function fechaHace(dias) {
@@ -185,10 +217,10 @@ try {
 
   const usuarios = {};
 
-  for (const { clave, ...datos } of USUARIOS) {
+  for (const { clave, contrasena = CONTRASENA_DEMO, ...datos } of USUARIOS) {
     usuarios[clave] = await contenedor.usuarioService.registrar({
       ...datos,
-      contrasena: CONTRASENA_DEMO,
+      contrasena,
     });
   }
 
@@ -254,12 +286,15 @@ try {
   console.log(`Reseñas: ${contar('resenas')}`);
   console.log(`Watchlist: ${contar('watchlist')}`);
   console.log('');
-  console.log(`Contraseña para todas las cuentas demo: ${CONTRASENA_DEMO}`);
   console.log('Usuarios:');
   for (const usuario of USUARIOS) {
-    console.log(`- ${usuario.email} (${usuario.nombreUsuario})`);
+    console.log(
+      `- ${usuario.email} (${usuario.nombreUsuario}) · contraseña: ${usuario.contrasena ?? CONTRASENA_DEMO}`,
+    );
   }
-  console.log(`- ${ADMIN.email} (${ADMIN.nombreUsuario}, administrador)`);
+  console.log(
+    `- ${ADMIN.email} (${ADMIN.nombreUsuario}, administrador) · contraseña: ${CONTRASENA_DEMO}`,
+  );
   console.log('');
   console.log('Iniciar la demo:');
   console.log('  npm run demo');

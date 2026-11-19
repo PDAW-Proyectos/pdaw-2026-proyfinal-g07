@@ -4,6 +4,8 @@
 
 Proyecto del equipo **7** para **7513 · Proyecto de Desarrollo de Aplicaciones Web** — Tecnicatura Universitaria en Programación Web y Móvil, DCIC, UNS.
 
+**Demo en línea:** <https://fotograma-satw.onrender.com> (Render, plan free: el servicio se duerme sin uso y el primer acceso puede tardar cerca de un minuto).
+
 ## Ficha del proyecto
 
 | Aspecto                | Descripción                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -60,7 +62,7 @@ npm run seed:demo
 npm run demo
 ```
 
-`seed:demo` **reemplaza** `data/demo.json` en cada ejecución y crea 20 películas, tres usuarios con reseñas/visualizaciones/favoritas cruzadas y una cuenta administradora. `demo` inicia el servidor con ese archivo. Las credenciales se muestran al final del seed y están en la [guía de uso](docs/guia-uso.md#demo-local-reproducible). Es solo para la presentación local: no usar estas cuentas en Render.
+`seed:demo` **reemplaza** `data/demo.json` en cada ejecución y crea 20 películas, cuatro usuarios con reseñas/visualizaciones/favoritas cruzadas (uno de ellos, `usuario`, pensado para la demo de afinidad) y una cuenta administradora. `demo` inicia el servidor con ese archivo. Las credenciales se muestran al final del seed y están en la [guía de uso](docs/guia-uso.md#demo-local-reproducible). Es solo para la presentación local: no usar estas cuentas en Render.
 
 La integración continua ejecuta `npm ci`, `npm run format:check`, `npm run lint` y `npm test -- --coverage` en cada push a `main` y en cada pull request.
 
@@ -79,18 +81,20 @@ Tecnologías: JavaScript, Node.js, Express, Jest, ESLint, Prettier y GitHub Acti
 
 ## Despliegue en Render
 
-El repositorio incluye [`render.yaml`](render.yaml) con un Blueprint para desplegar el servicio:
+El servicio está publicado en **<https://fotograma-satw.onrender.com>**; el health check responde en **<https://fotograma-satw.onrender.com/api/salud>**.
 
-1. Subir el repositorio a GitHub y crear un **Blueprint** en Render apuntando a este repositorio.
+El repositorio incluye [`render.yaml`](render.yaml) con un Blueprint que define el despliegue:
+
+1. El repositorio se conecta a GitHub y el **Blueprint** de Render apunta a este proyecto.
 2. Render crea el servicio `fotograma`, ejecuta `npm ci` y arranca con `npm start`.
-3. Definir `TMDB_API_KEY` en el dashboard de Render; el Blueprint la marca como secreta.
+3. `TMDB_API_KEY` se define en el dashboard de Render; el Blueprint la marca como secreta.
 4. `SESSION_SECRET` se genera automáticamente.
-5. Opcional: definir `ADMIN_EMAIL` y `ADMIN_PASSWORD` para crear la cuenta administradora en el primer arranque.
-6. Verificar el health check en `GET /api/salud`.
+5. Opcional: `ADMIN_EMAIL` y `ADMIN_PASSWORD` crean la cuenta administradora en el primer arranque.
+6. El health check `GET /api/salud` confirma que el servicio arrancó.
 
 El Blueprint usa el plan `free` y no incluye disco persistente. El archivo `data/fotograma.json` se pierde en cada reinicio o deploy, y las sesiones también se cierran porque viven en memoria. Para conservar los datos hay que pasar a un plan pago y agregar un `disk` montado en `/var/data` con `DATA_FILE=/var/data/fotograma.json`.
 
-El servicio debe ejecutarse en **una sola instancia**. Después del primer despliegue, agregar la URL pública de Render a esta sección.
+El servicio corre en **una sola instancia**. Con el plan free se duerme tras unos 15 minutos sin uso, así que la primera visita puede demorar alrededor de un minuto.
 
 ## Endpoints de la API
 
@@ -155,9 +159,12 @@ Los errores usan `application/problem+json` según RFC 9457. La respuesta incluy
 
 ## Uso de herramientas de IA
 
-| Fecha    | Herramienta | Aplicación                                                                              |
-| -------- | ----------- | --------------------------------------------------------------------------------------- |
-| Semana 1 | ChatGPT     | Redacción y organización de la documentación.                                           |
-| Semana 5 | OpenCode    | Implementación del catálogo con TMDB y testing. Revisión de documentación. Comentarios. |
+| Fecha    | Herramienta   | Aplicación                                                                              |
+| -------- | ------------- | --------------------------------------------------------------------------------------- |
+| Semana 1 | ChatGPT       | Redacción y organización de la documentación.                                           |
+| Semana 2 | Claude Sonnet | Estilizado de páginas.                                                                  |
+| Semana 4 | NotebookLM    | Aportes teóricos, ejemplificación y testing.                                            |
+| Semana 5 | OpenCode      | Implementación del catálogo con TMDB y testing. Revisión de documentación. Comentarios. |
+| Semana 6 | Claude Sonnet | Creación de usuarios de prueba.                                                         |
 
 El detalle de los criterios y las verificaciones está en la [declaración de uso de IA](docs/declaracion-ia.md).

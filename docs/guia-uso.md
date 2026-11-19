@@ -15,6 +15,10 @@ npm start
 
 La aplicación queda disponible en `http://localhost:3000`. Si no hay `TMDB_API_KEY`, las rutas de TMDB responden `502` con `TMDB_NO_DISPONIBLE`; el resto del sistema sigue funcionando con los datos locales.
 
+## Demo en línea
+
+El servicio está publicado en <https://fotograma-satw.onrender.com>. Usa el plan free de Render: se duerme tras unos 15 minutos sin uso, la primera visita puede tardar cerca de un minuto y los datos se pierden en cada reinicio o deploy. Las cuentas de la demo local no existen allí: hay que registrar una cuenta nueva o usar la cuenta administradora si se configuraron `ADMIN_EMAIL` y `ADMIN_PASSWORD` en el dashboard.
+
 ## Demo local reproducible
 
 Para la defensa conviene usar un archivo separado de datos, `data/demo.json`, y dejar `data/fotograma.json` intacto:
@@ -25,7 +29,7 @@ npm run demo
 ```
 
 - `seed:demo` requiere `TMDB_API_KEY`, trae el catálogo actual de TMDB y **reemplaza** `data/demo.json`.
-- Crea 20 películas, tres usuarios con reseñas/visualizaciones/favoritas cruzadas y una cuenta administradora.
+- Crea 20 películas, cuatro usuarios con reseñas/visualizaciones/favoritas cruzadas y una cuenta administradora.
 - `demo` inicia el servidor con `DATA_FILE=data/demo.json` sin modificar `.env`.
 - El catálogo y las tendencias del inicio se consultan en vivo a TMDB: mantener conexión durante la demo.
 - Detener el servidor antes de volver a ejecutar `seed:demo`.
@@ -35,9 +39,10 @@ npm run demo
 | Lucía | `lucia@fotograma.demo` | `Demo1234!` |
 | Mateo | `mateo@fotograma.demo` | `Demo1234!` |
 | Sofía | `sofia@fotograma.demo` | `Demo1234!` |
+| Usuario demo | `usuario@fotograma.demo` | `contrasena` |
 | Administrador | `admin@fotograma.demo` | `Demo1234!` |
 
-También se puede iniciar sesión con los nombres de usuario `lucia`, `mateo`, `sofia` o `admin_demo`. Estas cuentas son solo para la demo local: no usar la contraseña ni el archivo demo en Render.
+También se puede iniciar sesión con los nombres de usuario `lucia`, `mateo`, `sofia`, `usuario` o `admin_demo`. La cuenta `usuario` comparte puntuaciones y favoritas con Lucía, así que su perfil muestra una afinidad alta con ella. Estas cuentas son solo para la demo local: no usar la contraseña ni el archivo demo en Render.
 
 ## Roles
 

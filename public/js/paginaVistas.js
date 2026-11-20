@@ -6,14 +6,16 @@ import {
   filtrarPorAnio,
   filtrarPorGenero,
 } from './filtrosPeliculas.js';
+import { BuscadorPeliculas } from './buscadorPeliculas.js';
 import { PUNTUACION_MAXIMA } from './constantes.js';
-import { mensajeDeError, mostrarPoster } from './utilidades.js';
-import { listarVisualizaciones } from './api/visualizacionesApi.js';
+import { fechaDeHoy, mensajeDeError, mostrarPoster } from './utilidades.js';
+import { crearVisualizacion, listarVisualizaciones } from './api/visualizacionesApi.js';
 
 const TAMANO_PAGINA = 50;
 
 class PaginaVistas {
   #elementos;
+  #buscador = null;
   #vistas = [];
   #generos = new Set();
   #anios = new Set();
@@ -23,8 +25,34 @@ class PaginaVistas {
   }
 
   async iniciar() {
+    this.#elementos.btnAgregar.addEventListener('click', () => this.#abrirBuscador());
     this.#conectarFiltros();
     await this.#cargar();
+  }
+
+  #abrirBuscador() {
+    if (!this.#buscador) {
+      this.#buscador = new BuscadorPeliculas({
+        titulo: 'Agregar película vista',
+        descripcion: 'Buscá una película y marcala como vista.',
+        maxSeleccion: 1,
+        textoSeleccionar: 'Agregar',
+        etiquetaContador: 'agregadas',
+        cerrarAlSeleccionar: true,
+        onSeleccionar: (pelicula) => this.#agregar(pelicula),
+      });
+    }
+
+    this.#buscador.establecerSeleccionadas([]);
+    this.#buscador.abrir();
+  }
+
+  async #agregar(pelicula) {
+    this.#ocultarAviso();
+
+    await crearVisualizacion({ peliculaId: pelicula.id, fecha: fechaDeHoy() });
+    await this.#cargar();
+    this.#mostrarAviso(`Agregaste "${pelicula.titulo}" a películas vistas.`);
   }
 
   #conectarFiltros() {
@@ -238,12 +266,23 @@ class PaginaVistas {
 
     return mensaje;
   }
+
+  #mostrarAviso(texto) {
+    this.#elementos.aviso.textContent = texto;
+    this.#elementos.aviso.classList.remove('d-none');
+  }
+
+  #ocultarAviso() {
+    this.#elementos.aviso.classList.add('d-none');
+  }
 }
 
 const pagina = new PaginaVistas({
   elementos: {
     contenedor: document.getElementById('vistas-container'),
     plantilla: document.getElementById('tpl-vista-card'),
+    btnAgregar: document.getElementById('btn-add-vista'),
+    aviso: document.getElementById('vistas-aviso'),
     filtros: document.getElementById('vistas-filtros'),
     filtroGenero: document.getElementById('filtro-genero'),
     filtroPuntuacion: document.getElementById('filtro-puntuacion'),

@@ -205,10 +205,11 @@ async function esperarExpresion(pagina, expression, descripcion, { timeout = 100
   throw new Error(`Timeout esperando: ${descripcion}`);
 }
 
-async function iniciarAplicacion() {
+async function iniciarAplicacion({ tmdbAdapter } = {}) {
   const container = await createContainer({
     store: new MemoryStore(),
     rondasHash: 4,
+    tmdbAdapter,
   });
   const app = createApp({ logger: loggerSilencioso, container });
   const servidor = app.listen(0, '127.0.0.1');
@@ -260,6 +261,36 @@ async function ejecutarFlujo() {
   const rutaNavegador = resolverNavegador();
   const puertoDevTools = await obtenerPuertoLibre();
   const perfilTemporal = await mkdtemp(join(tmpdir(), 'fotograma-e2e-'));
+  const peliculaBuscada = new Pelicula({
+    id: 'p-e2e-vista',
+    tmdbId: 604,
+    titulo: 'Vista E2E',
+    sinopsis: 'Película usada por la prueba E2E de películas vistas.',
+    anioEstreno: 2003,
+    generos: ['Acción', 'Ciencia ficción'],
+    rutaPoster: '/vista-e2e.jpg',
+    rutaBackdrop: '/vista-e2e-backdrop.jpg',
+  });
+  const tmdbAdapter = {
+    async buscar() {
+      return { peliculas: [peliculaBuscada], total: 1 };
+    },
+    async tendencias() {
+      return { peliculas: [peliculaBuscada], total: 1 };
+    },
+    async catalogo() {
+      return { peliculas: [peliculaBuscada], total: 1 };
+    },
+    async recomendaciones() {
+      return { peliculas: [peliculaBuscada], total: 1 };
+    },
+    async obtenerDetalle() {
+      return { director: null, puntuacionTmdb: null, votosTmdb: null };
+    },
+    async trailer() {
+      return null;
+    },
+  };
   const argumentos = [
     '--headless=new',
     '--disable-gpu',
@@ -282,11 +313,22 @@ async function ejecutarFlujo() {
     pagina = await conectarPagina(puertoDevTools);
     await pagina.enviar('Runtime.enable');
     await pagina.enviar('Page.enable');
+    await pagina.enviar('Network.enable');
 
-    const { container, servidor, baseUrl } = await iniciarAplicacion();
+    const { container, servidor, baseUrl } = await iniciarAplicacion({ tmdbAdapter });
 
     try {
       const autor = await registrar(baseUrl, 'autor-e2e');
+      const separadorCookie = autor.cookie.indexOf('=');
+
+      await pagina.enviar('Network.setCookie', {
+        name: autor.cookie.slice(0, separadorCookie),
+        value: autor.cookie.slice(separadorCookie + 1),
+        url: baseUrl,
+        httpOnly: true,
+        sameSite: 'Lax',
+      });
+
       const pelicula = new Pelicula({
         id: 'p-e2e-perfil',
         tmdbId: 603,
@@ -383,7 +425,140 @@ async function ejecutarFlujo() {
         resenas: 1,
       });
 
-      console.log('E2E OK: la reseña navega al perfil y el perfil se renderiza completo.');
+      await pagina.enviar('Page.navigate', { url: `${baseUrl}/reviews.html` });
+      await esperarExpresion(
+        pagina,
+        `document.querySelectorAll('#all-reviews-container .btn-editar-resena').length === 1`,
+        'que reviews.html muestre la reseña con botón de edición',
+      );
+
+      await evaluar(
+        pagina,
+        `document.querySelector('#all-reviews-container .btn-editar-resena').click()`,
+      );
+      await esperarExpresion(
+        pagina,
+        `!document.querySelector('#all-reviews-container .resena-edicion').classList.contains('d-none')`,
+        'que se abra el editor inline de la reseña',
+      );
+
+      const fondosEditor = JSON.parse(
+        await evaluar(
+          pagina,
+          `JSON.stringify({
+            comentario: getComputedStyle(document.querySelector('#all-reviews-container .resena-comentario')).backgroundColor,
+            puntuacion: getComputedStyle(document.querySelector('#all-reviews-container .resena-puntuacion')).backgroundColor,
+            guardar: getComputedStyle(document.querySelector('#all-reviews-container .btn-guardar-resena')).backgroundColor,
+          })`,
+        ),
+      );
+
+      for (const fondo of Object.values(fondosEditor)) {
+        assert.notEqual(fondo, 'rgb(255, 255, 255)');
+      }
+
+      await evaluar(
+        pagina,
+        `(() => {
+          const editor = document.querySelector('#all-reviews-container .resena-edicion');
+          editor.querySelector('.resena-comentario').value = 'Reseña editada desde reviews.';
+          editor.querySelector('.resena-puntuacion').value = '4';
+          editor.querySelector('.btn-guardar-resena').click();
+          return true;
+        })()`,
+      );
+      await esperarExpresion(
+        pagina,
+        `document.querySelector('#all-reviews-container .review-text-content')?.textContent === 'Reseña editada desde reviews.'`,
+        'que la reseña editada se muestre guardada',
+      );
+      await esperarExpresion(
+        pagina,
+        `document.querySelector('#all-reviews-container .review-rating')?.textContent === '★★★★'`,
+        'que se actualice la puntuación editada',
+      );
+
+      const rutaResenas = await evaluar(pagina, `location.pathname`);
+
+      assert.ok(rutaResenas.endsWith('/reviews.html'));
+
+      const resenasGuardadas = await container.resenaRepository.listarPorUsuario(autor.usuario.id);
+
+      assert.equal(resenasGuardadas.length, 1);
+      assert.equal(resenasGuardadas[0].comentario, 'Reseña editada desde reviews.');
+      assert.equal(resenasGuardadas[0].puntuacion, 4);
+
+      await pagina.enviar('Page.navigate', { url: `${baseUrl}/vistas.html` });
+      await esperarExpresion(
+        pagina,
+        `document.querySelector('#btn-add-vista')?.tagName === 'BUTTON'`,
+        'que películas vistas muestre el botón para agregar',
+      );
+
+      await esperarExpresion(
+        pagina,
+        `!document.querySelector('#vistas-container .spinner-border')`,
+        'que películas vistas termine de inicializar',
+      );
+
+      await evaluar(pagina, `document.querySelector('#btn-add-vista').click()`);
+      await esperarExpresion(
+        pagina,
+        `document.querySelector('.modal.show [data-busqueda]')`,
+        'que se abra el buscador de películas',
+      );
+      await esperarExpresion(
+        pagina,
+        `window.bootstrap.Modal.getInstance(document.querySelector('.modal'))?._isTransitioning === false`,
+        'que el buscador termine de abrirse',
+      );
+
+      await evaluar(
+        pagina,
+        `(() => {
+          const modal = document.querySelector('.modal.show');
+          modal.querySelector('[data-busqueda]').value = 'Vista E2E';
+          modal
+            .querySelector('form[data-form]')
+            .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          return true;
+        })()`,
+      );
+      await esperarExpresion(
+        pagina,
+        `document.querySelector('.modal.show [data-resultados] [data-pelicula-id]')`,
+        'que el buscador muestre la película',
+      );
+
+      await evaluar(
+        pagina,
+        `document.querySelector('.modal.show [data-resultados] [data-pelicula-id]').click()`,
+      );
+      await esperarExpresion(
+        pagina,
+        `document.querySelector('#vistas-container .vista-title')?.textContent === 'Vista E2E'`,
+        'que la película agregada aparezca en películas vistas',
+      );
+      await esperarExpresion(
+        pagina,
+        `!document.querySelector('.modal.show')`,
+        'que se cierre el buscador después de agregar',
+      );
+
+      const aviso = await evaluar(pagina, `document.querySelector('#vistas-aviso')?.textContent`);
+
+      assert.equal(aviso, 'Agregaste "Vista E2E" a películas vistas.');
+
+      const visualizaciones = await container.visualizacionRepository.listarPorUsuario(
+        autor.usuario.id,
+      );
+
+      assert.equal(visualizaciones.length, 1);
+      assert.equal(visualizaciones[0].peliculaId, peliculaBuscada.id);
+
+      console.log(
+        'E2E OK: la reseña se edita en reviews y películas vistas agrega desde el buscador.',
+      );
     } finally {
       await detenerAplicacion(servidor);
     }

@@ -259,6 +259,26 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.resena-edicion .form-control,
+.resena-edicion .form-select {
+  background-color: var(--bg-card);
+  color: #ffffff;
+  border-color: var(--border-color);
+}
+
+.resena-edicion .form-control:focus,
+.resena-edicion .form-select:focus {
+  background-color: var(--bg-card);
+  color: #ffffff;
+  border-color: var(--bs-success);
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.resena-edicion .form-select option {
+  background-color: var(--bg-card);
+  color: #ffffff;
+}
+
 .review-poster {
   width: 50px;
   height: 75px;

@@ -1,4 +1,5 @@
-import { eliminarResena, listarMisResenas } from './api/resenasApi.js';
+import { actualizarResena, eliminarResena, listarMisResenas } from './api/resenasApi.js';
+import { LARGO_MAXIMO_COMENTARIO, PUNTUACION_MAXIMA } from './constantes.js';
 import { formatearFecha, mensajeDeError, mostrarPoster } from './utilidades.js';
 
 const TAMANO_PAGINA = 12;
@@ -7,8 +8,12 @@ const TEXTO_REINTENTAR = 'No se pudo cargar. Reintentar';
 const TEXTO_SIN_RESENAS =
   'Todavía no escribiste reseñas. Buscá una película y compartí tu opinión.';
 
+function textoPuntuacion(puntuacion) {
+  return Number.isInteger(puntuacion) && puntuacion > 0 ? '★'.repeat(puntuacion) : 'Sin puntuación';
+}
+
 /**
- * Página reviews.html: lista las reseñas del usuario y permite eliminarlas.
+ * Página reviews.html: lista las reseñas del usuario y permite editarlas o eliminarlas.
  */
 class PaginaResenas {
   #elementos;
@@ -25,6 +30,7 @@ class PaginaResenas {
   }
 
   async iniciar() {
+    this.#conectarResenas();
     this.#elementos.btnMasResenas.addEventListener('click', () => this.#cargar());
 
     await this.#cargar();
@@ -67,6 +73,132 @@ class PaginaResenas {
     }
   }
 
+  #conectarResenas() {
+    this.#elementos.contenedor.addEventListener('click', (evento) => {
+      const botonEditar = evento.target.closest('.btn-editar-resena');
+
+      if (botonEditar) {
+        this.#iniciarEdicionResena(botonEditar);
+        return;
+      }
+
+      const botonCancelar = evento.target.closest('.btn-cancelar-resena');
+
+      if (botonCancelar) {
+        this.#cancelarEdicionResena(botonCancelar);
+        return;
+      }
+
+      const botonGuardar = evento.target.closest('.btn-guardar-resena');
+
+      if (botonGuardar) {
+        this.#guardarResenaEditada(botonGuardar);
+      }
+    });
+  }
+
+  #iniciarEdicionResena(boton) {
+    const tarjeta = boton.closest('.review-card');
+
+    if (!tarjeta) {
+      return;
+    }
+
+    for (const otraTarjeta of this.#elementos.contenedor.querySelectorAll('.review-card')) {
+      if (otraTarjeta === tarjeta) {
+        this.#mostrarEditorResena(otraTarjeta);
+      } else {
+        this.#cerrarEditorResena(otraTarjeta);
+      }
+    }
+
+    tarjeta.querySelector('.resena-comentario')?.focus();
+  }
+
+  #mostrarEditorResena(tarjeta) {
+    const comentario = tarjeta.querySelector('.resena-comentario');
+    const selector = tarjeta.querySelector('.resena-puntuacion');
+
+    comentario.value = tarjeta.dataset.comentario ?? '';
+    selector.value = tarjeta.dataset.puntuacion ?? '';
+    tarjeta.querySelector('.review-text-content')?.classList.add('d-none');
+    tarjeta.querySelector('.review-rating')?.classList.add('d-none');
+    tarjeta.querySelector('.btn-editar-resena')?.classList.add('d-none');
+    tarjeta.querySelector('.resena-error')?.classList.add('d-none');
+    tarjeta.querySelector('.resena-edicion')?.classList.remove('d-none');
+  }
+
+  #cerrarEditorResena(tarjeta) {
+    tarjeta.querySelector('.review-text-content')?.classList.remove('d-none');
+    tarjeta.querySelector('.review-rating')?.classList.remove('d-none');
+    tarjeta.querySelector('.btn-editar-resena')?.classList.remove('d-none');
+    tarjeta.querySelector('.resena-edicion')?.classList.add('d-none');
+    tarjeta.querySelector('.resena-error')?.classList.add('d-none');
+  }
+
+  #cancelarEdicionResena(boton) {
+    const tarjeta = boton.closest('.review-card');
+
+    if (tarjeta) {
+      this.#cerrarEditorResena(tarjeta);
+    }
+  }
+
+  async #guardarResenaEditada(boton) {
+    const tarjeta = boton.closest('.review-card');
+    const id = tarjeta?.querySelector('.btn-editar-resena')?.dataset.resenaId;
+
+    if (!tarjeta || !id) {
+      return;
+    }
+
+    const comentario = tarjeta.querySelector('.resena-comentario').value.trim();
+    const valorPuntuacion = tarjeta.querySelector('.resena-puntuacion').value;
+    const puntuacion = valorPuntuacion === '' ? null : Number(valorPuntuacion);
+    const avisoError = tarjeta.querySelector('.resena-error');
+    const botonGuardar = tarjeta.querySelector('.btn-guardar-resena');
+    const botonCancelar = tarjeta.querySelector('.btn-cancelar-resena');
+
+    if (comentario === '') {
+      avisoError.textContent = 'Escribí tu reseña antes de guardar.';
+      avisoError.classList.remove('d-none');
+      tarjeta.querySelector('.resena-comentario').focus();
+      return;
+    }
+
+    avisoError.classList.add('d-none');
+    botonGuardar.disabled = true;
+    botonCancelar.disabled = true;
+    botonGuardar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
+
+    try {
+      const actualizada = await actualizarResena(id, { comentario, puntuacion });
+
+      this.#actualizarTarjeta(tarjeta, actualizada);
+      this.#cerrarEditorResena(tarjeta);
+    } catch (error) {
+      avisoError.textContent = mensajeDeError(error);
+      avisoError.classList.remove('d-none');
+    } finally {
+      botonGuardar.disabled = false;
+      botonCancelar.disabled = false;
+      botonGuardar.innerHTML = '<i class="bi bi-check2 me-1"></i> Guardar';
+    }
+  }
+
+  #actualizarTarjeta(tarjeta, resena) {
+    const rating = tarjeta.querySelector('.review-rating');
+    const puntuacion = resena.puntuacion ?? null;
+
+    tarjeta.dataset.comentario = resena.comentario;
+    tarjeta.dataset.puntuacion = puntuacion ?? '';
+    tarjeta.querySelector('.review-text-content').textContent = resena.comentario;
+    rating.textContent = textoPuntuacion(puntuacion);
+    rating.classList.toggle('text-warning', Boolean(puntuacion));
+    tarjeta.querySelector('.resena-comentario').value = resena.comentario;
+    tarjeta.querySelector('.resena-puntuacion').value = puntuacion ? String(puntuacion) : '';
+  }
+
   #crearTarjeta(resena) {
     const tarjeta = this.#elementos.plantilla.content.cloneNode(true);
     const destino = new URL('pelicula.html', window.location.href);
@@ -77,10 +209,31 @@ class PaginaResenas {
       enlace.href = destino;
     }
 
+    const articulo = tarjeta.querySelector('.review-card');
+    const rating = tarjeta.querySelector('.review-rating');
+    const botonEditar = tarjeta.querySelector('.btn-editar-resena');
+    const comentario = tarjeta.querySelector('.resena-comentario');
+    const selector = tarjeta.querySelector('.resena-puntuacion');
+
     tarjeta.querySelector('.review-movie-title').textContent = resena.pelicula.titulo;
     tarjeta.querySelector('.review-movie-year').textContent = resena.pelicula.anioEstreno;
     tarjeta.querySelector('.review-date').textContent = formatearFecha(resena.fechaPublicacion);
     tarjeta.querySelector('.review-text-content').textContent = resena.comentario;
+
+    articulo.dataset.comentario = resena.comentario;
+    articulo.dataset.puntuacion = resena.puntuacion ? String(resena.puntuacion) : '';
+    rating.textContent = textoPuntuacion(resena.puntuacion);
+    rating.classList.toggle('text-warning', Boolean(resena.puntuacion));
+
+    botonEditar.dataset.resenaId = resena.id;
+    botonEditar.setAttribute('aria-label', `Editar reseña de ${resena.pelicula.titulo}`);
+
+    comentario.maxLength = LARGO_MAXIMO_COMENTARIO;
+    selector.replaceChildren(new Option('Sin puntuación', ''));
+
+    for (let puntuacion = 1; puntuacion <= PUNTUACION_MAXIMA; puntuacion += 1) {
+      selector.append(new Option(`${puntuacion} ★`, String(puntuacion)));
+    }
 
     const botonEliminar = tarjeta.querySelector('.btn-eliminar-resena');
 
